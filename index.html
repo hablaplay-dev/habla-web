@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>window.FontAwesomeConfig={autoReplaceSvg:'nest'};</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  
+  
+  <style>
+    ::-webkit-scrollbar{display:none}
+    html,body{-ms-overflow-style:none;scrollbar-width:none}
+    body { font-family: 'Inter',sans-serif}
+    /* Reusables */
+    .strip{position:relative;overflow:hidden;border-radius:12px}
+    .strip .side{display:flex;align-items:center;justify-content:center}
+    .strip .center{background:linear-gradient(90deg,#0f172a 0%,#0b1220 100%);color:#fff;text-transform:uppercase;letter-spacing:.5px}
+    .strip .line-1{font-weight:800}
+    .strip .line-2,.strip .line-3{font-weight:700;opacity:.95}
+    .pill{position:absolute;top:8px;left:8px;font-size:11px;background:rgba(0,0,0,.45);color:#fff;padding:2px 8px;border-radius:999px}
+    .status-pill{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+    .status-dot{width:6px;height:6px;border-radius:999px}
+    .dist-bar{height:8px;border-radius:999px;overflow:hidden}
+  </style>
+  <script>tailwind.config = {
+  "theme": {
+    "extend": {
+      "colors": {
+        "primary": "#10B981",
+        "secondary": "#3B82F6",
+        "accent": "#F59E0B"
+      },
+      "fontFamily": {
+        "sans": [
+          "Inter",
+          "sans-serif"
+        ]
+      }
+    }
+  }
+};</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&amp;display=swap"><style>
+  .highlighted-section {
+    outline: 2px solid #3F20FB;
+    background-color: rgba(63, 32, 251, 0.1);
+  }
+
+  .edit-button {
+    position: absolute;
+    z-index: 1000;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  html, body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  </style></head>
+<body class="bg-gray-50">
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 h-16">
+    <div class="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+      <a class="flex items-center space-x-2" href="#" id="brand-home">
+        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+          <i class="fa-solid fa-futbol text-white text-sm"></i>
+        </div>
+        <span class="text-xl font-bold text-gray-900">Habla!</span>
+      </a>
+
+      <nav class="hidden lg:flex items-center space-x-8">
+        <button id="nav-matches" class="text-primary font-semibold cursor-pointer">Matches</button>
+        <button id="nav-results" class="text-gray-600 hover:text-gray-900 cursor-pointer">Results / Follow Live!</button>
+        <button id="nav-rewards" class="text-gray-600 hover:text-gray-900 cursor-pointer">Rewards</button>
+        <button id="nav-account" class="text-gray-600 hover:text-gray-900 cursor-pointer">Account</button>
+      </nav>
+
+      <div class="flex items-center space-x-3">
+        <!-- Lukas (logueado) -->
+        <div id="status-cluster" class="hidden items-center">
+          <div class="px-3 py-1.5 rounded-full text-white font-bold bg-gradient-to-r from-amber-500 to-rose-500 shadow ring-2 ring-amber-300/40">
+            <i class="fa-solid fa-star mr-1"></i> <span id="top-lukas">0</span> Lukas
+          </div>
+        </div>
+
+        <!-- Notifs -->
+        <div id="notif-wrap" class="hidden relative">
+          <button id="notif-btn" class="relative p-2 text-gray-600 hover:text-gray-900">
+            <i class="fa-solid fa-bell text-lg"></i>
+            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
+          </button>
+          <div id="notif-menu" class="hidden absolute right-0 mt-2 w-80 bg-white border rounded-lg shadow-lg z-50">
+            <div class="px-3 py-2 text-xs text-gray-500">Notifications</div>
+            <div class="max-h-64 overflow-auto divide-y">
+              <div class="p-3 text-sm"><b>Bonus active</b>: Sponsor multiplier x1.5 on today’s match</div>
+              <div class="p-3 text-sm">Weekly reset in <b>2d 4h</b></div>
+              <div class="p-3 text-sm">You earned <b>+8 Lukas</b> yesterday</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auth buttons -->
+        <div id="auth-buttons" class="flex items-center space-x-2">
+          <button id="btn-open-signin" class="px-3 py-1.5 border rounded-lg text-sm text-gray-700 hover:bg-gray-100">Sign in</button>
+          <button id="btn-open-signup" class="px-3 py-1.5 bg-primary text-white rounded-lg text-sm hover:bg-emerald-600">Create account</button>
+        </div>
+
+        <!-- Avatar -->
+        <div id="avatar-menu" class="hidden relative">
+          <button id="avatar-btn" class="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100">
+            <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg" class="w-8 h-8 rounded-full" alt="avatar">
+            <i class="fa-solid fa-chevron-down text-gray-400 text-xs"></i>
+          </button>
+          <div id="avatar-dropdown" class="hidden absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-50">
+            <button id="dd-account" class="w-full text-left block px-4 py-2 text-sm hover:bg-gray-50">Account</button>
+            <button id="dd-terms" class="w-full text-left block px-4 py-2 text-sm hover:bg-gray-50">Terms & Conditions</button>
+            <button id="dd-logout" class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Log Out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="pt-20">
+    <div class="max-w-7xl mx-auto px-4">
+
+      <!-- MATCHES (home) -->
+      <section id="matches-section" class="transition-all">
+        <!-- HERO -->
+        <div class="mb-4 grid grid-cols-1 lg:grid-cols-[1.1fr_.9fr] gap-4">
+          <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-2xl p-6 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <h1 class="text-2xl font-extrabold">Today’s Tournaments</h1>
+                <p class="text-emerald-100">Join now, lock before kickoff and earn Lukas</p>
+              </div>
+              <div class="hidden sm:block bg-white/10 rounded-xl px-4 py-2 text-sm font-semibold">
+                <i class="fa-solid fa-bolt-lightning mr-1"></i><span id="hero-bonus">Bonus active</span>
+              </div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-2 text-sm">
+              <span class="bg-white/10 px-3 py-1 rounded-full">🔥 Hot matches highlighted</span>
+              <span class="bg-white/10 px-3 py-1 rounded-full">🎯 Trending picks shown</span>
+              <span class="bg-white/10 px-3 py-1 rounded-full">🏆 Prize pool boosters</span>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border p-5">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold text-gray-900">Your momentum</div>
+              <div class="text-xs text-gray-500">Stay engaged to win more</div>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-3 text-center">
+              <div class="p-3 rounded-lg bg-emerald-50 border">
+                <div class="text-emerald-700 text-xl font-extrabold" id="hero-streak">2</div>
+                <div class="text-xs text-emerald-700">Day streak</div>
+              </div>
+              <div class="p-3 rounded-lg bg-yellow-50 border">
+                <div class="text-amber-700 text-xl font-extrabold">x1.5</div>
+                <div class="text-xs text-amber-700">Sponsor boost</div>
+              </div>
+              <div class="p-3 rounded-lg bg-sky-50 border">
+                <div class="text-sky-700 text-xl font-extrabold" id="hero-players">0</div>
+                <div class="text-xs text-sky-700">Players joined today</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de partidos -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Upcoming tournaments</h2>
+            <div class="text-sm text-gray-600"><i class="fa-regular fa-calendar mr-1"></i>Sorted by time to kickoff</div>
+          </div>
+          <div id="matches-vertical" class="space-y-5"></div>
+        </div>
+      </section>
+
+      <!-- RESULTS / FOLLOW LIVE -->
+      <section id="results-section" class="hidden transition-all">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900">Results / Follow Live!</h1>
+            <div class="text-sm text-gray-600 flex items-center gap-2">
+              <i class="fa-regular fa-satellite-dish"></i> Live, upcoming and finished
+            </div>
+          </div>
+
+          <div id="attention-banner" class="mt-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200/60 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🔥</span>
+              <div class="text-sm">
+                <div id="banner-title" class="font-semibold text-gray-900">Hot match</div>
+                <div id="banner-sub" class="text-gray-600">Join before kickoff and boost with sponsor bonus</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div id="banner-bonus" class="text-xs font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-800 hidden"></div>
+              <button id="banner-cta" class="px-3 py-1.5 bg-primary text-white rounded-lg text-sm hover:bg-emerald-600">Make your picks</button>
+            </div>
+          </div>
+
+          <div id="live-block" class="mt-6 hidden">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+              <h3 class="text-sm font-semibold text-red-600">Live now</h3>
+            </div>
+            <div id="live-table"></div>
+          </div>
+
+          <div class="mt-8">
+            <h3 class="text-sm font-semibold text-gray-900 mb-2">All Matches</h3>
+            <div id="all-table"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REWARDS (nuevo) -->
+      <section id="rewards-section" class="hidden transition-all">
+        <!-- HERO BALANCE -->
+        <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_.9fr] gap-4 mb-4">
+          <div class="bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl p-6 shadow">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm opacity-90">Your Lukas balance</div>
+                <div id="rewards-balance" class="text-4xl font-extrabold leading-tight">0</div>
+                <div class="text-xs opacity-90 mt-1">Keep playing to grow your rewards</div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs opacity-90">Current streak</div>
+                <div id="rewards-streak" class="text-2xl font-extrabold">0</div>
+                <button id="rewards-cta-play" class="mt-3 px-4 py-2 bg-white text-rose-600 rounded-lg font-semibold text-sm hover:bg-rose-50">
+                  Play now
+                </button>
+	      <div class="mt-2 flex gap-2 justify-end">
+  		<button id="rewards-cta-redeem"
+   		        class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                  Redeem for cash 
+		</button>
+		<button id="rewards-cta-store"
+			class="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">
+		  Go to Redeem Store
+		</button>
+	      </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mt-5 text-center">
+              <div class="bg-white/15 rounded-lg py-3">
+                <div id="rw-lifetime" class="text-xl font-bold">—</div>
+                <div class="text-xs">Lifetime Lukas</div>
+              </div>
+              <div class="bg-white/15 rounded-lg py-3">
+                <div id="rw-tickets" class="text-xl font-bold">—</div>
+                <div class="text-xs">Tickets played</div>
+              </div>
+              <div class="bg-white/15 rounded-lg py-3">
+                <div id="rw-avg" class="text-xl font-bold">—</div>
+                <div class="text-xs">Avg. rank</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- How it works -->
+          <div class="bg-white rounded-2xl border p-6">
+            <h3 class="text-lg font-bold text-gray-900">How rewards work</h3>
+            <ol class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <li class="flex items-start gap-3 p-3 rounded-lg border bg-emerald-50/60">
+                <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center"><i class="fa-solid fa-pen"></i></div>
+                <div class="text-sm"><b>Make your match ticket</b><br><span class="text-gray-600">Answer 5 predictions for each match.</span></div>
+              </li>
+              <li class="flex items-start gap-3 p-3 rounded-lg border bg-yellow-50/60">
+                <div class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center"><i class="fa-solid fa-trophy"></i></div>
+                <div class="text-sm"><b>Finish in prize spots</b><br><span class="text-gray-600">Claim Lukas for correct predictions.</span></div>
+              </li>
+              <li class="flex items-start gap-3 p-3 rounded-lg border bg-sky-50/60">
+                <div class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center"><i class="fa-solid fa-gift"></i></div>
+                <div class="text-sm"><b>Redeem prizes</b><br><span class="text-gray-600">Use Lukas to unlock real rewards.</span></div>
+              </li>
+            </ol>
+            <button id="rewards-cta-matches" class="mt-4 w-full sm:w-auto px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Go to Matches</button>
+          </div>
+        </div>
+
+        <!-- Body: History + Badges -->
+        <div class="grid grid-cols-1 lg:grid-cols-[1.25fr_.75fr] gap-4">
+          <!-- History -->
+          <div class="bg-white rounded-xl border p-6">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-bold text-gray-900">Tournament history</h3>
+              <div class="flex items-center gap-1 text-sm">
+                <button id="hist-all" class="px-3 py-1 rounded-full bg-gray-900 text-white">All</button>
+                <button id="hist-won" class="px-3 py-1 rounded-full hover:bg-gray-100">Won</button>
+                <button id="hist-noprize" class="px-3 py-1 rounded-full hover:bg-gray-100">No prize</button>
+              </div>
+            </div>
+            <div id="history-empty" class="hidden mt-6 p-4 rounded-lg border text-center text-sm text-gray-600">
+              Sign in to see your rewards history.
+              <div class="mt-3 flex gap-2 justify-center">
+                <button class="px-3 py-1.5 border rounded-lg text-sm" id="rw-open-signin">Sign in</button>
+                <button class="px-3 py-1.5 bg-primary text-white rounded-lg text-sm" id="rw-open-signup">Create account</button>
+              </div>
+            </div>
+
+            <div class="mt-4 overflow-auto">
+              <div class="min-w-[720px]">
+                <div class="grid grid-cols-[1.2fr,1fr,1.6fr,1fr,1fr,1fr] text-[12px] text-gray-500 px-3 py-2">
+                  <div>Date &amp; Time</div><div>League</div><div>Match</div><div class="text-center">Rank</div><div class="text-center">Lukas</div><div class="text-center">Status</div>
+                </div>
+                <div id="history-rows" class="divide-y"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Badges / Streaks -->
+          <aside class="space-y-4">
+            <div class="bg-white rounded-xl border p-6">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-bold text-gray-900">Streak badges</h3>
+                <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Play daily</span>
+              </div>
+              <div id="badges-grid" class="grid grid-cols-2 gap-3"></div>
+              <div class="text-xs text-gray-500 mt-2">Earn badges by playing consecutive days. Claim to receive extra Lukas.</div>
+            </div>
+
+            <div class="bg-white rounded-xl border p-6">
+              <h3 class="text-sm font-semibold text-gray-900 mb-2">Tips to earn more</h3>
+              <ul class="text-sm space-y-1 text-gray-700">
+                <li>• Join <b>hot matches</b> with sponsor bonuses.</li>
+                <li>• Keep your <b>streak</b> to unlock higher badges.</li>
+                <li>• Aim for <b>correct score</b> for big Lukas.</li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ADD: ACCOUNT PAGE -->
+      <section id="account-section" class="hidden transition-all">
+        <div class="bg-white rounded-2xl border p-6 mb-4">
+          <h1 class="text-2xl font-bold">Account</h1>
+          <p class="text-sm text-gray-600">Manage profile, security, payouts and preferences.</p>
+          <div class="mt-4">
+            <button id="acc-edit" class="px-3 py-1.5 border rounded-lg text-sm">Edit</button>
+            <button id="acc-cancel" class="ml-2 px-3 py-1.5 border rounded-lg text-sm hidden">Cancel</button>
+          </div>
+        </div>
+
+        <!-- ADD: gate para usuarios no logueados -->
+        <div id="account-guest" class="bg-white rounded-2xl border p-6 mb-4 hidden">
+          <h2 class="text-lg font-semibold">Please sign in</h2>
+          <p class="text-sm text-gray-600">You need an account to manage your settings.</p>
+          <div class="mt-3 flex gap-2">
+            <button id="acc-open-signin" class="px-3 py-1.5 border rounded-lg text-sm">Sign in</button>
+            <button id="acc-open-signup" class="px-3 py-1.5 bg-primary text-white rounded-lg text-sm">Create account</button>
+          </div>
+        </div>
+          
+        <div id="account-body" class="space-y-4">
+          <!-- Profile -->
+          <div class="bg-white rounded-2xl border p-6">
+            <h2 class="text-lg font-semibold mb-4">Profile</h2>
+            <div class="flex items-center gap-4">
+              <img id="acc-avatar" class="w-16 h-16 rounded-full border" src="" alt="avatar">
+              <button id="acc-change-avatar" class="px-3 py-1.5 border rounded-lg text-sm">Choose from library</button>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-3 mt-4">
+              <div>
+                <label class="text-xs text-gray-600">Real name</label>
+                <input id="acc-fullname" type="text" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Your real name">
+                <p class="text-[11px] text-gray-500 mt-1">Nombre real, visible para otros jugadores.</p>
+              </div>
+              <div>
+                <label class="text-xs text-gray-600">Favorite team</label>
+                <select id="acc-team" class="w-full border rounded-lg px-3 py-2 mt-1">
+                  <option>Real Madrid</option><option>Barcelona</option><option>Man City</option>
+                  <option>Arsenal</option><option>Alianza Lima</option><option>Universitario</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Identity & Age -->
+          <div class="bg-white rounded-2xl border p-6">
+            <h2 class="text-lg font-semibold mb-4">Identity & Age (18+)</h2>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-600">Date of birth</label>
+                <input id="acc-dob" type="date" class="w-full border rounded-lg px-3 py-2 mt-1">
+              </div>
+              <div class="flex items-end">
+                <label class="flex items-center gap-2 text-sm">
+                  <input id="acc-18" type="checkbox" class="accent-primary">
+                  I confirm I am 18+ years old
+                </label>
+              </div>
+            </div>
+            <div id="acc-age-error" class="hidden mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+              Only adults (18+) can play on Habla!.
+            </div>
+          </div>
+
+          <!-- Account & Security -->
+          <div class="bg-white rounded-2xl border p-6">
+            <h2 class="text-lg font-semibold mb-4">Account & Security</h2>
+            <div class="grid sm:grid-cols-3 gap-3">
+              <div>
+                <label class="text-xs text-gray-600">Email</label>
+                <input id="acc-email" type="email" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="you@email.com">
+              </div>
+              <div>
+                <label class="text-xs text-gray-600">New password</label>
+                <input id="acc-pass" type="password" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Leave blank to keep">
+              </div>
+              <div class="flex items-end">
+                <label class="flex items-center gap-2 text-sm">
+                  <input id="acc-2fa" type="checkbox" class="accent-primary">
+                  Enable 2-step verification
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rewards & Payouts -->
+          <div class="bg-white rounded-2xl border p-6">
+            <h2 class="text-lg font-semibold mb-4">Rewards & Payouts</h2>
+            <div class="grid sm:grid-cols-3 gap-3">
+              <div>
+                <label class="text-xs text-gray-600">Payout method</label>
+                <select id="acc-payout-method" class="w-full border rounded-lg px-3 py-2 mt-1">
+                  <option>Bank transfer (PEN)</option><option>Yape</option><option>Plin</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="text-xs text-gray-600">Details (account number / phone)</label>
+                <input id="acc-payout-detail" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="000-00000000 / 9xx xxx xxx">
+              </div>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-2">Datos usados sólo para canjes de Lukas por Soles.</p>
+          </div>
+
+          <!-- Notifications & Preferences -->
+          <div class="bg-white rounded-2xl border p-6">
+            <h2 class="text-lg font-semibold mb-4">Notifications & Preferences</h2>
+            <div class="grid sm:grid-cols-3 gap-3">
+              <label class="flex items-center gap-2 text-sm"><input id="acc-n-email" type="checkbox" class="accent-primary" checked> Email updates</label>
+              <label class="flex items-center gap-2 text-sm"><input id="acc-n-push" type="checkbox" class="accent-primary" checked> Push notifications</label>
+              <div>
+                <label class="text-xs text-gray-600">Language</label>
+                <select id="acc-lang" class="w-full border rounded-lg px-3 py-2 mt-1"><option>Español</option><option>English</option></select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Privacy + Save -->
+          <div class="bg-white rounded-2xl border p-6">
+            <h2 class="text-lg font-semibold mb-3">Privacy</h2>
+            <p class="text-sm text-gray-600">Los nombres son reales y visibles. Los avatares provienen de una biblioteca aprobada.</p>
+            <label class="mt-3 flex items-center gap-2 text-sm"><input id="acc-profile-public" type="checkbox" class="accent-primary" checked> Show my profile in leaderboards</label>
+            <div class="mt-4">
+              <button id="acc-save" class="px-4 py-2 bg-primary text-white rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Save changes</button>
+            </div>
+          </div>
+
+          <!-- Danger zone -->
+          <div class="bg-white rounded-2xl border p-6">
+            <h2 class="text-lg font-semibold text-red-600 mb-3">Danger zone</h2>
+            <button class="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-sm">Delete my account</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Overlay compartido -->
+  <div id="overlay" class="fixed left-0 right-0 bottom-0 top-16 bg-black/40 backdrop-blur-[2px] opacity-0 pointer-events-none transition-opacity z-40"></div>
+
+  <!-- Drawer: Ticket -->
+  <aside id="ticket-drawer" class="fixed right-0 top-16 bottom-0 bg-white shadow-2xl border-l border-gray-200 z-50 w-[min(94vw,1200px)] translate-x-full transition-transform">
+    <div class="flex items-center justify-between px-5 py-4 border-b">
+      <button id="drawer-back" class="text-gray-700 hover:text-gray-900 flex items-center gap-2">
+        <i class="fa-solid fa-arrow-left"></i><span class="text-sm font-medium">Back to matches</span>
+      </button>
+      <span id="ticket-lock-time" class="text-xs text-gray-500"></span>
+    </div>
+    <div class="h-full overflow-auto">
+      <div class="max-w-6xl mx-auto px-5 py-5 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
+        <div>
+          <div id="strip-ticket" class="strip shadow mb-4"></div>
+          <div id="predictions-grid" class="space-y-4"></div>
+          <div class="mt-6 p-4 border rounded-lg bg-gray-50">
+            <div id="error-banner" class="hidden mb-3 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
+              Please complete all 5 predictions before submitting.
+            </div>
+            <div class="grid grid-cols-3 gap-4 text-center">
+              <div><div id="completed-counter" class="text-xl font-bold text-primary">0/5</div><div class="text-xs text-gray-600">Completed</div></div>
+              <div><div id="time-remaining" class="text-xl font-bold text-red-600">--:--:--</div><div class="text-xs text-gray-600">Time to kickoff</div></div>
+              <div><div id="lukas-balance" class="text-xl font-bold text-accent">—</div><div class="text-xs text-gray-600">If you win you will have</div></div>
+            </div>
+            <button id="submit-ticket" class="mt-4 w-full bg-gradient-to-r from-primary to-green-600 text-white font-bold py-3 rounded-lg text-base hover:from-green-600 hover:to-green-700">
+              <i class="fa-solid fa-ticket mr-2"></i>Submit Tournament Ticket
+            </button>
+          </div>
+        </div>
+        <div class="space-y-6">
+          <div class="border rounded-lg p-4">
+            <div class="flex items-center gap-2">
+              <img id="sponsor-logo" src="https://dummyimage.com/28x28/000/fff&amp;text=S" class="w-7 h-7 rounded" alt="sponsor">
+              <div><div class="text-sm font-semibold text-gray-900">Sponsored power-up</div><div id="sponsor-name" class="text-xs text-gray-500">by Sponsor</div></div>
+            </div>
+            <div id="bonus-list" class="mt-3 space-y-2"></div>
+            <div class="mt-2 text-[11px] text-gray-500">Bonuses are applied automatically on this match.</div>
+          </div>
+          <div class="border rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Match stats</h3>
+            <div id="stat-probs" class="space-y-3"></div>
+            <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+              <div class="p-2 bg-gray-50 rounded"><div class="text-gray-500">Avg goals</div><div id="stat-avg" class="font-semibold">—</div></div>
+              <div class="p-2 bg-gray-50 rounded"><div class="text-gray-500">Recent form</div><div id="stat-form" class="font-semibold leading-tight">—</div></div>
+            </div>
+          </div>
+          <div class="border rounded-lg p-4">
+            <div class="text-xs text-gray-500">Kickoff in</div>
+            <div id="sidebar-clock" class="text-2xl font-bold text-red-600">--:--:--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Drawer: Results -->
+  <aside id="results-drawer" class="fixed right-0 top-16 bottom-0 bg-white shadow-2xl border-l border-gray-200 z-50 w-[min(95vw,1200px)] translate-x-full transition-transform">
+    <div class="flex items-center justify-between px-5 py-4 border-b">
+      <button id="results-back" class="text-gray-700 hover:text-gray-900 flex items-center gap-2">
+        <i class="fa-solid fa-arrow-left"></i><span class="text-sm font-medium">Back to Results</span>
+      </button>
+      <span id="results-status-pill" class="text-xs font-semibold px-2 py-1 rounded-full"></span>
+    </div>
+    <div class="h-full overflow-auto">
+      <div class="max-w-6xl mx-auto px-5 py-5 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+        <div>
+          <div id="results-strip" class="strip shadow mb-4"></div>
+          <div class="border rounded-lg">
+            <div class="px-4 py-3 border-b flex items-center justify-between">
+              <h3 class="text-lg font-semibold">Participants</h3>
+              <div id="participants-count" class="text-sm text-gray-600">—</div>
+            </div>
+            <div id="players-list" class="divide-y"></div>
+          </div>
+        </div>
+        <div class="space-y-6">
+          <div class="border rounded-lg p-4">
+            <div class="text-xs text-gray-500" id="live-time-label">Status</div>
+            <div id="live-time" class="text-2xl font-bold">—</div>
+          </div>
+          <div class="border rounded-lg p-4">
+            <div class="flex items-center gap-2">
+              <img id="res-sponsor-logo" src="https://dummyimage.com/28x28/000/fff&amp;text=S" class="w-7 h-7 rounded" alt="sponsor">
+              <div><div class="text-sm font-semibold text-gray-900">Bonuses</div><div id="res-sponsor-name" class="text-xs text-gray-500">by Sponsor</div></div>
+            </div>
+            <div id="res-bonus-list" class="mt-3 space-y-2"></div>
+          </div>
+          <div class="border rounded-lg p-4">
+            <h4 class="text-sm font-semibold mb-2">Match result pick share</h4>
+            <div id="res-dist" class="dist-bar bg-gray-200"></div>
+            <div class="mt-2 flex justify-between text-xs text-gray-600"><span>Home</span><span>Draw</span><span>Away</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- AUTH FLOW -->
+  <div id="auth-flow" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[70]">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div id="auth-header" class="px-6 pt-8 pb-4 text-center">
+        <div class="w-12 h-12 rounded-full bg-primary/90 text-white flex items-center justify-center mx-auto shadow"><i class="fa-solid fa-futbol"></i></div>
+        <h2 class="mt-3 text-xl font-bold">Welcome to Habla!</h2>
+        <p id="auth-subtitle" class="text-sm text-gray-600">Daily football predictions game</p>
+      </div>
+      <div class="px-6 border-t">
+        <div class="flex items-center">
+          <button data-tab="signin" class="auth-tab flex-1 py-3 text-sm font-medium border-b-2 border-primary text-primary">Sign In</button>
+          <button data-tab="signup" class="auth-tab flex-1 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500">Sign Up</button>
+          <button data-tab="reset" class="auth-tab flex-1 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500">Reset</button>
+        </div>
+      </div>
+      <div class="px-6 py-5 space-y-5">
+        <form id="form-signin" class="space-y-4">
+          <div><label class="text-xs text-gray-600">Email</label><div class="mt-1 relative"><input type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your email" required=""><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
+          <div><label class="text-xs text-gray-600">Password</label><div class="mt-1 relative"><input id="si-pass" type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your password" required=""><button type="button" data-toggle="#si-pass" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div>
+            <div class="flex items-center justify-between mt-2"><label class="text-xs text-gray-600 flex items-center gap-2"><input type="checkbox" class="accent-primary"> Remember me</label><button type="button" data-jump="reset" class="text-xs text-primary hover:underline">Forgot password?</button></div>
+          </div>
+          <button type="submit" class="w-full bg-primary text-white rounded-lg py-2.5 font-semibold">Sign In</button>
+          <button id="btn-guest-signin" type="button" class="w-full bg-gray-100 text-gray-800 rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2">
+            <i class="fa-regular fa-user"></i> Continue as Guest
+          </button>
+          <p class="text-[11px] text-gray-500 text-center">By signing in, you agree to our <a class="underline">Terms</a> and <a class="underline">Privacy Policy</a>.</p>
+        </form>
+
+        <form id="form-signup" class="hidden space-y-4">
+          <div><label class="text-xs text-gray-600">Username</label><div class="mt-1 relative"><input type="text" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Choose a username" required=""><i class="fa-regular fa-user absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
+          <div><label class="text-xs text-gray-600">Email Address</label><div class="mt-1 relative"><input type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="your@email.com" required=""><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs text-gray-600">Password</label><div class="mt-1 relative"><input id="su-pass" type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Create a strong password" required=""><button type="button" data-toggle="#su-pass" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div></div>
+            <div><label class="text-xs text-gray-600">Confirm Password</label><div class="mt-1 relative"><input id="su-confirm" type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Confirm your password" required=""><button type="button" data-toggle="#su-confirm" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div></div>
+          </div>
+          <label class="text-xs text-gray-600 flex items-center gap-2"><input type="checkbox" required="" class="accent-primary"> I agree to the <a class="underline">Terms of Service</a> and <a class="underline">Privacy Policy</a></label>
+          <button type="submit" class="w-full bg-primary text-white rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2">
+            <i class="fa-solid fa-user-plus"></i> Create Account
+          </button>
+          <button id="btn-guest-signup" type="button" class="w-full bg-gray-100 text-gray-800 rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2">
+            <i class="fa-regular fa-user"></i> Continue as Guest
+          </button>
+          <p class="text-[11px] text-gray-500 text-center">Already have an account? <button type="button" data-jump="signin" class="text-primary underline">Sign in here</button></p>
+        </form>
+
+        <form id="form-reset" class="hidden space-y-4">
+          <h4 class="font-semibold">Reset Password</h4>
+          <p class="text-sm text-gray-600">Enter your email and we’ll send you a link to reset your password.</p>
+          <div class="mt-1 relative"><input type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your email address" required=""><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div>
+          <button class="w-full bg-emerald-600 text-white rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2"><i class="fa-regular fa-paper-plane"></i> Send Reset Link</button>
+          <div class="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800"><b>Check your email</b> – We’ve sent instructions. Also look in your spam folder.</div>
+          <p class="text-sm">Remember your password? <button type="button" data-jump="signin" class="text-primary underline">Back to Sign In</button></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!--  -->
+  <div id="review-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[65]">
+    <div class="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
+      <h3 class="text-lg font-semibold mb-3">Review your picks</h3>
+      <div id="review-list" class="mb-4 text-sm text-gray-800 space-y-2"></div>
+      <div class="flex gap-3"><button id="confirm-submit" class="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-emerald-600">Submit ticket</button><button id="cancel-submit" class="flex-1 border px-4 py-2 rounded-lg hover:bg-gray-50">Go back</button></div>
+    </div>
+  </div>
+  <div id="already-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[65]">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl text-center">
+      <h3 class="text-lg font-semibold mb-2">You are already participating</h3>
+      <p class="text-sm text-gray-600">Your ticket was submitted. Follow results live now.</p>
+      <a href="#" id="go-results" class="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-secondary text-white hover:bg-blue-600">Go to “Results / Follow Live!”</a>
+    </div>
+  </div>
+  <div id="redeem-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[75]">
+    <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+      <h3 class="text-lg font-semibold">Redeem Lukas for cash</h3>
+      <p class="text-sm text-gray-600">Rate: <b>1 Luka = 1 Sol (PEN)</b></p>
+
+      <div class="mt-4 space-y-3">
+        <div class="text-sm">Balance: <b id="redeem-balance">—</b></div>
+
+        <div>
+          <label class="text-xs text-gray-600">Amount to redeem (min 100)</label>
+          <input id="redeem-amount" type="number" min="100" step="10"
+                 class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="100">
+        </div>
+
+        <div class="text-xs text-gray-600">
+          You will receive: <b id="redeem-soles">S/ 0</b>
+        </div>
+
+        <div id="redeem-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2"></div>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button id="redeem-confirm"
+                class="flex-1 bg-primary text-white rounded-lg py-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+          Confirm redeem
+        </button>
+        <button id="redeem-close" class="flex-1 border rounded-lg py-2">Cancel</button>
+      </div>
+    </div>
+  </div> 
+  <!-- ADD: Avatar library modal -->
+  <div id="avatar-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[76]">
+    <div class="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-xl">
+      <h3 class="text-lg font-semibold">Choose an avatar</h3>
+      <p class="text-sm text-gray-600">Pick one from our approved library.</p>
+      <div id="avatar-grid" class="grid grid-cols-6 gap-3 mt-4"></div>
+      <div class="mt-4 text-right">
+        <button id="avatar-cancel" class="px-4 py-2 border rounded-lg">Close</button>
+      </div>
+    </div>
+  </div>
+    <div id="terms-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[80]">
+    <div class="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-xl">
+      <h3 class="text-lg font-semibold">Terms & Conditions</h3>
+      <div class="mt-3 max-h-[60vh] overflow-auto text-sm text-gray-700 space-y-2">
+        <p>These are placeholder Terms & Conditions for demo purposes.</p>
+        <p>You can replace this text with your real T&amp;C content.</p>
+      </div>
+      <div class="mt-4 text-right">
+        <button id="terms-close" class="px-4 py-2 border rounded-lg">Close</button>
+      </div>
+    </div>
+  </div>        
+  <div id="toast" class="fixed bottom-6 right-6 hidden">
+    <div class="bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2">
+      <i class="fa-solid fa-check-circle"></i><span id="toast-text">Done!</span>
+    </div>
+  </div>
+
+<script>
+/* ===== AUTH / HEADER ===== */
+let isLoggedIn=false;  // toggle para probar
+let lukasBalance=1250;
+const tournamentLukasPrize=100;
+let userStreak=7;      // días
+function headerAuth(){
+  const show=(id,cond)=>document.getElementById(id).classList.toggle('hidden',!cond);
+  show('auth-buttons',!isLoggedIn);
+  show('avatar-menu',isLoggedIn);
+  show('status-cluster',isLoggedIn);
+  show('notif-wrap',isLoggedIn);
+  document.getElementById('top-lukas').textContent=lukasBalance.toLocaleString();
+}
+headerAuth();
+document.getElementById('btn-open-signin').addEventListener('click',()=>openAuthFlow('signin'));
+document.getElementById('btn-open-signup').addEventListener('click',()=>openAuthFlow('signup'));
+document.getElementById('avatar-btn')?.addEventListener('click',(e)=>{e.stopPropagation();document.getElementById('avatar-dropdown').classList.toggle('hidden');});
+document.getElementById('notif-btn')?.addEventListener('click',(e)=>{e.stopPropagation();document.getElementById('notif-menu').classList.toggle('hidden');});
+document.addEventListener('click',()=>{document.getElementById('avatar-dropdown')?.classList.add('hidden');document.getElementById('notif-menu')?.classList.add('hidden');});
+document.getElementById('dd-account')?.addEventListener('click', (e)=>{e.stopPropagation();document.getElementById('avatar-dropdown')?.classList.add('hidden');showView('account');});
+function openTerms(){
+  const m = document.getElementById('terms-modal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeTerms(){
+  const m = document.getElementById('terms-modal');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+document.getElementById('dd-terms')?.addEventListener('click',(e)=>{e.stopPropagation();document.getElementById('avatar-dropdown')?.classList.add('hidden');openTerms();});
+document.getElementById('terms-close')?.addEventListener('click', closeTerms);
+document.getElementById('dd-logout')?.addEventListener('click',(e)=>{e.stopPropagation();isLoggedIn = false;document.getElementById('avatar-dropdown')?.classList.add('hidden');headerAuth();renderRewards();
+  renderAccount();showView('matches');showToast('Logged out');});
+
+/* ===== DEMO MATCH DATA ===== */
+const matches=[
+  { id:1, league:"LaLiga", venue:"Santiago Bernabéu Stadium | Madrid", startISO:addMinutes(new Date(),22).toISOString(), durMin:110,
+    home:{name:"Real Madrid", color:"bg-blue-600", logo:"https://dummyimage.com/60x60/1e3a8a/ffffff&text=RM"},
+    away:{name:"Barcelona",  color:"bg-red-600",  logo:"https://dummyimage.com/60x60/b91c1c/ffffff&text=B"},
+    sponsor:{name:"Bank Pacha", logo:"https://dummyimage.com/28x28/000/fff&text=B"},
+    bonuses:["x1.5 Correct Score booster","x2 if 3+ total goals","+1 Lukas streak"],
+    stats:{avgGoals:"3.2",form:"RM WWWDW / FCB WWDWL"},
+    probs:{home:48,draw:22,away:30,over25:61,btts:55},
+    participants:128, players:samplePlayers()
+  },
+  { id:2, league:"Premier League", venue:"Etihad Stadium | Manchester", startISO:addMinutes(new Date(),-30).toISOString(), durMin:110,
+    home:{name:"Man City", color:"bg-cyan-600", logo:"https://dummyimage.com/60x60/155e75/ffffff&text=MC"},
+    away:{name:"Arsenal",  color:"bg-red-500",  logo:"https://dummyimage.com/60x60/b91c1c/ffffff&text=A"},
+    sponsor:{name:"IncaBet", logo:"https://dummyimage.com/28x28/111/fff&text=I"},
+    bonuses:["x2 Clean Sheet bonus","x1.25 Under 2.5"],
+    stats:{avgGoals:"2.6",form:"MCI WWWWW / ARS WWDWW"},
+    probs:{home:44,draw:26,away:30,over25:54,btts:52},
+    participants:96, players:samplePlayers()
+  },
+  { id:3, league:"Liga 1 Perú", venue:"Estadio Alejandro Villanueva | Lima", startISO:addMinutes(new Date(),-180).toISOString(), durMin:110,
+    home:{name:"Alianza Lima", color:"bg-indigo-700", logo:"https://dummyimage.com/60x60/3730a3/ffffff&text=AL"},
+    away:{name:"Universitario", color:"bg-amber-600", logo:"https://dummyimage.com/60x60/b45309/ffffff&text=U"},
+    sponsor:{name:"Cusqueña", logo:"https://dummyimage.com/28x28/222/fff&text=C"},
+    bonuses:["x1.75 Derby bonus","+2 Lukas if BTTS"],
+    stats:{avgGoals:"2.1",form:"AL WDLWW / U LWWWL"},
+    probs:{home:39,draw:29,away:32,over25:47,btts:49},
+    participants:212, players:samplePlayers()
+  }
+];
+
+/* ===== REWARDS DATA (historial + badges) ===== */
+const historyData = [
+  {date:addMinutes(new Date(),-60*24*1), league:"LaLiga",   match:"Real Madrid vs Barcelona",     rank:2, total:120, lukas:18, status:"Won"},
+  {date:addMinutes(new Date(),-60*24*2), league:"Premier League", match:"Man City vs Arsenal",   rank:15,total:140,lukas:0,  status:"No prize"},
+  {date:addMinutes(new Date(),-60*24*3), league:"Serie A", match:"Juventus vs AC Milan",         rank:1, total:98, lukas:25, status:"Won"},
+  {date:addMinutes(new Date(),-60*24*4), league:"Champions League", match:"PSG vs Bayern",       rank:34,total:210,lukas:0,  status:"No prize"},
+  {date:addMinutes(new Date(),-60*24*6), league:"Liga 1 Perú", match:"Alianza vs Universitario", rank:5, total:160,lukas:8,  status:"Won"},
+  {date:addMinutes(new Date(),-60*24*8), league:"LaLiga",  match:"Sevilla vs Atlético",          rank:67,total:180,lukas:0,  status:"No prize"},
+];
+
+const badgesTemplate = [
+  {id:'streak3',  name:'Warm-up',   days:3,  reward:5},
+  {id:'streak7',  name:'On Fire',   days:7,  reward:12},
+  {id:'streak14', name:'Unstoppable',days:14,reward:25},
+  {id:'streak30', name:'Legend',    days:30, reward:60},
+];
+let claimedBadges=new Set();
+
+/* ===== HELPERS ===== */
+function samplePlayers(){const n=["Carlos","Ana","Miguel","Sofía","Luis","María","Diego","Valeria","Jorge","Lucía","Pablo","Camila"];return n.map((x,i)=>({id:i+1,name:x+" "+String.fromCharCode(65+i)+".",avatar:`https://i.pravatar.cc/48?img=${10+i}`,points:Math.floor(Math.random()*25),picks:{s1:["HOME","DRAW","AWAY"][Math.floor(Math.random()*3)],s2:Math.random()>.5?"YES":"NO",s3:Math.random()>.5?"OVER":"UNDER",s4:Math.random()>.5?"YES":"NO",s5:`${Math.floor(Math.random()*3)}-${Math.floor(Math.random()*3)}`}}));}
+function addMinutes(date,m){return new Date(date.getTime()+m*60000)}
+function fmtCountdown(ms){if(ms<0) return "00:00:00"; const s=Math.floor(ms/1000),h=String(Math.floor(s/3600)).padStart(2,'0'),m=String(Math.floor((s%3600)/60)).padStart(2,'0'),se=String(s%60).padStart(2,'0'); return `${h}:${m}:${se}`;}
+function fmtTime(d){return new Date(d).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+function fmtDateLine(d){const dt=new Date(d);const day=dt.toLocaleDateString([], {weekday:'short'});const md=dt.toLocaleDateString([], {month:'short',day:'numeric'}); const t=fmtTime(d);return `${day}, ${md} • ${t}`}
+function el(id){return document.getElementById(id)}
+function showToast(msg){el('toast-text').textContent=msg; const b=el('toast'); b.classList.remove('hidden'); setTimeout(()=>b.classList.add('hidden'),2200);}
+
+/* ===== ACCOUNT DATA ===== */
+const avatarLibrary = Array.from({length: 24}, (_,i)=>`https://i.pravatar.cc/120?img=${i+1}`);
+          
+/* ===== STRIP BUILDER ===== */
+function buildStripHTML(match,size='md'){
+  const h=match.home,a=match.away;
+  const leftW=size==='lg'?'w-32':'w-24', imgSz=size==='lg'?'w-16 h-16':'w-12 h-12', py=size==='lg'?'py-5':'py-3', f1=size==='lg'?'text-base':'text-sm', f2=size==='lg'?'text-xs':'text-[11px]';
+  return `<div class="strip flex rounded-lg overflow-hidden shadow">
+    <div class="side ${leftW} ${h.color}"><img src="${h.logo}" alt="${h.name}" class="${imgSz} rounded-full shadow-md"></div>
+    <div class="center flex-1 ${py} text-center"><div class="line-1 ${f1}">${fmtDateLine(match.startISO)}</div><div class="line-2 ${f2} opacity-90">${match.venue}</div><div class="line-3 ${f2} opacity-90">${match.league}</div></div>
+    <div class="side ${leftW} ${a.color}"><img src="${a.logo}" alt="${a.name}" class="${imgSz} rounded-full shadow-md"></div>
+  </div>`;
+}
+
+/* ===== MATCHES LIST ===== */
+const countdownTimers=new Map();
+function renderMatches(){
+  const box=el('matches-vertical'); box.innerHTML=''; countdownTimers.forEach(id=>clearInterval(id)); countdownTimers.clear();
+  const ups=[...matches].filter(m=>new Date(m.startISO)>new Date()).sort((a,b)=> new Date(a.startISO)-new Date(b.startISO));
+  el('hero-players').textContent = ups.reduce((acc,m)=>acc+(m.participants||m.players.length),0);
+  ups.forEach(m=>{
+    const d=dist(m.players);
+    const item=document.createElement('div');
+    item.className="rounded-xl border hover:shadow-md transition bg-white";
+    item.innerHTML=`
+      <button class="w-full text-left p-0">
+        <div class="relative">${buildStripHTML(m,'md')}
+          <div class="pill">Kickoff in <span id="cd-${m.id}">--:--:--</span></div>
+        </div>
+        <div class="px-4 py-3">
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            ${(m.bonuses&&m.bonuses.length)?`<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold"><i class="fa-solid fa-bolt-lightning mr-1"></i>Bonus</span>`:''}
+            <span class="px-2 py-0.5 rounded-full bg-gray-100">👥 ${m.participants||m.players.length} players</span>
+            <span class="hidden sm:inline text-gray-600">Trending:</span>
+            <div class="dist-bar bg-gray-200 w-40 hidden sm:block">
+              <div style="width:${d.home}%;background:#16a34a" class="h-full float-left"></div>
+              <div style="width:${d.draw}%;background:#a3a3a3" class="h-full float-left"></div>
+              <div style="width:${d.away}%;background:#3b82f6" class="h-full"></div>
+            </div>
+            <span class="ml-auto px-3 py-1 rounded-lg bg-primary/10 text-primary font-medium text-xs">Make your picks</span>
+          </div>
+        </div>
+      </button>`;
+    item.querySelector('button').addEventListener('click',()=>openTicket(m.id));
+    box.appendChild(item);
+    const span=item.querySelector(`#cd-${m.id}`), tick=()=>span.textContent=fmtCountdown(new Date(m.startISO)-new Date());
+    tick(); const t=setInterval(tick,1000); countdownTimers.set(m.id,t);
+  });
+}
+function dist(players){const t=players.length||1,c={HOME:0,DRAW:0,AWAY:0};players.forEach(p=>c[p.picks.s1]++);return{home:Math.round(c.HOME*100/t),draw:Math.round(c.DRAW*100/t),away:Math.round(c.AWAY*100/t)}}
+
+/* ===== RESULTS LIST ===== */
+function renderResults(){
+  const now = new Date();
+
+  const live = matches
+    .filter(m => new Date(m.startISO) <= now && now < addMinutes(new Date(m.startISO), m.durMin || 110))
+    .sort((a,b)=> new Date(a.startISO) - new Date(b.startISO));
+
+  const upcoming = matches
+    .filter(m => new Date(m.startISO) > now)
+    .sort((a,b)=> new Date(a.startISO) - new Date(b.startISO));
+
+  const finished = matches
+    .filter(m => now >= addMinutes(new Date(m.startISO), m.durMin || 110))
+    .sort((a,b)=> new Date(b.startISO) - new Date(a.startISO));
+
+  // Banner “Hot match”: próximo más cercano
+  if (upcoming[0]) {
+    const d = dist(upcoming[0].players), bonus = (upcoming[0].bonuses || [])[0];
+    el('banner-title').textContent = `${upcoming[0].league}: ${upcoming[0].home.name} vs ${upcoming[0].away.name}`;
+    el('banner-sub').textContent = `${d.home}% Home • ${d.draw}% Draw • ${d.away}% Away • Starts ${fmtTime(upcoming[0].startISO)}`;
+    const bb = el('banner-bonus');
+    if (bonus){ bb.textContent = bonus; bb.classList.remove('hidden'); } else { bb.classList.add('hidden'); }
+  }
+  el('banner-cta').onclick = () => showView('matches');
+
+  // Bloque LIVE
+  el('live-block').classList.toggle('hidden', live.length === 0);
+  if (live.length) buildTable('live-table', live, false);
+
+  // Tabla general (agrupada por fecha): upcoming y finished
+  buildTable('all-table', [...upcoming, ...finished], true);
+}
+function buildTable(containerId, items, showDateGroup){
+  const wrap=el(containerId); wrap.innerHTML='';
+  const table=document.createElement('div'); table.className='w-full';
+  table.innerHTML=`
+    <div class="grid grid-cols-[1.1fr,1fr,1.4fr,60px,1.4fr,1fr,1.4fr] text-[12px] text-gray-500 px-3 py-2">
+      <div>Date & Time</div><div>League</div><div class="pl-2">Home</div><div class="text-center">vs</div><div class="pl-2">Away</div><div class="text-center">Status</div><div>Highlights</div>
+    </div>
+    <div class="divide-y" id="${containerId}-rows"></div>`;
+  wrap.appendChild(table);
+
+  const rows=el(`${containerId}-rows`); let lastGroup='';
+  items.forEach(m=>{
+    const now = new Date();
+    const st = now < new Date(m.startISO)
+      ? 'upcoming'
+      : (now < addMinutes(new Date(m.startISO), m.durMin || 110) ? 'live' : 'finished');
+    const group=groupLabel(m.startISO);
+    if(showDateGroup && group!==lastGroup){ const g=document.createElement('div'); g.className='bg-gray-50 text-xs font-semibold text-gray-600 px-3 py-1.5'; g.textContent=group; rows.appendChild(g); lastGroup=group; }
+    const r=document.createElement('button'); r.className='w-full hover:bg-gray-50';
+    r.innerHTML=`
+      <div class="grid grid-cols-[1.1fr,1fr,1.4fr,60px,1.4fr,1fr,1.4fr] items-center px-3 py-3">
+        <div class="text-sm">${fmtDateLine(m.startISO)}</div>
+        <div class="text-sm text-gray-700">${m.league}</div>
+        <div class="flex items-center gap-2"><img src="${m.home.logo}" class="w-6 h-6 rounded-full"><span class="font-medium">${m.home.name}</span></div>
+        <div class="text-center text-gray-400">VS</div>
+        <div class="flex items-center gap-2"><img src="${m.away.logo}" class="w-6 h-6 rounded-full"><span class="font-medium">${m.away.name}</span></div>
+        <div class="flex justify-center">${statusPill(st,m.startISO)}</div>
+        <div class="text-xs">
+          <div class="flex items-center gap-2 flex-wrap">
+            ${(m.bonuses&&m.bonuses.length)?`<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">Bonus</span>`:''}
+            <span class="px-2 py-0.5 rounded-full bg-gray-100">👥 ${m.participants||m.players.length} players</span>
+          </div>
+        </div>
+      </div>`;
+    r.addEventListener('click',()=>openResultsDrawer(m.id));
+    rows.appendChild(r);
+  });
+}
+function statusPill(state){ if(state==='live') return `<span class="status-pill bg-red-100 text-red-700"><span class="status-dot bg-red-600 animate-pulse"></span>Live</span>`; if(state==='upcoming') return `<span class="status-pill bg-amber-100 text-amber-700"><span class="status-dot bg-amber-500"></span>Upcoming</span>`; return `<span class="status-pill bg-gray-100 text-gray-700"><span class="status-dot bg-gray-500"></span>Finished</span>`;}
+function groupLabel(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); if(delta===0) return 'Today'; if(delta===1) return 'Tomorrow'; if(delta===-1) return 'Yesterday'; return dt.toLocaleDateString([], {weekday:'long',month:'short',day:'numeric'});}
+
+/* ===== RESULTS DRAWER ===== */
+let selectedRes=null, liveSorterTimer=null;
+function openResultsDrawer(id){
+  selectedRes=matches.find(m=>m.id===id);
+  el('results-strip').innerHTML=buildStripHTML(selectedRes,'lg');
+  renderResultsSidebar(selectedRes); renderPlayers(selectedRes);
+  const pill=el('results-status-pill'); pill.textContent='DETAILS'; pill.className='text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700';
+  el('overlay').classList.remove('pointer-events-none'); el('overlay').classList.add('opacity-100');
+  el('results-section').classList.add('opacity-60','blur-[2px]');
+  document.getElementById('results-drawer').classList.remove('translate-x-full');
+}
+function closeResultsDrawer(){ el('overlay').classList.add('pointer-events-none'); el('overlay').classList.remove('opacity-100'); el('results-section').classList.remove('opacity-60','blur-[2px]'); document.getElementById('results-drawer').classList.add('translate-x-full');}
+document.getElementById('results-back').addEventListener('click',closeResultsDrawer);
+function renderResultsSidebar(m){
+  const d=dist(m.players);
+  el('res-sponsor-name').textContent='by '+(m.sponsor?.name||'Sponsor');
+  el('res-bonus-list').innerHTML=(m.bonuses||[]).map(b=>`<div class="text-sm bg-yellow-50 border border-yellow-200 rounded px-2 py-1.5"><i class="fa-solid fa-bolt-lightning text-yellow-500 mr-1"></i>${b}</div>`).join('')||`<div class="text-xs text-gray-500">No active bonuses</div>`;
+  el('res-dist').innerHTML=`<div style="width:${d.home}%;background:#16a34a" class="h-full float-left"></div><div style="width:${d.draw}%;background:#a3a3a3" class="h-full float-left"></div><div style="width:${d.away}%;background:#3b82f6" class="h-full"></div>`;
+  el('live-time-label').textContent='Status'; el('live-time').textContent='—';
+}
+function renderPlayers(m){const list=el('players-list'); let arr=[...m.players]; list.innerHTML=arr.map((p,i)=>`<div class="p-3 flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-6 text-xs font-bold text-gray-800">#${i+1}</div><img src="${p.avatar}" class="w-8 h-8 rounded-full"><div class="font-medium">${p.name}</div></div><button class="text-xs px-2 py-1 border rounded hover:bg-gray-50">View picks</button></div>`).join('');}
+
+/* ===== DRAWER TICKET (Matches) ===== */
+let selectedMatch=null, picks={}, picksSubmitted=false, score={home:0,away:0};
+function openTicket(id){
+  selectedMatch=matches.find(x=>x.id===id); picks={}; picksSubmitted=false; score={home:0,away:0};
+  el('strip-ticket').innerHTML=buildStripHTML(selectedMatch,'lg');
+  el('lukas-balance').textContent=`${(lukasBalance+tournamentLukasPrize).toLocaleString()} Lukas`;
+  el('ticket-lock-time').textContent=`Lock at ${fmtTime(selectedMatch.startISO)}`;
+  const tick=()=>{const t=fmtCountdown(new Date(selectedMatch.startISO)-new Date()); el('time-remaining').textContent=t; el('sidebar-clock').textContent=t;}; tick(); if(window._tkTimer) clearInterval(window._tkTimer); window._tkTimer=setInterval(tick,1000);
+  renderSponsor(selectedMatch); renderStats(selectedMatch.probs||{},selectedMatch.stats||{}); renderPredictions(selectedMatch);
+  el('overlay').classList.remove('pointer-events-none'); el('overlay').classList.add('opacity-100');
+  el('matches-section').classList.add('opacity-60','blur-[2px]');
+  document.getElementById('ticket-drawer').classList.remove('translate-x-full');
+  el('error-banner').classList.add('hidden');
+}
+function closeTicket(){ if(window._tkTimer) clearInterval(window._tkTimer); el('overlay').classList.add('pointer-events-none'); el('overlay').classList.remove('opacity-100'); el('matches-section').classList.remove('opacity-60','blur-[2px]'); document.getElementById('ticket-drawer').classList.add('translate-x-full'); selectedMatch=null; picks={}; updateCompleted(); }
+document.getElementById('drawer-back').addEventListener('click',()=>{ if(selectedMatch && !picksSubmitted && Object.keys(picks).length>0){ if(!confirm("You haven't submitted your ticket yet. Leave anyway?")) return;} closeTicket();});
+function renderSponsor(m){ el('sponsor-name').textContent=`by ${m.sponsor?.name||'Sponsor'}`; if(m.sponsor?.logo) el('sponsor-logo').src=m.sponsor.logo; el('bonus-list').innerHTML=(m.bonuses||[]).map(b=>`<div class="text-sm bg-yellow-50 border border-yellow-200 rounded px-2 py-1.5"><i class="fa-solid fa-bolt-lightning text-yellow-500 mr-1"></i>${b}</div>`).join('') || `<div class="text-xs text-gray-500">No active bonuses</div>`;}
+function renderStats(p,meta){const block=el('stat-probs'); const bar=(l,v,i)=>`<div><div class="flex justify-between text-xs text-gray-600 mb-1"><span>${i} ${l}</span><span>${v||0}%</span></div><div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden"><div class="h-2 bg-primary" style="width:${Math.max(0,Math.min(100,v||0))}%"></div></div></div>`; block.innerHTML=[bar('Home win',p.home,'🏠'),bar('Draw',p.draw,'➖'),bar('Away win',p.away,'✈️'),bar('Over 2.5',p.over25,'🚀'),bar('BTTS',p.btts,'🎯')].join(''); el('stat-avg').textContent=meta.avgGoals||'—'; el('stat-form').textContent=meta.form||'—';}
+function renderPredictions(match){
+  const h=match.home,a=match.away,grid=el('predictions-grid');
+  const card=(i,pts,body)=>`<div class="border border-gray-200 rounded-lg p-4"><div class="flex items-center justify-between mb-3"><span class="text-sm font-medium text-gray-500">Prediction ${i}/5</span><span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">+${pts} Lukas</span></div>${body}</div>`;
+  grid.innerHTML =
+    card(1,3,`<div class="flex gap-2"><button data-s="s1" data-v="HOME" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${h.name}</button><button data-s="s1" data-v="DRAW" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">Draw</button><button data-s="s1" data-v="AWAY" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${a.name}</button></div>`) +
+    card(2,2,`<p class="text-lg font-medium text-gray-900 mb-3">Both teams to score?</p><div class="flex gap-2"><button data-s="s2" data-v="YES" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-check mr-2"></i>Yes</button><button data-s="s2" data-v="NO" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-times mr-2"></i>No</button></div>`) +
+    card(3,2,`<p class="text-lg font-medium text-gray-900 mb-3">Over 2.5 total goals?</p><div class="flex gap-2"><button data-s="s3" data-v="OVER" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1">Over 2.5</button><button data-s="s3" data-v="UNDER" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1">Under 2.5</button></div>`) +
+    card(4,6,`<p class="text-lg font-medium text-gray-900 mb-3">Will there be a red card?</p><div class="flex gap-2"><button data-s="s4" data-v="YES" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-check mr-2"></i>Yes</button><button data-s="s4" data-v="NO" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-times mr-2"></i>No</button></div>`) +
+    card(5,8,`<p class="text-lg font-medium text-gray-900 mb-3">Predict the correct score</p>
+      <div class="space-y-3">
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center justify-center gap-4">
+            <div class="text-center"><div class="text-xs text-gray-600 mb-1">${h.name}</div>
+              <div class="flex items-center gap-2">
+                <button class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300" onclick="adjScore('home',-1)"><i class="fa-solid fa-minus text-xs"></i></button>
+                <div id="home-score" class="w-12 h-12 bg-white border-2 border-primary rounded-lg flex items-center justify-center text-xl font-bold text-primary">0</div>
+                <button class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300" onclick="adjScore('home',1)"><i class="fa-solid fa-plus text-xs"></i></button>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-gray-400">:</div>
+            <div class="text-center"><div class="text-xs text-gray-600 mb-1">${a.name}</div>
+              <div class="flex items-center gap-2">
+                <button class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300" onclick="adjScore('away',-1)"><i class="fa-solid fa-minus text-xs"></i></button>
+                <div id="away-score" class="w-12 h-12 bg-white border-2 border-primary rounded-lg flex items-center justify-center text-xl font-bold text-primary">0</div>
+                <button class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300" onclick="adjScore('away',1)"><i class="fa-solid fa-plus text-xs"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div><div class="text-sm text-gray-600 mb-2">Quick picks:</div>
+          <div class="grid grid-cols-6 gap-2">${["0-0","1-0","2-0","0-1","1-1","2-1","0-2","1-2","3-0","3-1","2-2","0-3"].map(s=>{const [x,y]=s.split("-");return `<button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm py-1.5 rounded" onclick="quickScore(${x},${y})">${s}</button>`;}).join("")}</div>
+        </div>
+      </div>`);
+  grid.querySelectorAll('button[data-s]').forEach(b=>{ b.addEventListener('click',()=>{ const st=b.dataset.s; b.parentElement.querySelectorAll('button[data-s="'+st+'"]').forEach(x=>x.classList.remove('!bg-primary','!text-white')); b.classList.add('!bg-primary','!text-white'); picks[st]=b.dataset.v; updateCompleted(); });});
+}
+function adjScore(side,delta){ score[side]=Math.max(0,score[side]+delta); syncScore(); }
+function quickScore(h,a){ score.home=h; score.away=a; syncScore(); }
+function syncScore(){ const hs=el('home-score'), as=el('away-score'); if(hs) hs.textContent=score.home; if(as) as.textContent=score.away; picks['s5']=`${score.home}-${score.away}`; updateCompleted(); }
+function updateCompleted(){ el('completed-counter').textContent=`${Object.keys(picks).length}/5`; }
+
+/* Submit flow */
+el('submit-ticket').addEventListener('click', ()=>{
+  if(!selectedMatch) return;
+  if(Object.keys(picks).length<5){ el('error-banner').classList.remove('hidden'); setTimeout(()=>el('error-banner').classList.add('hidden'),3000); return; }
+  if(!isLoggedIn){ openAuthFlow('signin'); return; }
+  if(picksSubmitted){ openAlreadyModal(); return; }
+  openReviewModal();
+});
+function openReviewModal(){ const r=el('review-modal'); const list=el('review-list'); const h=selectedMatch.home.name, a=selectedMatch.away.name; const mapS1={HOME:h,DRAW:'Draw',AWAY:a}; list.innerHTML=`<div><b>Who wins:</b> ${mapS1[picks.s1]||'-'}</div><div><b>BTTS:</b> ${picks.s2||'-'}</div><div><b>Over 2.5:</b> ${picks.s3||'-'}</div><div><b>Red card:</b> ${picks.s4||'-'}</div><div><b>Correct score:</b> ${picks.s5||'-'}</div>`; r.classList.remove('hidden'); r.classList.add('flex');}
+el('cancel-submit').addEventListener('click', ()=>{ el('review-modal').classList.add('hidden'); el('review-modal').classList.remove('flex'); });
+el('confirm-submit').addEventListener('click', ()=>{ el('review-modal').classList.add('hidden'); el('review-modal').classList.remove('flex'); picksSubmitted=true; showToast('Predictions submitted successfully!');});
+
+/* Overlay behavior */
+el('overlay').addEventListener('click',()=>{ if(!document.getElementById('ticket-drawer').classList.contains('translate-x-full')){ if(selectedMatch && !picksSubmitted && Object.keys(picks).length>0){ if(!confirm("You haven't submitted your ticket yet. Leave anyway?")) return;} closeTicket(); } closeResultsDrawer();});
+
+/* ===== AUTH (UI) ===== */
+const auth={root:document.getElementById('auth-flow'),tabs:[...document.querySelectorAll('.auth-tab')],forms:{signin:document.getElementById('form-signin'),signup:document.getElementById('form-signup'),reset:document.getElementById('form-reset')},
+  setMode(mode){this.tabs.forEach(t=>{const a=t.dataset.tab===mode;t.classList.toggle('text-primary',a);t.classList.toggle('border-primary',a);t.classList.toggle('border-b-2',a);t.classList.toggle('text-gray-500',!a);t.classList.toggle('border-transparent',!a)});Object.entries(this.forms).forEach(([k,f])=>f.classList.toggle('hidden',k!==mode));document.getElementById('auth-subtitle').textContent=mode==='signin'?'Daily football predictions game':mode==='signup'?'Join the daily football prediction game':'Reset your password';},
+  open(m='signin'){this.setMode(m);this.root.classList.remove('hidden');this.root.classList.add('flex')},close(){this.root.classList.add('hidden');this.root.classList.remove('flex')}
+};
+function openAuthFlow(m='signin'){auth.open(m)}
+auth.tabs.forEach(t=>t.addEventListener('click',()=>auth.setMode(t.dataset.tab)));
+document.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>auth.setMode(b.dataset.jump)));
+document.querySelectorAll('.toggle-pass').forEach(btn=>btn.addEventListener('click',()=>{const input=document.querySelector(btn.dataset.toggle); if(!input) return; input.type=input.type==='password'?'text':'password'; btn.innerHTML=input.type==='password'?'<i class="fa-regular fa-eye"></i>':'<i class="fa-regular fa-eye-slash"></i>'; }));
+auth.forms.signin.addEventListener('submit',(e)=>{e.preventDefault(); isLoggedIn=true; auth.close(); headerAuth(); renderRewards(); renderAccount();});
+auth.forms.signup.addEventListener('submit',(e)=>{e.preventDefault(); isLoggedIn=true; auth.close(); headerAuth(); renderRewards(); renderAccount();});
+auth.forms.reset.addEventListener('submit',(e)=>{e.preventDefault(); alert('Reset link sent to your email.');});
+document.getElementById('rw-open-signin')?.addEventListener('click',()=>openAuthFlow('signin'));
+document.getElementById('rw-open-signup')?.addEventListener('click',()=>openAuthFlow('signup'));
+document.getElementById('btn-guest-signin')?.addEventListener('click', ()=>{auth.close();headerAuth(); renderRewards(); renderAccount(); showView('matches');showToast('Continuing as guest');});
+document.getElementById('btn-guest-signup')?.addEventListener('click', ()=>{auth.close();headerAuth(); renderRewards(); renderAccount(); showView('matches');showToast('Continuing as guest');});
+                                                                                                                                                    
+/* ===== NAV / ROUTING ===== */
+function showView(view){
+  const m=el('matches-section'), r=el('results-section'), rw=el('rewards-section'), ac=el('account-section');
+  m.classList.toggle('hidden', view!=='matches');
+  r.classList.toggle('hidden', view!=='results');
+  rw.classList.toggle('hidden', view!=='rewards');
+  ac.classList.toggle('hidden', view!=='account');
+
+  ['nav-matches','nav-results','nav-rewards','nav-account'].forEach(id=>{
+    const b=el(id); if(!b) return;
+    b.classList.toggle('text-primary', id==='nav-'+view);
+    b.classList.toggle('font-semibold', id==='nav-'+view);
+  });
+
+  if(view==='matches') renderMatches();
+  if(view==='results') renderResults();
+  if(view==='rewards') renderRewards();
+  if(view==='account') renderAccount();
+}
+                                                                                                                                                  
+document.getElementById('nav-matches').addEventListener('click',()=>showView('matches'));
+document.getElementById('nav-results').addEventListener('click',()=>showView('results'));
+document.getElementById('nav-rewards').addEventListener('click',()=>showView('rewards'));
+document.getElementById('brand-home').addEventListener('click',()=>showView('matches'));
+document.getElementById('nav-account').addEventListener('click',()=>showView('account'));
+                                                                                                                                                    
+/* ===== REWARDS RENDER ===== */
+function renderRewards(){
+  // Hero balance/stats
+  el('rewards-balance').textContent = (isLoggedIn?lukasBalance:0).toLocaleString()+' Lukas';
+  el('rewards-streak').textContent  = isLoggedIn?userStreak:0;
+  const ticketsPlayed = isLoggedIn?historyData.length:0;
+  const lifetime = isLoggedIn?historyData.reduce((a,h)=>a+h.lukas,0):0;
+  el('rw-lifetime').textContent = lifetime;
+  el('rw-tickets').textContent = ticketsPlayed;
+  const avgRank = isLoggedIn?Math.round(historyData.reduce((a,h)=>a+(h.rank/h.total),0)/historyData.length*100):0;
+  el('rw-avg').textContent = isLoggedIn?(`#${Math.round(avgRank*historyData[0].total/100)||1}`):'—';
+
+  // History
+  if(!isLoggedIn){ el('history-empty').classList.remove('hidden'); el('history-rows').innerHTML=''; }
+  else { el('history-empty').classList.add('hidden'); renderHistory('all'); }
+
+  // Badges
+  renderBadges();
+
+  // CTAs
+  el('rewards-cta-play').onclick=()=>showView('matches');
+  el('rewards-cta-matches').onclick=()=>showView('matches');
+
+  // Tabs
+  el('hist-all').onclick=()=>{setHistTab('all');renderHistory('all');};
+  el('hist-won').onclick=()=>{setHistTab('won');renderHistory('won');};
+  el('hist-noprize').onclick=()=>{setHistTab('noprize');renderHistory('noprize');};
+  const redeemBtn = el('rewards-cta-redeem');
+  if (redeemBtn) {
+    const canRedeem = isLoggedIn && lukasBalance >= 100;
+    redeemBtn.disabled = !canRedeem;
+    redeemBtn.title = canRedeem ? '' : 'You need at least 100 Lukas and to be signed in';
+  }
+}
+function setHistTab(sel){
+  ['hist-all','hist-won','hist-noprize'].forEach(id=>{
+    const b=el(id); const active=id==='hist-'+sel;
+    b.className = 'px-3 py-1 rounded-full ' + (active?'bg-gray-900 text-white':'hover:bg-gray-100');
+  });
+}
+function renderHistory(filter){
+  const rows=el('history-rows'); rows.innerHTML='';
+  const arr=historyData.filter(h=> filter==='all' ? true : (filter==='won'?h.lukas>0:h.lukas===0));
+  arr.sort((a,b)=>b.date-a.date);
+  arr.forEach(h=>{
+    const medal = h.lukas>0 ? (h.rank===1?'🥇':(h.rank===2?'🥈':'🥉')) : '—';
+    const status = h.lukas>0?'<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Won</span>':'<span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">No prize</span>';
+    const row=document.createElement('div');
+    row.className='grid grid-cols-[1.2fr,1fr,1.6fr,1fr,1fr,1fr] items-center px-3 py-3 text-sm';
+    row.innerHTML=`
+      <div>${fmtDateLine(h.date)}</div>
+      <div class="text-gray-700">${h.league}</div>
+      <div class="font-medium">${h.match}</div>
+      <div class="text-center">${medal} #${h.rank}/${h.total}</div>
+      <div class="text-center ${h.lukas>0?'text-emerald-600 font-semibold':''}">${h.lukas>0?`+${h.lukas}`:'0'}</div>
+      <div class="text-center">${status}</div>`;
+    rows.appendChild(row);
+  });
+}
+
+function renderBadges(){
+  const grid=el('badges-grid'); grid.innerHTML='';
+  const data=badgesTemplate.map(b=>({...b, unlocked:isLoggedIn && userStreak>=b.days, progress:Math.min(1,(isLoggedIn?userStreak:0)/b.days)}));
+  data.forEach(b=>{
+    const card=document.createElement('div');
+    card.className='p-4 border rounded-lg hover:shadow-sm transition bg-white';
+    card.innerHTML=`
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full ${b.unlocked?'bg-amber-400':'bg-gray-200'} flex items-center justify-center text-white text-lg">★</div>
+          <div>
+            <div class="text-sm font-semibold">${b.name}</div>
+            <div class="text-xs text-gray-500">${b.days}-day streak</div>
+          </div>
+        </div>
+        <div class="text-xs text-gray-600">${Math.round(b.progress*100)}%</div>
+      </div>
+      <div class="mt-3 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div class="h-2 ${b.unlocked?'bg-amber-400':'bg-gray-400'}" style="width:${b.progress*100}%"></div>
+      </div>
+      <div class="mt-3 flex items-center justify-between">
+        <div class="text-xs text-gray-600">Reward: <b>+${b.reward} Lukas</b></div>
+        ${b.unlocked?`<button data-claim="${b.id}" class="px-3 py-1 rounded-lg text-xs ${claimedBadges.has(b.id)?'bg-gray-100 text-gray-500 cursor-default':'bg-primary text-white hover:bg-emerald-600'}">${claimedBadges.has(b.id)?'Claimed':'Claim'}</button>`:`<span class="text-xs text-gray-400">Locked</span>`}
+      </div>`;
+    grid.appendChild(card);
+  });
+  grid.querySelectorAll('[data-claim]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const id=btn.getAttribute('data-claim'); if(claimedBadges.has(id)) return;
+      claimedBadges.add(id); const b=badgesTemplate.find(x=>x.id===id); lukasBalance+=b.reward; headerAuth(); renderRewards(); showToast(`Badge claimed! +${b.reward} Lukas`);
+    });
+  });
+}
+
+/* ===== REDEEM MODAL LOGIC ===== */
+function openRedeemModal(){
+  if(!isLoggedIn){ openAuthFlow('signin'); return; }
+  if(lukasBalance < 100){ showToast('You need at least 100 Lukas to redeem'); return; }
+  el('redeem-balance').textContent = `${lukasBalance.toLocaleString()} Lukas`;
+  el('redeem-amount').value = Math.min(lukasBalance, 100);
+  updateRedeemUI();
+  const m = el('redeem-modal'); m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeRedeemModal(){
+  const m = el('redeem-modal'); m.classList.add('hidden'); m.classList.remove('flex');
+}
+function updateRedeemUI(){
+  const amt = parseInt(el('redeem-amount').value || 0, 10);
+  const valid = amt >= 100 && amt <= lukasBalance;
+  el('redeem-soles').textContent = 'S/ ' + (isNaN(amt) ? 0 : amt).toLocaleString();
+  el('redeem-confirm').disabled = !valid;
+  const err = el('redeem-error');
+  if(!valid){
+    err.textContent = (amt < 100) ? 'Minimum redeem is 100 Lukas.' : 'Amount exceeds your balance.';
+    err.classList.remove('hidden');
+  } else {
+    err.classList.add('hidden');
+  }
+}
+// Eventos
+el('rewards-cta-redeem')?.addEventListener('click', openRedeemModal);
+el('redeem-close')?.addEventListener('click', closeRedeemModal);
+el('redeem-amount')?.addEventListener('input', updateRedeemUI);
+el('redeem-confirm')?.addEventListener('click', ()=>{
+  const amt = parseInt(el('redeem-amount').value || 0, 10);
+  if(!(amt >= 100 && amt <= lukasBalance)) return;
+  // 1 Luka = 1 Sol
+  lukasBalance -= amt;
+  headerAuth();
+  renderRewards();
+  closeRedeemModal();
+  showToast(`Redeemed ${amt} Lukas for S/ ${amt}`);
+});
+
+// Botón "Go to Redeem Store" (demo)
+el('rewards-cta-store')?.addEventListener('click', ()=>{
+  // Aquí podrías redirigir a /store; por ahora mostramos un toast
+  showToast('Opening Redeem Store…');
+});
+
+/* ===== ACCOUNT PAGE (vertical) ===== */
+function calcAgeFromInput(v){ if(!v) return 0; const d=new Date(v); const t=Date.now()-d.getTime(); return Math.abs(new Date(t).getUTCFullYear()-1970); }
+function validateAge(){
+  const age = calcAgeFromInput(el('acc-dob').value);
+  const ok = age >= 18 && el('acc-18').checked;
+  el('acc-age-error').classList.toggle('hidden', ok);
+  // save sólo si edición + ok + perfil completo
+  el('acc-save').disabled = !accountEditMode || !ok || !isProfileComplete();
+}
+function openAvatarModal(){
+  if(!accountEditMode) return;
+  const g = el('avatar-grid');
+  g.innerHTML = avatarLibrary.map(u=>`<button data-url="${u}" class="rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary"><img src="${u}" class="w-full h-20 object-cover" alt=""></button>`).join('');
+  g.querySelectorAll('button').forEach(b=> b.onclick = ()=>{ el('acc-avatar').src = b.dataset.url; closeAvatarModal(); });
+  el('avatar-modal').classList.remove('hidden'); el('avatar-modal').classList.add('flex');
+}
+function closeAvatarModal(){ el('avatar-modal').classList.add('hidden'); el('avatar-modal').classList.remove('flex'); }
+
+function renderAccount(){
+  // Gate: si no hay sesión, muestra invitación a loguearse
+  if(!isLoggedIn){
+    el('account-guest')?.classList.remove('hidden');
+    el('account-body')?.classList.add('hidden');
+    el('acc-open-signin')?.addEventListener('click',()=>openAuthFlow('signin'));
+    el('acc-open-signup')?.addEventListener('click',()=>openAuthFlow('signup'));
+    return;
+  }
+  // Con sesión: oculta gate y muestra cuerpo
+  el('account-guest')?.classList.add('hidden');
+  el('account-body')?.classList.remove('hidden');
+
+  // Inicializa perfil guardado si no existe (puedes reemplazar por datos reales)
+  if(!savedProfile){
+    savedProfile = {
+      avatar: avatarLibrary[2],
+      fullname: 'Carlos Martinez',
+      team: 'Real Madrid',
+      dob: '1996-04-02',
+      is18: true,
+      email: 'carlos@example.com',
+      twofa: false,
+      payoutMethod: 'Bank transfer (PEN)',
+      payoutDetail: '',
+      nEmail: true, nPush: true, lang: 'Español', profilePublic: true
+    };
+  }
+  // Carga valores y bloquea edición por defecto
+  fillProfile(savedProfile);
+  setAccountEditable(false);
+  validateAge();
+
+  // Banner “completa tu perfil” (se crea una sola vez)
+  if(!el('acc-complete-banner')){
+    const banner = document.createElement('div');
+    banner.id = 'acc-complete-banner';
+    banner.className = 'hidden bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 mb-4';
+    banner.innerHTML = '<b>Complete your profile</b> to enable withdrawals and play.';
+    const sec = el('account-section');
+    sec.insertBefore(banner, el('account-body'));
+  }
+  el('acc-complete-banner').classList.toggle('hidden', isProfileComplete());
+
+  // Listeners de edición
+  el('acc-edit').onclick = ()=>{ setAccountEditable(true); };
+  el('acc-cancel').onclick = ()=>{
+    fillProfile(savedProfile);
+    setAccountEditable(false);
+    validateAge();
+  };
+
+  // Guardar (requiere perfil completo)
+  el('acc-save').onclick = ()=>{
+    if(!accountEditMode) return;
+    if(!isProfileComplete()){ showToast('Please complete all required fields (18+).'); return; }
+    savedProfile = readProfile();
+    setAccountEditable(false);
+    showToast('Account settings saved');
+    el('acc-complete-banner').classList.toggle('hidden', true);
+  };
+
+  // Re-evaluar habilitación del botón Save en cada cambio
+  const reval = ()=>{ el('acc-save').disabled = !accountEditMode || !isProfileComplete(); };
+  getAccountInputs().forEach(ctrl=>{
+    ctrl.addEventListener('input', ()=>{ validateAge(); reval(); });
+    ctrl.addEventListener('change', ()=>{ validateAge(); reval(); });
+  });
+
+  // Avatar modal
+  el('acc-change-avatar').onclick = openAvatarModal;
+  el('avatar-cancel').onclick = closeAvatarModal;
+}                                                                       
+
+/* === Account: estado y helpers de edición/validación === */
+let accountEditMode = false;
+let savedProfile = null;
+
+function getAccountInputs(){
+  // Todos los campos dentro del cuerpo (excepto los botones de control)
+  return el('account-body').querySelectorAll('input, select, textarea');
+}
+
+function setAccountEditable(on){
+  accountEditMode = on;
+  // habilita/deshabilita campos
+  getAccountInputs().forEach(ctrl => { ctrl.disabled = !on; });
+  // botón de avatar
+  const avatarBtn = el('acc-change-avatar');
+  if (avatarBtn) avatarBtn.disabled = !on;
+
+  // toggle botones
+  el('acc-edit')?.classList.toggle('hidden', on);
+  el('acc-cancel')?.classList.toggle('hidden', !on);
+
+  // save se habilita sólo en edición + validación ok
+  el('acc-save').disabled = !on || !isProfileComplete();
+}
+
+function fillProfile(p){
+  el('acc-avatar').src = p.avatar;
+  el('acc-fullname').value = p.fullname || '';
+  el('acc-team').value = p.team || 'Real Madrid';
+  el('acc-dob').value = p.dob || '';
+  el('acc-18').checked = !!p.is18;
+  el('acc-email').value = p.email || '';
+  el('acc-pass').value = '';               // nunca persistimos password
+  el('acc-2fa').checked = !!p.twofa;
+  el('acc-payout-method').value = p.payoutMethod || 'Bank transfer (PEN)';
+  el('acc-payout-detail').value = p.payoutDetail || '';
+  el('acc-n-email').checked = p.nEmail !== false;
+  el('acc-n-push').checked = p.nPush !== false;
+  el('acc-lang').value = p.lang || 'Español';
+  el('acc-profile-public').checked = p.profilePublic !== false;
+}
+
+function readProfile(){
+  return {
+    avatar: el('acc-avatar').src,
+    fullname: el('acc-fullname').value.trim(),
+    team: el('acc-team').value,
+    dob: el('acc-dob').value,
+    is18: el('acc-18').checked,
+    email: el('acc-email').value.trim(),
+    twofa: el('acc-2fa').checked,
+    payoutMethod: el('acc-payout-method').value,
+    payoutDetail: el('acc-payout-detail').value.trim(),
+    nEmail: el('acc-n-email').checked,
+    nPush: el('acc-n-push').checked,
+    lang: el('acc-lang').value,
+    profilePublic: el('acc-profile-public').checked
+  };
+}
+
+function isProfileComplete(){
+  const ageOK = calcAgeFromInput(el('acc-dob').value) >= 18 && el('acc-18').checked;
+  const reqFilled = [
+    el('acc-fullname').value.trim(),
+    el('acc-team').value,
+    el('acc-dob').value,
+    el('acc-email').value.trim(),
+    el('acc-payout-method').value,
+    el('acc-payout-detail').value.trim(),
+    el('acc-avatar').src
+  ].every(Boolean);
+  return ageOK && reqFilled;
+}
+                                                             
+/* ===== UTILS FOR RESULTS ===== */
+function labelDateTime(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); const tag = delta===0?'Today':(delta===1?'Tomorrow':(delta===-1?'Yesterday':dt.toLocaleDateString([], {weekday:'short'}))); return `${tag} ${dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;}
+
+/* ===== START ===== */
+showView('matches');
+renderMatches();
+
+/* EVENTS extra */
+document.getElementById('go-results').addEventListener('click',(e)=>{e.preventDefault(); showView('results'); closeResultsDrawer(); closeTicket();});
+document.getElementById('rewards-cta-play').addEventListener('click',()=>showView('matches'));
+</script>
+
+</body></html>
