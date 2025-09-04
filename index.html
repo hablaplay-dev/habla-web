@@ -7,7 +7,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
   
-  
+  <!-- Supabase JS desde CDN -->
+  <script src="https://esm.sh/@supabase/supabase-js@2"></script>
+  <!-- Guardamos tus claves aquí solo para prototipo -->
+  <script id="env" type="application/json">
+  {
+    "SUPABASE_URL": "https://ajogsubrgcsgrtieqffh.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqb2dzdWJyZ2NzZ3J0aWVxZmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMjgzMjIsImV4cCI6MjA2NjcwNDMyMn0.1ckGlWSAl6Bc9I2kKTlxwoUT-uVC9B2RostwOmnKuPY"
+  }
+  </script>
+  <script>
+    // Crear cliente de Supabase
+    const ENV = JSON.parse(document.getElementById('env').textContent);
+    const sb = supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
+	window.sb = sb;
+  </script>
+
   <style>
     ::-webkit-scrollbar{display:none}
     html,body{-ms-overflow-style:none;scrollbar-width:none}
