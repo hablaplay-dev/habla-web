@@ -715,7 +715,30 @@
         <button id="terms-close" class="px-4 py-2 border rounded-lg">Close</button>
       </div>
     </div>
-  </div>        
+  </div>
+  <!-- AGE 18+ MODAL -->
+  <div id="age-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[78]">
+    <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+      <h3 class="text-lg font-semibold">Confirm your age (18+)</h3>
+      <p class="text-sm text-gray-600">Only adults can submit a ticket.</p>
+
+      <div class="mt-4 grid gap-3">
+        <div>
+          <label class="text-xs text-gray-600">Date of birth</label>
+          <input id="age-dob" type="date" class="w-full border rounded-lg px-3 py-2 mt-1">
+        </div>
+        <label class="flex items-center gap-2 text-sm">
+          <input id="age-confirm" type="checkbox" class="accent-primary">
+          I confirm I am 18+ years old
+        </label>
+        <div id="age-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2"></div>
+      </div>
+      <div class="mt-4 flex gap-2">
+        <button id="age-save"   class="flex-1 bg-primary text-white rounded-lg py-2 font-semibold">Continue</button>
+        <button id="age-cancel" class="flex-1 border rounded-lg py-2">Cancel</button>
+      </div>
+    </div>
+  </div>
   <div id="toast" class="fixed bottom-6 right-6 hidden">
     <div class="bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2">
       <i class="fa-solid fa-check-circle"></i><span id="toast-text">Done!</span>
@@ -1393,6 +1416,169 @@ renderMatches();
 /* EVENTS extra */
 document.getElementById('go-results').addEventListener('click',(e)=>{e.preventDefault(); showView('results'); closeResultsDrawer(); closeTicket();});
 document.getElementById('rewards-cta-play').addEventListener('click',()=>showView('matches'));
-</script>
+	
+/* ========= SUPABASE SESSION & PROFILE HELPERS ========= */
+// Garantiza que exista sesión. Si no, crea invitado anónimo (válido con RLS por auth.uid()).
+async function ensureSession() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (user) return user;
+  const { data, error } = await sb.auth.signInAnonymously();
+  if (error) { console.error(error); throw error; }
+  return (await sb.auth.getUser()).data.user;
+}
 
+// Lee (o crea) el perfil del usuario actual.
+async function getOrCreateProfile() {
+  const user = await ensureSession();
+  const { data: prof, error } = await sb.from('profiles')
+    .select('*').eq('id', user.id).maybeSingle();
+  if (error) throw error;
+  if (prof) return prof;
+  // crea perfil mínimo
+  const { data: created, error: upErr } = await sb.from('profiles')
+    .insert([{ id: user.id }]).select().single();
+  if (upErr) throw upErr;
+  return created;
+}
+
+// Abre el modal 18+ si hace falta. Devuelve true si queda verificado.
+function calcAge(dateStr) {
+  if (!dateStr) return 0;
+  const d = new Date(dateStr);
+  const diff = Date.now() - d.getTime();
+  return Math.abs(new Date(diff).getUTCFullYear() - 1970);
+}
+
+async function requireAdultGate() {
+  const prof = await getOrCreateProfile();
+  if (prof?.is_adult === true) return true;
+
+  // Mostrar modal 18+
+  const modal = document.getElementById('age-modal');
+  const dob   = document.getElementById('age-dob');
+  const ok18  = document.getElementById('age-confirm');
+  const err   = document.getElementById('age-error');
+  const save  = document.getElementById('age-save');
+  const cancel= document.getElementById('age-cancel');
+
+  modal.classList.remove('hidden'); modal.classList.add('flex');
+
+  return new Promise((resolve) => {
+    function cleanup(res){
+      modal.classList.add('hidden'); modal.classList.remove('flex');
+      save.removeEventListener('click', onSave);
+      cancel.removeEventListener('click', onCancel);
+      resolve(res);
+    }
+    async function onSave(){
+      const age = calcAge(dob.value);
+      const checked = ok18.checked;
+      if (age < 18 || !checked) {
+        err.textContent = age < 18 ? 'Only 18+ can play.' : 'Please confirm you are 18+.'; 
+        err.classList.remove('hidden');
+        return;
+      }
+      err.classList.add('hidden');
+      const { error } = await sb.from('profiles')
+        .update({ dob: dob.value, is_adult: true })
+        .eq('id', (await ensureSession()).id);
+      if (error) { console.error(error); err.textContent = 'Could not save. Try again.'; err.classList.remove('hidden'); return; }
+      cleanup(true);
+    }
+    function onCancel(){ cleanup(false); }
+
+    save.addEventListener('click', onSave);
+    cancel.addEventListener('click', onCancel);
+  });
+}
+
+/* ========= SUBMIT TICKET (guarda en Supabase) ========= */
+
+// 1) Reemplaza el click original para que primero verifique 18+
+//    y recién luego abra tu "review-modal".
+(() => {
+  const btn = document.getElementById('submit-ticket');
+  if (!btn) return;
+
+  btn.addEventListener('click', async (ev) => {
+    ev.stopImmediatePropagation(); // evitamos dobles handlers anteriores
+
+    if (!selectedMatch) return;
+    if (Object.keys(picks).length < 5) {
+      document.getElementById('error-banner').classList.remove('hidden');
+      setTimeout(()=>document.getElementById('error-banner').classList.add('hidden'), 3000);
+      return;
+    }
+
+    // Crear/obtener sesión y requerir 18+
+    try {
+      await ensureSession();
+      const ok = await requireAdultGate();
+      if (!ok) return;              // usuario canceló o no cumple
+      openReviewModal();            // usa tu modal existente
+    } catch (e) {
+      console.error(e);
+      showToast('Could not start session');
+    }
+  }, { capture: true }); // asegura que este handler sea el que corre
+})();
+
+// 2) Reemplaza el "confirm-submit" para crear ticket + respuestas en DB
+(() => {
+  const btn = document.getElementById('confirm-submit');
+  if (!btn) return;
+
+  btn.addEventListener('click', async (ev) => {
+    ev.stopImmediatePropagation();
+
+    try {
+      const user = await ensureSession();
+
+      // Evita duplicar ticket por match (depende de tu RLS/índice único si lo añadiste)
+      // Crea ticket
+      const { data: tkt, error: tErr } = await sb.from('tickets')
+        .insert([{
+          user_id: user.id,
+          match_id: selectedMatch.id,
+          status: 'submitted'
+        }]).select().single();
+
+      if (tErr) {
+        // Si ya existe (violación de unique), muestra tu modal "already"
+        if (tErr.code === '23505') { // Postgres unique_violation
+          openAlreadyModal();
+          return;
+        }
+        throw tErr;
+      }
+
+      // Inserta respuestas (5 filas)
+      const answers = Object.entries(picks).map(([q_key, value]) => ({
+        ticket_id: tkt.id,
+        q_key,
+        value_text: String(value)
+      }));
+      const { error: aErr } = await sb.from('ticket_answers').insert(answers);
+      if (aErr) throw aErr;
+
+      // Cierra modal de revisión y confirma en UI
+      document.getElementById('review-modal').classList.add('hidden');
+      document.getElementById('review-modal').classList.remove('flex');
+
+      picksSubmitted = true;
+      showToast('Predictions submitted successfully!');
+      // (opcional) closeTicket(); // si quieres cerrar el drawer
+    } catch (e) {
+      console.error(e);
+      showToast('Could not submit ticket');
+    }
+  }, { capture: true });
+})();
+
+/* ========= OPCIONAL: helper para abrir el modal "ya participas" ========= */
+function openAlreadyModal(){
+  const m = document.getElementById('already-modal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+</script>
 </body></html>
