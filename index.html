@@ -732,20 +732,66 @@ async function initAuth() {
   // lee sesión actual
   const { data: { session } } = await sb.auth.getSession();
   currentUser = session?.user ?? null;
+
+  // Respeta modo guest si venía de localStorage
   isGuest = JSON.parse(localStorage.getItem('habla_guest') || 'false');
 
-  headerAuth();     // refresca header
-  renderRewards();  // datos dependientes
-  renderAccount();  // carga/lock de Account
+  headerAuth();
+  renderRewards();
+  renderAccount();
 
   // suscribe a cambios de sesión
   sb.auth.onAuthStateChange((_event, sess) => {
     currentUser = sess?.user ?? null;
-    if (currentUser) isGuest = false; // si inicia, deja de ser guest
+    if (currentUser) {
+      isGuest = false; // deja de ser guest
+    }
     localStorage.setItem('habla_guest', JSON.stringify(isGuest));
     headerAuth();
     renderRewards();
     renderAccount();
+
+    // ► Si el user se autenticó en mitad de un intento de envío,
+    // retomamos el flujo abriendo el review con sus picks preservados.
+    if (currentUser && pendingSubmit?.matchId) {
+      try {
+        auth.close();
+      } catch (_) {}
+      // reabrimos el ticket, restauramos picks y abrimos el modal de confirmación
+      const { matchId, picksSnapshot } = pendingSubmit;
+      pendingSubmit = null;
+
+      openTicket(matchId);
+
+      // restaurar picks (s1..s4)
+      if (picksSnapshot) {
+        picks = { ...picksSnapshot };
+        // aplica estilos activos a los botones según lo elegido
+        Object.entries(picks).forEach(([key, val]) => {
+          const btn = document.querySelector(`#predictions-grid button[data-s="${key}"][data-v="${val}"]`);
+          if (btn) {
+            // limpiar siblings
+            btn.parentElement.querySelectorAll(`button[data-s="${key}"]`).forEach(x=>{
+              x.classList.remove('!bg-primary','!text-white');
+            });
+            btn.classList.add('!bg-primary','!text-white');
+          }
+        });
+
+        // restaurar marcador (s5)
+        if (picks.s5) {
+          const [h,a] = picks.s5.split('-').map(n=>parseInt(n,10)||0);
+          score.home = h; score.away = a;
+          syncScore();
+        }
+        updateCompleted();
+      }
+
+      // si ya están completas las 5, muestra el review directamente
+      if (Object.keys(picks).length === 5) {
+        openReviewModal();
+      }
+    }
   });
 }
 function isLoggedIn() { return !!currentUser; };  // toggle para probar
@@ -1044,31 +1090,63 @@ function syncScore(){ const hs=el('home-score'), as=el('away-score'); if(hs) hs.
 function updateCompleted(){ el('completed-counter').textContent=`${Object.keys(picks).length}/5`; }
 
 /* Submit flow */
+let pendingSubmit = null; // { matchId, picksSnapshot }
+
 el('submit-ticket').addEventListener('click', ()=>{
-  if(!selectedMatch) return;
-  if(Object.keys(picks).length<5){
+  if (!selectedMatch) return;
+
+  if (Object.keys(picks).length < 5) {
     el('error-banner').classList.remove('hidden');
     setTimeout(()=>el('error-banner').classList.add('hidden'),3000);
     return;
   }
-  // Guest o no logueado: forzar creación de cuenta
-  if(!isLoggedIn()){
-    openAuthFlow('signup');
+
+  // Si NO hay sesión (guest o no autenticado): pedir crear cuenta / login
+  if (!isLoggedIn()) {
+    // guardamos el intento para retomarlo tras auth
+    pendingSubmit = {
+      matchId: selectedMatch.id,
+      picksSnapshot: { ...picks }
+    };
+    openAuthFlow('signup'); // muestra tabs; pueden pasar a "Sign In"
     return;
   }
-  if(picksSubmitted){
+
+  // Si ya envió, sólo informar
+  if (picksSubmitted) {
     openAlreadyModal();
     return;
   }
+
+  // Con sesión y todo ok → review
   openReviewModal();
 });
-function openReviewModal(){ const r=el('review-modal'); const list=el('review-list'); const h=selectedMatch.home.name, a=selectedMatch.away.name; const mapS1={HOME:h,DRAW:'Draw',AWAY:a}; list.innerHTML=`<div><b>Who wins:</b> ${mapS1[picks.s1]||'-'}</div><div><b>BTTS:</b> ${picks.s2||'-'}</div><div><b>Over 2.5:</b> ${picks.s3||'-'}</div><div><b>Red card:</b> ${picks.s4||'-'}</div><div><b>Correct score:</b> ${picks.s5||'-'}</div>`; r.classList.remove('hidden'); r.classList.add('flex');}
-el('cancel-submit').addEventListener('click', ()=>{ el('review-modal').classList.add('hidden'); el('review-modal').classList.remove('flex'); });
-el('confirm-submit').addEventListener('click', ()=>{ el('review-modal').classList.add('hidden'); el('review-modal').classList.remove('flex'); picksSubmitted=true; showToast('Predictions submitted successfully!');});
 
-/* Overlay behavior */
-el('overlay').addEventListener('click',()=>{ if(!document.getElementById('ticket-drawer').classList.contains('translate-x-full')){ if(selectedMatch && !picksSubmitted && Object.keys(picks).length>0){ if(!confirm("You haven't submitted your ticket yet. Leave anyway?")) return;} closeTicket(); } closeResultsDrawer();});
+function openReviewModal(){
+  const r=el('review-modal');
+  const list=el('review-list');
+  const h=selectedMatch.home.name, a=selectedMatch.away.name;
+  const mapS1={HOME:h,DRAW:'Draw',AWAY:a};
+  list.innerHTML=`<div><b>Who wins:</b> ${mapS1[picks.s1]||'-'}</div>
+                  <div><b>BTTS:</b> ${picks.s2||'-'}</div>
+                  <div><b>Over 2.5:</b> ${picks.s3||'-'}</div>
+                  <div><b>Red card:</b> ${picks.s4||'-'}</div>
+                  <div><b>Correct score:</b> ${picks.s5||'-'}</div>`;
+  r.classList.remove('hidden'); r.classList.add('flex');
+}
 
+el('cancel-submit').addEventListener('click', ()=>{
+  el('review-modal').classList.add('hidden');
+  el('review-modal').classList.remove('flex');
+});
+
+el('confirm-submit').addEventListener('click', ()=>{
+  el('review-modal').classList.add('hidden');
+  el('review-modal').classList.remove('flex');
+  picksSubmitted = true;
+  showToast('Predictions submitted successfully!');
+});
+	
 /* ===== AUTH (UI) ===== */
 const auth={root:document.getElementById('auth-flow'),tabs:[...document.querySelectorAll('.auth-tab')],forms:{signin:document.getElementById('form-signin'),signup:document.getElementById('form-signup'),reset:document.getElementById('form-reset')},
   setMode(mode){this.tabs.forEach(t=>{const a=t.dataset.tab===mode;t.classList.toggle('text-primary',a);t.classList.toggle('border-primary',a);t.classList.toggle('border-b-2',a);t.classList.toggle('text-gray-500',!a);t.classList.toggle('border-transparent',!a)});Object.entries(this.forms).forEach(([k,f])=>f.classList.toggle('hidden',k!==mode));document.getElementById('auth-subtitle').textContent=mode==='signin'?'Daily football predictions game':mode==='signup'?'Join the daily football prediction game':'Reset your password';},
@@ -1140,6 +1218,13 @@ document.getElementById('btn-guest-signup')?.addEventListener('click', ()=>{
 
 /* ===== NAV / ROUTING ===== */
 function showView(view){
+  // Cierra cualquier overlay/drawer que pudiera bloquear UI
+  try { closeTicket(); } catch(_) {}
+  try { closeResultsDrawer(); } catch(_) {}
+  try { auth.close(); } catch(_) {}
+  el('overlay').classList.add('pointer-events-none');
+  el('overlay').classList.remove('opacity-100');
+
   const m=el('matches-section'), r=el('results-section'), rw=el('rewards-section'), ac=el('account-section');
   m.classList.toggle('hidden', view!=='matches');
   r.classList.toggle('hidden', view!=='results');
@@ -1148,8 +1233,9 @@ function showView(view){
 
   ['nav-matches','nav-results','nav-rewards','nav-account'].forEach(id=>{
     const b=el(id); if(!b) return;
-    b.classList.toggle('text-primary', id==='nav-'+view);
-    b.classList.toggle('font-semibold', id==='nav-'+view);
+    const active = id === ('nav-' + view);
+    b.classList.toggle('text-primary', active);
+    b.classList.toggle('font-semibold', active);
   });
 
   if(view==='matches') renderMatches();
