@@ -203,7 +203,7 @@
           <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-gray-900">Results / Follow Live!</h1>
             <div class="text-sm text-gray-600 flex items-center gap-2">
-              <i class="fa-regular fa-satellite-dish"></i> Live, upcoming and finished
+              <i class="fa-solid fa-satellite-dish"></i> Live, upcoming and finished
             </div>
           </div>
 
@@ -608,8 +608,8 @@
       </div>
       <div class="px-6 py-5 space-y-5">
         <form id="form-signin" class="space-y-4">
-          <div><label class="text-xs text-gray-600">Email</label><div class="mt-1 relative"><input type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your email" required=""><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
-          <div><label class="text-xs text-gray-600">Password</label><div class="mt-1 relative"><input id="si-pass" type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your password" required=""><button type="button" data-toggle="#si-pass" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div>
+          <div><label class="text-xs text-gray-600">Email</label><div class="mt-1 relative"><input id="si-email" type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your email" required><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
+          <div><label class="text-xs text-gray-600">Password</label><div class="mt-1 relative"><input id="si-pass"  type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your password" required><button type="button" data-toggle="#si-pass" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div>
             <div class="flex items-center justify-between mt-2"><label class="text-xs text-gray-600 flex items-center gap-2"><input type="checkbox" class="accent-primary"> Remember me</label><button type="button" data-jump="reset" class="text-xs text-primary hover:underline">Forgot password?</button></div>
           </div>
           <button type="submit" class="w-full bg-primary text-white rounded-lg py-2.5 font-semibold">Sign In</button>
@@ -620,13 +620,13 @@
         </form>
 
         <form id="form-signup" class="hidden space-y-4">
-          <div><label class="text-xs text-gray-600">Username</label><div class="mt-1 relative"><input type="text" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Choose a username" required=""><i class="fa-regular fa-user absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
-          <div><label class="text-xs text-gray-600">Email Address</label><div class="mt-1 relative"><input type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="your@email.com" required=""><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
+          <div><label class="text-xs text-gray-600">Username</label><div class="mt-1 relative"><input id="su-username" type="text" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Choose a username" required><i class="fa-regular fa-user absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
+          <div><label class="text-xs text-gray-600">Email Address</label><div class="mt-1 relative"><input id="su-email" type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="your@email.com" required><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
           <div class="grid grid-cols-2 gap-3">
-            <div><label class="text-xs text-gray-600">Password</label><div class="mt-1 relative"><input id="su-pass" type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Create a strong password" required=""><button type="button" data-toggle="#su-pass" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div></div>
-            <div><label class="text-xs text-gray-600">Confirm Password</label><div class="mt-1 relative"><input id="su-confirm" type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Confirm your password" required=""><button type="button" data-toggle="#su-confirm" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div></div>
+            <div><label class="text-xs text-gray-600">Password</label><div class="mt-1 relative"><input id="su-pass"    type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Create a strong password" required><button type="button" data-toggle="#su-pass" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div></div>
+            <div><label class="text-xs text-gray-600">Confirm Password</label><div class="mt-1 relative"><input id="su-confirm" type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Confirm your password" required><button type="button" data-toggle="#su-confirm" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div></div>
           </div>
-          <label class="text-xs text-gray-600 flex items-center gap-2"><input type="checkbox" required="" class="accent-primary"> I agree to the <a class="underline">Terms of Service</a> and <a class="underline">Privacy Policy</a></label>
+          <label class="text-xs text-gray-600 flex items-center gap-2"><input id="su-terms" type="checkbox" required class="accent-primary"> I agree to the <a class="underline">Terms of Service</a> and <a class="underline">Privacy Policy</a></label>
           <button type="submit" class="w-full bg-primary text-white rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2">
             <i class="fa-solid fa-user-plus"></i> Create Account
           </button>
@@ -639,7 +639,7 @@
         <form id="form-reset" class="hidden space-y-4">
           <h4 class="font-semibold">Reset Password</h4>
           <p class="text-sm text-gray-600">Enter your email and we’ll send you a link to reset your password.</p>
-          <div class="mt-1 relative"><input type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your email address" required=""><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div>
+          <div class="mt-1 relative"><input id="re-email" type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your email address" required><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div>
           <button class="w-full bg-emerald-600 text-white rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2"><i class="fa-regular fa-paper-plane"></i> Send Reset Link</button>
           <div class="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800"><b>Check your email</b> – We’ve sent instructions. Also look in your spam folder.</div>
           <p class="text-sm">Remember your password? <button type="button" data-jump="signin" class="text-primary underline">Back to Sign In</button></p>
@@ -716,29 +716,6 @@
       </div>
     </div>
   </div>
-  <!-- AGE 18+ MODAL -->
-  <div id="age-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[78]">
-    <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
-      <h3 class="text-lg font-semibold">Confirm your age (18+)</h3>
-      <p class="text-sm text-gray-600">Only adults can submit a ticket.</p>
-
-      <div class="mt-4 grid gap-3">
-        <div>
-          <label class="text-xs text-gray-600">Date of birth</label>
-          <input id="age-dob" type="date" class="w-full border rounded-lg px-3 py-2 mt-1">
-        </div>
-        <label class="flex items-center gap-2 text-sm">
-          <input id="age-confirm" type="checkbox" class="accent-primary">
-          I confirm I am 18+ years old
-        </label>
-        <div id="age-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2"></div>
-      </div>
-      <div class="mt-4 flex gap-2">
-        <button id="age-save"   class="flex-1 bg-primary text-white rounded-lg py-2 font-semibold">Continue</button>
-        <button id="age-cancel" class="flex-1 border rounded-lg py-2">Cancel</button>
-      </div>
-    </div>
-  </div>
   <div id="toast" class="fixed bottom-6 right-6 hidden">
     <div class="bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2">
       <i class="fa-solid fa-check-circle"></i><span id="toast-text">Done!</span>
@@ -747,19 +724,42 @@
 
 <script>
 /* ===== AUTH / HEADER ===== */
-let isLoggedIn=false;  // toggle para probar
+// --- AUTH STATE (real) ---
+let isGuest = false; // modo invitado: navegar sí, enviar ticket no
+let currentUser = null; // objeto supabase user
+
+async function initAuth() {
+  // lee sesión actual
+  const { data: { session } } = await sb.auth.getSession();
+  currentUser = session?.user ?? null;
+  isGuest = JSON.parse(localStorage.getItem('habla_guest') || 'false');
+
+  headerAuth();     // refresca header
+  renderRewards();  // datos dependientes
+  renderAccount();  // carga/lock de Account
+
+  // suscribe a cambios de sesión
+  sb.auth.onAuthStateChange((_event, sess) => {
+    currentUser = sess?.user ?? null;
+    if (currentUser) isGuest = false; // si inicia, deja de ser guest
+    localStorage.setItem('habla_guest', JSON.stringify(isGuest));
+    headerAuth();
+    renderRewards();
+    renderAccount();
+  });
+}
+function isLoggedIn() { return !!currentUser; };  // toggle para probar
 let lukasBalance=1250;
 const tournamentLukasPrize=100;
 let userStreak=7;      // días
 function headerAuth(){
   const show=(id,cond)=>document.getElementById(id).classList.toggle('hidden',!cond);
-  show('auth-buttons',!isLoggedIn);
-  show('avatar-menu',isLoggedIn);
-  show('status-cluster',isLoggedIn);
-  show('notif-wrap',isLoggedIn);
+  show('auth-buttons',!isLoggedIn());
+  show('avatar-menu', isLoggedIn());
+  show('status-cluster', isLoggedIn());
+  show('notif-wrap',  isLoggedIn());
   document.getElementById('top-lukas').textContent=lukasBalance.toLocaleString();
-}
-headerAuth();
+};
 document.getElementById('btn-open-signin').addEventListener('click',()=>openAuthFlow('signin'));
 document.getElementById('btn-open-signup').addEventListener('click',()=>openAuthFlow('signup'));
 document.getElementById('avatar-btn')?.addEventListener('click',(e)=>{e.stopPropagation();document.getElementById('avatar-dropdown').classList.toggle('hidden');});
@@ -776,8 +776,9 @@ function closeTerms(){
 }
 document.getElementById('dd-terms')?.addEventListener('click',(e)=>{e.stopPropagation();document.getElementById('avatar-dropdown')?.classList.add('hidden');openTerms();});
 document.getElementById('terms-close')?.addEventListener('click', closeTerms);
-document.getElementById('dd-logout')?.addEventListener('click',(e)=>{e.stopPropagation();isLoggedIn = false;document.getElementById('avatar-dropdown')?.classList.add('hidden');headerAuth();renderRewards();
-  renderAccount();showView('matches');showToast('Logged out');});
+document.getElementById('dd-logout')?.addEventListener('click', async (e)=>{e.stopPropagation();
+  await sb.auth.signOut();isGuest = false;localStorage.removeItem('habla_guest');
+  headerAuth(); renderRewards(); renderAccount();showView('matches'); showToast('Logged out');});
 
 /* ===== DEMO MATCH DATA ===== */
 const matches=[
@@ -1045,8 +1046,15 @@ function updateCompleted(){ el('completed-counter').textContent=`${Object.keys(p
 /* Submit flow */
 el('submit-ticket').addEventListener('click', ()=>{
   if(!selectedMatch) return;
-  if(Object.keys(picks).length<5){ el('error-banner').classList.remove('hidden'); setTimeout(()=>el('error-banner').classList.add('hidden'),3000); return; }
-  if(!isLoggedIn){ openAuthFlow('signin'); return; }
+  if(Object.keys(picks).length<5){
+    el('error-banner').classList.remove('hidden');
+    setTimeout(()=>el('error-banner').classList.add('hidden'),3000);
+    return;
+  }
+  if(!isLoggedIn()){
+    openAuthFlow('signin');
+    return;
+  }
   if(picksSubmitted){ openAlreadyModal(); return; }
   openReviewModal();
 });
@@ -1066,14 +1074,66 @@ function openAuthFlow(m='signin'){auth.open(m)}
 auth.tabs.forEach(t=>t.addEventListener('click',()=>auth.setMode(t.dataset.tab)));
 document.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>auth.setMode(b.dataset.jump)));
 document.querySelectorAll('.toggle-pass').forEach(btn=>btn.addEventListener('click',()=>{const input=document.querySelector(btn.dataset.toggle); if(!input) return; input.type=input.type==='password'?'text':'password'; btn.innerHTML=input.type==='password'?'<i class="fa-regular fa-eye"></i>':'<i class="fa-regular fa-eye-slash"></i>'; }));
-auth.forms.signin.addEventListener('submit',(e)=>{e.preventDefault(); isLoggedIn=true; auth.close(); headerAuth(); renderRewards(); renderAccount();});
-auth.forms.signup.addEventListener('submit',(e)=>{e.preventDefault(); isLoggedIn=true; auth.close(); headerAuth(); renderRewards(); renderAccount();});
-auth.forms.reset.addEventListener('submit',(e)=>{e.preventDefault(); alert('Reset link sent to your email.');});
+auth.forms.signin.addEventListener('submit', async (e)=>{e.preventDefault();const email = document.getElementById('si-email').value.trim();
+  const pass  = document.getElementById('si-pass').value;const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { showToast(error.message || 'Sign in failed'); return; }auth.close();});
+auth.forms.signup.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+
+  const username = document.getElementById('su-username').value.trim();
+  const email    = document.getElementById('su-email').value.trim();
+  const pass     = document.getElementById('su-pass').value;
+  const confirm  = document.getElementById('su-confirm').value;
+  const termsOk  = document.getElementById('su-terms').checked;
+
+  if (!termsOk) { showToast('Please accept Terms & Privacy'); return; }
+  if (pass !== confirm) { showToast('Passwords do not match'); return; }
+
+  const { data, error } = await sb.auth.signUp({
+    email,
+    password: pass,
+    options: { data: { username } } // metadata opcional en el JWT
+  });
+
+  if (error) { showToast(error.message || 'Sign up failed'); return; }
+
+  // Crea/actualiza fila de profiles (BC1)
+  if (data.user) {
+    await sb.from('profiles').upsert({
+      id: data.user.id,
+      username,
+      full_name: '',
+      avatar_url: '',
+      favorite_team: null
+    });
+  }
+
+  showToast('Check your email to verify your account');
+  auth.setMode('signin');
+});
+auth.forms.reset.addEventListener('submit', async (e)=>{e.preventDefault();
+  const email = document.getElementById('re-email').value.trim();
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin // cambia si usas ruta /auth/callback
+  });
+  if (error) { showToast(error.message || 'Could not send reset link'); return; }
+  showToast('Reset link sent. Check your inbox.');
+});
 document.getElementById('rw-open-signin')?.addEventListener('click',()=>openAuthFlow('signin'));
 document.getElementById('rw-open-signup')?.addEventListener('click',()=>openAuthFlow('signup'));
-document.getElementById('btn-guest-signin')?.addEventListener('click', ()=>{auth.close();headerAuth(); renderRewards(); renderAccount(); showView('matches');showToast('Continuing as guest');});
-document.getElementById('btn-guest-signup')?.addEventListener('click', ()=>{auth.close();headerAuth(); renderRewards(); renderAccount(); showView('matches');showToast('Continuing as guest');});
-                                                                                                                                                    
+document.getElementById('btn-guest-signin')?.addEventListener('click', ()=>{
+  isGuest = true;
+  localStorage.setItem('habla_guest', 'true');
+  auth.close(); headerAuth(); renderRewards(); renderAccount();
+  showView('matches'); showToast('Continuing as guest');
+});
+document.getElementById('btn-guest-signup')?.addEventListener('click', ()=>{
+  isGuest = true;
+  localStorage.setItem('habla_guest', 'true');
+  auth.close(); headerAuth(); renderRewards(); renderAccount();
+  showView('matches'); showToast('Continuing as guest');
+});
+
 /* ===== NAV / ROUTING ===== */
 function showView(view){
   const m=el('matches-section'), r=el('results-section'), rw=el('rewards-section'), ac=el('account-section');
@@ -1103,18 +1163,27 @@ document.getElementById('nav-account').addEventListener('click',()=>showView('ac
 /* ===== REWARDS RENDER ===== */
 function renderRewards(){
   // Hero balance/stats
-  el('rewards-balance').textContent = (isLoggedIn?lukasBalance:0).toLocaleString()+' Lukas';
-  el('rewards-streak').textContent  = isLoggedIn?userStreak:0;
-  const ticketsPlayed = isLoggedIn?historyData.length:0;
-  const lifetime = isLoggedIn?historyData.reduce((a,h)=>a+h.lukas,0):0;
+  el('rewards-balance').textContent = (isLoggedIn() ? lukasBalance : 0).toLocaleString()+' Lukas';
+  el('rewards-streak').textContent  = isLoggedIn() ? userStreak : 0;
+
+  const ticketsPlayed = isLoggedIn() ? historyData.length : 0;
+  const lifetime = isLoggedIn() ? historyData.reduce((a,h)=>a+h.lukas,0) : 0;
   el('rw-lifetime').textContent = lifetime;
   el('rw-tickets').textContent = ticketsPlayed;
-  const avgRank = isLoggedIn?Math.round(historyData.reduce((a,h)=>a+(h.rank/h.total),0)/historyData.length*100):0;
-  el('rw-avg').textContent = isLoggedIn?(`#${Math.round(avgRank*historyData[0].total/100)||1}`):'—';
+
+  const avgRank = isLoggedIn()
+    ? Math.round(historyData.reduce((a,h)=>a+(h.rank/h.total),0)/historyData.length*100)
+    : 0;
+  el('rw-avg').textContent = isLoggedIn() ? (`#${Math.round(avgRank*historyData[0].total/100)||1}`) : '—';
 
   // History
-  if(!isLoggedIn){ el('history-empty').classList.remove('hidden'); el('history-rows').innerHTML=''; }
-  else { el('history-empty').classList.add('hidden'); renderHistory('all'); }
+  if(!isLoggedIn()){
+    el('history-empty').classList.remove('hidden');
+    el('history-rows').innerHTML='';
+  } else {
+    el('history-empty').classList.add('hidden');
+    renderHistory('all');
+  }
 
   // Badges
   renderBadges();
@@ -1127,9 +1196,11 @@ function renderRewards(){
   el('hist-all').onclick=()=>{setHistTab('all');renderHistory('all');};
   el('hist-won').onclick=()=>{setHistTab('won');renderHistory('won');};
   el('hist-noprize').onclick=()=>{setHistTab('noprize');renderHistory('noprize');};
+
+  // Redeem button
   const redeemBtn = el('rewards-cta-redeem');
   if (redeemBtn) {
-    const canRedeem = isLoggedIn && lukasBalance >= 100;
+    const canRedeem = isLoggedIn() && lukasBalance >= 100;
     redeemBtn.disabled = !canRedeem;
     redeemBtn.title = canRedeem ? '' : 'You need at least 100 Lukas and to be signed in';
   }
@@ -1159,10 +1230,13 @@ function renderHistory(filter){
     rows.appendChild(row);
   });
 }
-
 function renderBadges(){
   const grid=el('badges-grid'); grid.innerHTML='';
-  const data=badgesTemplate.map(b=>({...b, unlocked:isLoggedIn && userStreak>=b.days, progress:Math.min(1,(isLoggedIn?userStreak:0)/b.days)}));
+  const data = badgesTemplate.map(b=>({
+    ...b,
+    unlocked: isLoggedIn() && userStreak >= b.days,
+    progress: Math.min(1, (isLoggedIn() ? userStreak : 0) / b.days)
+  }));
   data.forEach(b=>{
     const card=document.createElement('div');
     card.className='p-4 border rounded-lg hover:shadow-sm transition bg-white';
@@ -1196,7 +1270,7 @@ function renderBadges(){
 
 /* ===== REDEEM MODAL LOGIC ===== */
 function openRedeemModal(){
-  if(!isLoggedIn){ openAuthFlow('signin'); return; }
+  if(!isLoggedIn() || isGuest){ openAuthFlow('signin'); return; }
   if(lukasBalance < 100){ showToast('You need at least 100 Lukas to redeem'); return; }
   el('redeem-balance').textContent = `${lukasBalance.toLocaleString()} Lukas`;
   el('redeem-amount').value = Math.min(lukasBalance, 100);
@@ -1260,30 +1334,59 @@ function closeAvatarModal(){ el('avatar-modal').classList.add('hidden'); el('ava
 
 function renderAccount(){
   // Gate: si no hay sesión, muestra invitación a loguearse
-  if(!isLoggedIn){
+  if(!isLoggedIn()){
     el('account-guest')?.classList.remove('hidden');
     el('account-body')?.classList.add('hidden');
     el('acc-open-signin')?.addEventListener('click',()=>openAuthFlow('signin'));
     el('acc-open-signup')?.addEventListener('click',()=>openAuthFlow('signup'));
     return;
   }
+  async function loadProfileFromDB(){
+    if (!currentUser) return null;
+    const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+    if (error) { console.warn(error); return null; }
+    return data;
+  }
+  async function saveProfileToDB(payload){
+    if (!currentUser) return;
+    const row = { id: currentUser.id, ...payload };
+    const { error } = await sb.from('profiles').upsert(row);
+    if (error) throw error;
+  }
   // Con sesión: oculta gate y muestra cuerpo
   el('account-guest')?.classList.add('hidden');
   el('account-body')?.classList.remove('hidden');
 
-  // Inicializa perfil guardado si no existe (puedes reemplazar por datos reales)
-  if(!savedProfile){
+  // Cargar perfil real (o defaults si no existe)
+  const dbp = await loadProfileFromDB();
+  if (!dbp) {
     savedProfile = {
       avatar: avatarLibrary[2],
-      fullname: 'Carlos Martinez',
+      fullname: '',
       team: 'Real Madrid',
-      dob: '1996-04-02',
-      is18: true,
-      email: 'carlos@example.com',
+      dob: '',
+      is18: false,
+      email: currentUser?.email || '',
       twofa: false,
       payoutMethod: 'Bank transfer (PEN)',
       payoutDetail: '',
       nEmail: true, nPush: true, lang: 'Español', profilePublic: true
+    };
+  } else {
+    savedProfile = {
+      avatar: dbp.avatar_url || avatarLibrary[2],
+      fullname: dbp.full_name || '',
+      team: dbp.favorite_team || 'Real Madrid',
+      dob: dbp.dob || '',
+      is18: !!dbp.is_adult,
+      email: currentUser?.email || '',
+      twofa: !!dbp.twofa_enabled,
+      payoutMethod: dbp.payout_method || 'Bank transfer (PEN)',
+      payoutDetail: dbp.payout_detail || '',
+      nEmail: dbp.notify_email ?? true,
+      nPush:  dbp.notify_push  ?? true,
+      lang: dbp.lang || 'Español',
+      profilePublic: dbp.profile_public ?? true
     };
   }
   // Carga valores y bloquea edición por defecto
@@ -1311,13 +1414,33 @@ function renderAccount(){
   };
 
   // Guardar (requiere perfil completo)
-  el('acc-save').onclick = ()=>{
+  el('acc-save').onclick = async ()=>{
     if(!accountEditMode) return;
     if(!isProfileComplete()){ showToast('Please complete all required fields (18+).'); return; }
-    savedProfile = readProfile();
-    setAccountEditable(false);
-    showToast('Account settings saved');
-    el('acc-complete-banner').classList.toggle('hidden', true);
+    const p = readProfile();
+    // Guarda en DB (mapea a columnas reales)
+    try {
+      await saveProfileToDB({
+        full_name: p.fullname,
+        avatar_url: p.avatar,
+        favorite_team: p.team,
+        dob: p.dob,
+        is_adult: p.is18,
+        payout_method: p.payoutMethod,
+        payout_detail: p.payoutDetail,
+        notify_email: p.nEmail,
+        notify_push:  p.nPush,
+        lang: p.lang,
+        profile_public: p.profilePublic
+      });
+      savedProfile = p; // cache local para UI
+      setAccountEditable(false);
+      showToast('Account settings saved');
+      el('acc-complete-banner').classList.add('hidden');
+    } catch(err){
+      console.error(err);
+      showToast('Could not save profile');
+    }
   };
 
   // Re-evaluar habilitación del botón Save en cada cambio
@@ -1416,169 +1539,6 @@ renderMatches();
 /* EVENTS extra */
 document.getElementById('go-results').addEventListener('click',(e)=>{e.preventDefault(); showView('results'); closeResultsDrawer(); closeTicket();});
 document.getElementById('rewards-cta-play').addEventListener('click',()=>showView('matches'));
-	
-/* ========= SUPABASE SESSION & PROFILE HELPERS ========= */
-// Garantiza que exista sesión. Si no, crea invitado anónimo (válido con RLS por auth.uid()).
-async function ensureSession() {
-  const { data: { user } } = await sb.auth.getUser();
-  if (user) return user;
-  const { data, error } = await sb.auth.signInAnonymously();
-  if (error) { console.error(error); throw error; }
-  return (await sb.auth.getUser()).data.user;
-}
 
-// Lee (o crea) el perfil del usuario actual.
-async function getOrCreateProfile() {
-  const user = await ensureSession();
-  const { data: prof, error } = await sb.from('profiles')
-    .select('*').eq('id', user.id).maybeSingle();
-  if (error) throw error;
-  if (prof) return prof;
-  // crea perfil mínimo
-  const { data: created, error: upErr } = await sb.from('profiles')
-    .insert([{ id: user.id }]).select().single();
-  if (upErr) throw upErr;
-  return created;
-}
-
-// Abre el modal 18+ si hace falta. Devuelve true si queda verificado.
-function calcAge(dateStr) {
-  if (!dateStr) return 0;
-  const d = new Date(dateStr);
-  const diff = Date.now() - d.getTime();
-  return Math.abs(new Date(diff).getUTCFullYear() - 1970);
-}
-
-async function requireAdultGate() {
-  const prof = await getOrCreateProfile();
-  if (prof?.is_adult === true) return true;
-
-  // Mostrar modal 18+
-  const modal = document.getElementById('age-modal');
-  const dob   = document.getElementById('age-dob');
-  const ok18  = document.getElementById('age-confirm');
-  const err   = document.getElementById('age-error');
-  const save  = document.getElementById('age-save');
-  const cancel= document.getElementById('age-cancel');
-
-  modal.classList.remove('hidden'); modal.classList.add('flex');
-
-  return new Promise((resolve) => {
-    function cleanup(res){
-      modal.classList.add('hidden'); modal.classList.remove('flex');
-      save.removeEventListener('click', onSave);
-      cancel.removeEventListener('click', onCancel);
-      resolve(res);
-    }
-    async function onSave(){
-      const age = calcAge(dob.value);
-      const checked = ok18.checked;
-      if (age < 18 || !checked) {
-        err.textContent = age < 18 ? 'Only 18+ can play.' : 'Please confirm you are 18+.'; 
-        err.classList.remove('hidden');
-        return;
-      }
-      err.classList.add('hidden');
-      const { error } = await sb.from('profiles')
-        .update({ dob: dob.value, is_adult: true })
-        .eq('id', (await ensureSession()).id);
-      if (error) { console.error(error); err.textContent = 'Could not save. Try again.'; err.classList.remove('hidden'); return; }
-      cleanup(true);
-    }
-    function onCancel(){ cleanup(false); }
-
-    save.addEventListener('click', onSave);
-    cancel.addEventListener('click', onCancel);
-  });
-}
-
-/* ========= SUBMIT TICKET (guarda en Supabase) ========= */
-
-// 1) Reemplaza el click original para que primero verifique 18+
-//    y recién luego abra tu "review-modal".
-(() => {
-  const btn = document.getElementById('submit-ticket');
-  if (!btn) return;
-
-  btn.addEventListener('click', async (ev) => {
-    ev.stopImmediatePropagation(); // evitamos dobles handlers anteriores
-
-    if (!selectedMatch) return;
-    if (Object.keys(picks).length < 5) {
-      document.getElementById('error-banner').classList.remove('hidden');
-      setTimeout(()=>document.getElementById('error-banner').classList.add('hidden'), 3000);
-      return;
-    }
-
-    // Crear/obtener sesión y requerir 18+
-    try {
-      await ensureSession();
-      const ok = await requireAdultGate();
-      if (!ok) return;              // usuario canceló o no cumple
-      openReviewModal();            // usa tu modal existente
-    } catch (e) {
-      console.error(e);
-      showToast('Could not start session');
-    }
-  }, { capture: true }); // asegura que este handler sea el que corre
-})();
-
-// 2) Reemplaza el "confirm-submit" para crear ticket + respuestas en DB
-(() => {
-  const btn = document.getElementById('confirm-submit');
-  if (!btn) return;
-
-  btn.addEventListener('click', async (ev) => {
-    ev.stopImmediatePropagation();
-
-    try {
-      const user = await ensureSession();
-
-      // Evita duplicar ticket por match (depende de tu RLS/índice único si lo añadiste)
-      // Crea ticket
-      const { data: tkt, error: tErr } = await sb.from('tickets')
-        .insert([{
-          user_id: user.id,
-          match_id: selectedMatch.id,
-          status: 'submitted'
-        }]).select().single();
-
-      if (tErr) {
-        // Si ya existe (violación de unique), muestra tu modal "already"
-        if (tErr.code === '23505') { // Postgres unique_violation
-          openAlreadyModal();
-          return;
-        }
-        throw tErr;
-      }
-
-      // Inserta respuestas (5 filas)
-      const answers = Object.entries(picks).map(([q_key, value]) => ({
-        ticket_id: tkt.id,
-        q_key,
-        value_text: String(value)
-      }));
-      const { error: aErr } = await sb.from('ticket_answers').insert(answers);
-      if (aErr) throw aErr;
-
-      // Cierra modal de revisión y confirma en UI
-      document.getElementById('review-modal').classList.add('hidden');
-      document.getElementById('review-modal').classList.remove('flex');
-
-      picksSubmitted = true;
-      showToast('Predictions submitted successfully!');
-      // (opcional) closeTicket(); // si quieres cerrar el drawer
-    } catch (e) {
-      console.error(e);
-      showToast('Could not submit ticket');
-    }
-  }, { capture: true });
-})();
-
-/* ========= OPCIONAL: helper para abrir el modal "ya participas" ========= */
-function openAlreadyModal(){
-  const m = document.getElementById('already-modal');
-  m.classList.remove('hidden'); m.classList.add('flex');
-}
 </script>
 </body></html>
