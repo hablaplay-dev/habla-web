@@ -1051,11 +1051,15 @@ el('submit-ticket').addEventListener('click', ()=>{
     setTimeout(()=>el('error-banner').classList.add('hidden'),3000);
     return;
   }
+  // Guest o no logueado: forzar creación de cuenta
   if(!isLoggedIn()){
-    openAuthFlow('signin');
+    openAuthFlow('signup');
     return;
   }
-  if(picksSubmitted){ openAlreadyModal(); return; }
+  if(picksSubmitted){
+    openAlreadyModal();
+    return;
+  }
   openReviewModal();
 });
 function openReviewModal(){ const r=el('review-modal'); const list=el('review-list'); const h=selectedMatch.home.name, a=selectedMatch.away.name; const mapS1={HOME:h,DRAW:'Draw',AWAY:a}; list.innerHTML=`<div><b>Who wins:</b> ${mapS1[picks.s1]||'-'}</div><div><b>BTTS:</b> ${picks.s2||'-'}</div><div><b>Over 2.5:</b> ${picks.s3||'-'}</div><div><b>Red card:</b> ${picks.s4||'-'}</div><div><b>Correct score:</b> ${picks.s5||'-'}</div>`; r.classList.remove('hidden'); r.classList.add('flex');}
@@ -1533,8 +1537,8 @@ function isProfileComplete(){
 function labelDateTime(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); const tag = delta===0?'Today':(delta===1?'Tomorrow':(delta===-1?'Yesterday':dt.toLocaleDateString([], {weekday:'short'}))); return `${tag} ${dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;}
 
 /* ===== START ===== */
+initAuth();        // establece currentUser/isGuest, y refresca UI
 showView('matches');
-renderMatches();
 
 /* EVENTS extra */
 document.getElementById('go-results').addEventListener('click',(e)=>{e.preventDefault(); showView('results'); closeResultsDrawer(); closeTicket();});
