@@ -127,7 +127,7 @@
         <!-- Avatar -->
         <div id="avatar-menu" class="hidden relative">
           <button id="avatar-btn" class="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100">
-            <img "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg" class="w-8 h-8 rounded-full" alt="avatar">
+            <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg" class="w-8 h-8 rounded-full" alt="avatar">
             <i class="fa-solid fa-chevron-down text-gray-400 text-xs"></i>
           </button>
           <div id="avatar-dropdown" class="hidden absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-50">
@@ -381,7 +381,7 @@
           <div class="bg-white rounded-2xl border p-6">
             <h2 class="text-lg font-semibold mb-4">Profile</h2>
             <div class="flex items-center gap-4">
-              <img id="acc-avatar" class="w-16 h-16 rounded-full border" "" alt="avatar">
+              <img id="acc-avatar" class="w-16 h-16 rounded-full border" src="" alt="avatar">
               <button id="acc-change-avatar" class="px-3 py-1.5 border rounded-lg text-sm">Choose from library</button>
             </div>
             <div class="grid sm:grid-cols-2 gap-3 mt-4">
@@ -526,7 +526,7 @@
         <div class="space-y-6">
           <div class="border rounded-lg p-4">
             <div class="flex items-center gap-2">
-              <img id="sponsor-logo" "https://dummyimage.com/28x28/000/fff&amp;text=S" class="w-7 h-7 rounded" alt="sponsor">
+              <img id="sponsor-logo" src="https://dummyimage.com/28x28/000/fff&text=S" class="w-7 h-7 rounded" alt="sponsor">
               <div><div class="text-sm font-semibold text-gray-900">Sponsored power-up</div><div id="sponsor-name" class="text-xs text-gray-500">by Sponsor</div></div>
             </div>
             <div id="bonus-list" class="mt-3 space-y-2"></div>
@@ -576,7 +576,7 @@
           </div>
           <div class="border rounded-lg p-4">
             <div class="flex items-center gap-2">
-              <img id="res-sponsor-logo" "https://dummyimage.com/28x28/000/fff&amp;text=S" class="w-7 h-7 rounded" alt="sponsor">
+              <img id="res-sponsor-logo" src="https://dummyimage.com/28x28/000/fff&text=S" class="w-7 h-7 rounded" alt="sponsor">
               <div><div class="text-sm font-semibold text-gray-900">Bonuses</div><div id="res-sponsor-name" class="text-xs text-gray-500">by Sponsor</div></div>
             </div>
             <div id="res-bonus-list" class="mt-3 space-y-2"></div>
@@ -910,7 +910,7 @@ function renderMatches(){
     const item=document.createElement('div');
     item.className="rounded-xl border hover:shadow-md transition bg-white";
     item.innerHTML=`
-      <button class="w-full text-left p-0">
+      <button class="w-full text-left p-0" data-id="${m.id}">
         <div class="relative">${buildStripHTML(m,'md')}
           <div class="pill">Kickoff in <span id="cd-${m.id}">--:--:--</span></div>
         </div>
@@ -928,7 +928,7 @@ function renderMatches(){
           </div>
         </div>
       </button>`;
-    item.querySelector('button').addEventListener('click',()=>openTicket(m.id));
+	const btn = item.querySelector('button');btn.addEventListener('click', (e) => {  const id = Number(e.currentTarget.dataset.id);  openTicket(id);});
     box.appendChild(item);
     const span=item.querySelector(`#cd-${m.id}`), tick=()=>span.textContent=fmtCountdown(new Date(m.startISO)-new Date());
     tick(); const t=setInterval(tick,1000); countdownTimers.set(m.id,t);
@@ -1013,7 +1013,13 @@ function groupLabel(d){const dt=new Date(d); const today=new Date(); today.setHo
 /* ===== RESULTS DRAWER ===== */
 let selectedRes=null, liveSorterTimer=null;
 function openResultsDrawer(id){
-  selectedRes=matches.find(m=>m.id===id);
+  const m = matches.find(mm => String(mm.id) === String(id));
+  if (!m) {
+    console.warn('Result match not found:', id);
+    showToast('Could not open match details.');
+    return;
+  }
+  selectedRes = m;
   el('results-strip').innerHTML=buildStripHTML(selectedRes,'lg');
   renderResultsSidebar(selectedRes); renderPlayers(selectedRes);
   const pill=el('results-status-pill'); pill.textContent='DETAILS'; pill.className='text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700';
@@ -1034,21 +1040,61 @@ function renderPlayers(m){const list=el('players-list'); let arr=[...m.players];
 
 /* ===== DRAWER TICKET (Matches) ===== */
 let selectedMatch=null, picks={}, picksSubmitted=false, score={home:0,away:0};
-function openTicket(id){
-  selectedMatch=matches.find(x=>x.id===id); picks={}; picksSubmitted=false; score={home:0,away:0};
-  el('strip-ticket').innerHTML=buildStripHTML(selectedMatch,'lg');
-  el('lukas-balance').textContent=`${(lukasBalance+tournamentLukasPrize).toLocaleString()} Lukas`;
-  el('ticket-lock-time').textContent=`Lock at ${fmtTime(selectedMatch.startISO)}`;
-  const tick=()=>{const t=fmtCountdown(new Date(selectedMatch.startISO)-new Date()); el('time-remaining').textContent=t; el('sidebar-clock').textContent=t;}; tick(); if(window._tkTimer) clearInterval(window._tkTimer); window._tkTimer=setInterval(tick,1000);
-  renderSponsor(selectedMatch); renderStats(selectedMatch.probs||{},selectedMatch.stats||{}); renderPredictions(selectedMatch);
-  el('overlay').classList.remove('pointer-events-none'); el('overlay').classList.add('opacity-100');
+function openTicket(matchOrId){
+  // Resolver el match
+  const m = (matchOrId && typeof matchOrId === 'object')
+    ? matchOrId
+    : matches.find(x => String(x.id) === String(matchOrId));
+
+  if (!m) {
+    console.warn('Match not found for:', matchOrId);
+    showToast('Could not open this match. Please try again.');
+    return; // evitar seguir con undefined
+  }
+
+  selectedMatch = m;
+  picks = {};
+  picksSubmitted = false;
+  score = { home: 0, away: 0 };
+
+  el('strip-ticket').innerHTML = buildStripHTML(selectedMatch,'lg');
+  el('lukas-balance').textContent = `${(lukasBalance + tournamentLukasPrize).toLocaleString()} Lukas`;
+  el('ticket-lock-time').textContent = `Lock at ${fmtTime(selectedMatch.startISO)}`;
+
+  const tick = () => {
+    const t = fmtCountdown(new Date(selectedMatch.startISO) - new Date());
+    el('time-remaining').textContent = t;
+    el('sidebar-clock').textContent = t;
+  };
+  tick();
+  if (window._tkTimer) clearInterval(window._tkTimer);
+  window._tkTimer = setInterval(tick, 1000);
+
+  renderSponsor(selectedMatch);
+  renderStats(selectedMatch.probs || {}, selectedMatch.stats || {});
+  renderPredictions(selectedMatch);
+
+  el('overlay').classList.remove('pointer-events-none');
+  el('overlay').classList.add('opacity-100');
   el('matches-section').classList.add('opacity-60','blur-[2px]');
   document.getElementById('ticket-drawer').classList.remove('translate-x-full');
   el('error-banner').classList.add('hidden');
 }
 function closeTicket(){ if(window._tkTimer) clearInterval(window._tkTimer); el('overlay').classList.add('pointer-events-none'); el('overlay').classList.remove('opacity-100'); el('matches-section').classList.remove('opacity-60','blur-[2px]'); document.getElementById('ticket-drawer').classList.add('translate-x-full'); selectedMatch=null; picks={}; updateCompleted(); }
 document.getElementById('drawer-back').addEventListener('click',()=>{ if(selectedMatch && !picksSubmitted && Object.keys(picks).length>0){ if(!confirm("You haven't submitted your ticket yet. Leave anyway?")) return;} closeTicket();});
-function renderSponsor(m){ el('sponsor-name').textContent=`by ${m.sponsor?.name||'Sponsor'}`; if(m.sponsor?.logo) el('sponsor-logo').m.sponsor.logo; el('bonus-list').innerHTML=(m.bonuses||[]).map(b=>`<div class="text-sm bg-yellow-50 border border-yellow-200 rounded px-2 py-1.5"><i class="fa-solid fa-bolt-lightning text-yellow-500 mr-1"></i>${b}</div>`).join('') || `<div class="text-xs text-gray-500">No active bonuses</div>`;}
+function renderSponsor(m){
+  if (!m) return; // nada que renderizar
+
+  el('sponsor-name').textContent = `by ${m.sponsor?.name || 'Sponsor'}`;
+  if (m.sponsor?.logo) el('sponsor-logo').src = m.sponsor.logo;
+
+  el('bonus-list').innerHTML =
+    (m.bonuses || []).map(b => `
+      <div class="text-sm bg-yellow-50 border border-yellow-200 rounded px-2 py-1.5">
+        <i class="fa-solid fa-bolt-lightning text-yellow-500 mr-1"></i>${b}
+      </div>`).join('') ||
+    `<div class="text-xs text-gray-500">No active bonuses</div>`;
+}
 function renderStats(p,meta){const block=el('stat-probs'); const bar=(l,v,i)=>`<div><div class="flex justify-between text-xs text-gray-600 mb-1"><span>${i} ${l}</span><span>${v||0}%</span></div><div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden"><div class="h-2 bg-primary" style="width:${Math.max(0,Math.min(100,v||0))}%"></div></div></div>`; block.innerHTML=[bar('Home win',p.home,'🏠'),bar('Draw',p.draw,'➖'),bar('Away win',p.away,'✈️'),bar('Over 2.5',p.over25,'🚀'),bar('BTTS',p.btts,'🎯')].join(''); el('stat-avg').textContent=meta.avgGoals||'—'; el('stat-form').textContent=meta.form||'—';}
 function renderPredictions(match){
   const h=match.home,a=match.away,grid=el('predictions-grid');
@@ -1152,13 +1198,20 @@ const auth={root:document.getElementById('auth-flow'),tabs:[...document.querySel
   setMode(mode){this.tabs.forEach(t=>{const a=t.dataset.tab===mode;t.classList.toggle('text-primary',a);t.classList.toggle('border-primary',a);t.classList.toggle('border-b-2',a);t.classList.toggle('text-gray-500',!a);t.classList.toggle('border-transparent',!a)});Object.entries(this.forms).forEach(([k,f])=>f.classList.toggle('hidden',k!==mode));document.getElementById('auth-subtitle').textContent=mode==='signin'?'Daily football predictions game':mode==='signup'?'Join the daily football prediction game':'Reset your password';},
   open(m='signin'){this.setMode(m);this.root.classList.remove('hidden');this.root.classList.add('flex')},close(){this.root.classList.add('hidden');this.root.classList.remove('flex')}
 };
-function openAuthFlow(m='signin'){auth.open(m)}
+function openAuthFlow(m='signin'){returnView = currentView; auth.open(m)}
 auth.tabs.forEach(t=>t.addEventListener('click',()=>auth.setMode(t.dataset.tab)));
 document.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>auth.setMode(b.dataset.jump)));
 document.querySelectorAll('.toggle-pass').forEach(btn=>btn.addEventListener('click',()=>{const input=document.querySelector(btn.dataset.toggle); if(!input) return; input.type=input.type==='password'?'text':'password'; btn.innerHTML=input.type==='password'?'<i class="fa-regular fa-eye"></i>':'<i class="fa-regular fa-eye-slash"></i>'; }));
-auth.forms.signin.addEventListener('submit', async (e)=>{e.preventDefault();const email = document.getElementById('si-email').value.trim();
-  const pass  = document.getElementById('si-pass').value;const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) { showToast(error.message || 'Sign in failed'); return; }auth.close();});
+auth.forms.signin.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('si-email').value.trim();
+  const pass  = document.getElementById('si-pass').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { showToast(error.message || 'Sign in failed'); return; }
+  auth.close();
+  showView(returnView || currentView);
+  returnView = null;
+});
 auth.forms.signup.addEventListener('submit', async (e)=>{
   e.preventDefault();
 
@@ -1207,16 +1260,24 @@ document.getElementById('btn-guest-signin')?.addEventListener('click', ()=>{
   isGuest = true;
   localStorage.setItem('habla_guest', 'true');
   auth.close(); headerAuth(); renderRewards(); renderAccount();
-  showView('matches'); showToast('Continuing as guest');
+  // Volver a donde estábamos
+  showView(returnView || currentView);
+  returnView = null;
+  showToast('Continuing as guest');
 });
 document.getElementById('btn-guest-signup')?.addEventListener('click', ()=>{
   isGuest = true;
   localStorage.setItem('habla_guest', 'true');
   auth.close(); headerAuth(); renderRewards(); renderAccount();
-  showView('matches'); showToast('Continuing as guest');
+  // Volver a donde estábamos
+  showView(returnView || currentView);
+  returnView = null;
+  showToast('Continuing as guest');
 });
 
 /* ===== NAV / ROUTING ===== */
+let currentView = 'matches';
+let returnView  = null;
 function showView(view){
   // Cierra cualquier overlay/drawer que pudiera bloquear UI
   try { closeTicket(); } catch(_) {}
@@ -1242,6 +1303,7 @@ function showView(view){
   if(view==='results') renderResults();
   if(view==='rewards') renderRewards();
   if(view==='account') renderAccount();
+  currentView = view;
 }
                                                                                                                                                   
 document.getElementById('nav-matches').addEventListener('click',()=>showView('matches'));
