@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
   
   <!-- Supabase JS desde CDN -->
-  <script src="https://esm.sh/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
   <!-- Guardamos tus claves aquí solo para prototipo -->
   <script id="env" type="application/json">
   {
@@ -727,7 +727,8 @@
 // --- AUTH STATE (real) ---
 let isGuest = false; // modo invitado: navegar sí, enviar ticket no
 let currentUser = null; // objeto supabase user
-
+let pendingSubmit = null;
+	
 async function initAuth() {
   // lee sesión actual
   const { data: { session } } = await sb.auth.getSession();
@@ -1090,7 +1091,6 @@ function syncScore(){ const hs=el('home-score'), as=el('away-score'); if(hs) hs.
 function updateCompleted(){ el('completed-counter').textContent=`${Object.keys(picks).length}/5`; }
 
 /* Submit flow */
-let pendingSubmit = null; // { matchId, picksSnapshot }
 
 el('submit-ticket').addEventListener('click', ()=>{
   if (!selectedMatch) return;
