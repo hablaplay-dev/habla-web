@@ -765,7 +765,7 @@
     </div>
   </div> 
   <!-- ADD: Avatar library modal -->
-  <div id="avatar-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[76]">
+  <div id="avatar-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[90]">
     <div class="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-xl">
       <h3 class="text-lg font-semibold">Choose an avatar</h3>
       <p class="text-sm text-gray-600">Pick one from our approved library.</p>
@@ -792,14 +792,16 @@
       <i class="fa-solid fa-check-circle"></i><span id="toast-text">Done!</span>
     </div>
   </div>
-  <div id="profile-wizard" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[78]">
+  <div id="profile-wizard" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[80]">
     <div class="bg-white rounded-2xl w-full max-w-xl p-6 shadow-2xl">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">Complete your profile</h3>
       </div>
       <p class="text-sm text-gray-600 mt-1">A few details to get you started.</p>
-      <div id="pw-steps" class="mt-4">
-        <div data-step="1" class="space-y-3">
+      <!-- Todo en una sola vista scrolleable -->
+      <div id="pw-form" class="mt-4 max-h-[60vh] overflow-y-auto space-y-5 pr-1">
+        <!-- Nombre + Equipo -->
+        <div class="space-y-3">
           <div>
             <label class="text-xs text-gray-600">Real name</label>
             <input id="pw-fullname" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Your real name">
@@ -813,7 +815,9 @@
             </select>
           </div>
         </div>
-        <div data-step="2" class="space-y-3">
+
+        <!-- Edad -->
+        <div class="space-y-3">
           <div class="grid sm:grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-gray-600">Date of birth</label>
@@ -830,10 +834,11 @@
             Only adults (18+) can play on Habla!.
           </div>
         </div>
-        <div data-step="3" class="space-y-3">
+
+        <!-- Avatar + Preferencias -->
+        <div class="space-y-3">
           <div class="flex items-center gap-4">
-            <img id="pw-avatar" class="w-16 h-16 rounded-full border"
-                 src="https://i.pravatar.cc/120?img=7" alt="avatar">
+            <img id="pw-avatar" class="w-16 h-16 rounded-full border" src="https://i.pravatar.cc/120?img=7" alt="avatar">
             <button id="pw-change-avatar" class="px-3 py-1.5 border rounded-lg text-sm">Choose from library</button>
           </div>
           <div class="grid sm:grid-cols-2 gap-3">
@@ -850,9 +855,10 @@
           </div>
         </div>
       </div>
+
+      <!-- Botones: sólo Back + Finish -->
       <div class="mt-5 flex gap-2">
-        <button id="pw-back"  class="hidden flex-1 border rounded-lg py-2">Back</button>
-        <button id="pw-next"  class="hidden flex-1 bg-primary text-white rounded-lg py-2 font-semibold">Next</button>
+        <button id="pw-back" class="flex-1 border rounded-lg py-2">Back</button>
         <button id="pw-finish" class="flex-1 bg-primary text-white rounded-lg py-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
           Finish
         </button>
@@ -1842,157 +1848,162 @@ function isProfileComplete(){
   return ageOK && reqFilled;
 }
 
-/* ===== PROFILE WIZARD (post–Sign Up) ===== */
+/* ===== PROFILE WIZARD (post–Sign Up) — versión sin pasos ===== */
 let pwState = { userId: null, email: '' };
 
+/** Abre el wizard en una sola vista y deja solo validación + navegación */
 function openProfileWizard(ctx = {}) {
   pwState = { userId: ctx.userId || null, email: ctx.email || '' };
-  // al abrir, validamos para establecer el estado del botón
-  validatePW();
-  const m = document.getElementById('profile-wizard');
-  m.classList.remove('hidden'); m.classList.add('flex');
-}
-function closeProfileWizard() {
-  const m = document.getElementById('profile-wizard');
-  m.classList.add('hidden'); m.classList.remove('flex');
-}
 
-function updatePWUI() {
-  // step indicator
+  // Arranca el modal
+  const m = document.getElementById('profile-wizard');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+
+  // Oculta cualquier UI de pasos que pueda existir en HTML
   const stepPill = document.getElementById('pw-step');
   if (stepPill) stepPill.classList.add('hidden');
-  // show/hide step contents
-  document.querySelectorAll('#pw-steps [data-step]').forEach(s => {
-    s.classList.toggle('hidden', Number(s.dataset.step) !== pwState.step);
-  });
-  // buttons
-  document.getElementById('pw-back').classList.toggle('hidden', pwState.step === 1);
-  document.getElementById('pw-next').classList.toggle('hidden', pwState.step !== pwState.max);
-  document.getElementById('pw-finish').classList.toggle('hidden', pwState.step !== pwState.max);
-  validatePW(); // revalida en cada paso
+  const nextBtn = document.getElementById('pw-next');
+  if (nextBtn) nextBtn.classList.add('hidden');
+
+  // Back solo cierra el wizard
+  const backBtn = document.getElementById('pw-back');
+  if (backBtn) backBtn.classList.remove('hidden');
+
+  // Enlaza validación en vivo una sola vez
+  wirePwLiveValidation();
+
+  // Valida estado inicial (habilita/deshabilita Finish)
+  validatePW();
 }
 
-// Validaciones del wizard
-function calcAge(dateStr){ if(!dateStr) return 0; const d=new Date(dateStr); const t=Date.now()-d.getTime(); return Math.abs(new Date(t).getUTCFullYear()-1970); }
-function validatePW(){
-  // limpiar errores visuales
+function closeProfileWizard() {
+  const m = document.getElementById('profile-wizard');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+
+/** Valida los campos requeridos (nombre + 18+) y habilita/deshabilita Finish */
+function validatePW() {
+  // limpiar estados
   ['pw-fullname','pw-dob'].forEach(id => document.getElementById(id).classList.remove('is-invalid'));
   ['err-pw-fullname','pw-age-error'].forEach(id => document.getElementById(id).classList.add('hidden'));
 
   let ok = true;
+
   // Nombre obligatorio
-  if (!document.getElementById('pw-fullname').value.trim()) {
+  const $name = document.getElementById('pw-fullname');
+  if (!$name.value.trim()) {
     ok = false;
-    document.getElementById('pw-fullname').classList.add('is-invalid');
+    $name.classList.add('is-invalid');
     document.getElementById('err-pw-fullname').classList.remove('hidden');
   }
+
   // 18+
   const dob  = document.getElementById('pw-dob').value;
   const is18 = document.getElementById('pw-18').checked;
-  const age  = (function(d){ if(!d) return 0; const t=Date.now()-new Date(d).getTime(); return Math.abs(new Date(t).getUTCFullYear()-1970); })(dob);
+  const age  = (function(d){
+    if(!d) return 0;
+    const t = Date.now() - new Date(d).getTime();
+    return Math.abs(new Date(t).getUTCFullYear() - 1970);
+  })(dob);
   if (!(age >= 18 && is18)) {
     ok = false;
     document.getElementById('pw-age-error').classList.remove('hidden');
   }
+
   // Habilitar/Deshabilitar botón Finish
-  document.getElementById('pw-finish').disabled = !ok;
+  const finishBtn = document.getElementById('pw-finish');
+  if (finishBtn) finishBtn.disabled = !ok;
+
   return ok;
 }
 
-// --- INICIO: Paso 3 + Validación en vivo (pegar debajo de validatePW) ---
+/** Enlaza listeners para validación en vivo (se asegura de no duplicar) */
 let _pwListenersWired = false;
-function startPwAtStep3() {
-  // Arranca en el último paso (ocultando Next, mostrando Finish)
-  pwState.step = 3;
-  pwState.max  = 3;
-  updatePWUI();
-  validatePW(); // Evalúa el estado del botón al abrir
-}
 function wirePwLiveValidation() {
-  if (_pwListenersWired) return; // evita duplicados si abres/cerras varias veces
-  // Campos que determinan si el Finish se habilita
-  const ids = ['pw-fullname', 'pw-dob', 'pw-18'];
+  if (_pwListenersWired) return;
+  const ids = ['pw-fullname', 'pw-dob', 'pw-18', 'pw-team', 'pw-lang', 'pw-n-email'];
   ids.forEach(id => {
     const node = document.getElementById(id);
     if (!node) return;
     const ev = (node.tagName === 'INPUT' && node.type === 'checkbox') ? 'change' : 'input';
     node.addEventListener(ev, validatePW);
   });
-
   _pwListenersWired = true;
 }
-// Llama a estas dos funciones al abrir el wizard
-const _openProfileWizard_orig = openProfileWizard;
-openProfileWizard = function(ctx = {}) {
-  _openProfileWizard_orig(ctx);
-  startPwAtStep3();
-  wirePwLiveValidation();
-};
 
-// Navegación
-document.getElementById('pw-back').addEventListener('click', () => {
-  pwState.step = Math.max(1, pwState.step - 1);
-  updatePWUI();
-});
-document.getElementById('pw-next').addEventListener('click', () => {
-  if (!validatePW()) return;
-  pwState.step = Math.min(pwState.max, pwState.step + 1);
-  updatePWUI();
-});
-
-// Finish → guarda en DB y cierra
-document.getElementById('pw-finish').addEventListener('click', async () => {
-  if (!validatePW()) return;
-
-  const payload = {
-    full_name: document.getElementById('pw-fullname').value.trim(),
-    favorite_team: document.getElementById('pw-team').value,
-    dob: document.getElementById('pw-dob').value,
-    is_adult: document.getElementById('pw-18').checked,
-    avatar_url: document.getElementById('pw-avatar').src,
-    lang: document.getElementById('pw-lang').value,
-    notify_email: document.getElementById('pw-n-email').checked,
-  };
-
-  try {
-    if (pwState.userId) {
-      await sb.from('profiles').upsert({ id: pwState.userId, ...payload });
-    }
-
-    // ► AQUÍ (al final): reenviamos/verificamos y mostramos el banner
-    try {
-      if (pwState.email) {
-        await sb.auth.resend({ type: 'signup', email: pwState.email });
-      }
-    } catch (_) { /* ignoramos si no está soportado */ }
-
-    // Mostrar aviso de verificación ahora
-    const banner = document.getElementById('su-verify-banner');
-    if (banner) banner.classList.remove('hidden');
-    showToast('Perfil guardado. Revisa tu correo para verificar tu cuenta.');
-
+// Botón Back → cierra el wizard
+const _pwBackBtn = document.getElementById('pw-back');
+if (_pwBackBtn) {
+  _pwBackBtn.onclick = () => {
     closeProfileWizard();
-    auth.setMode('signin'); // los llevamos a iniciar sesión tras verificar
-  } catch (err) {
-    showToast('Could not save profile');
-  }
-});
+  };
+}
 
-// Abrir selector de avatar del propio wizard (reutiliza tu modal)
-document.getElementById('pw-change-avatar').addEventListener('click', () => {
-  // Reutilizamos tu biblioteca de avatares:
-  const g = document.getElementById('avatar-grid');
-  g.innerHTML = avatarLibrary.map(u=>`<button data-url="${u}" class="rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary"><img src="${u}" class="w-full h-20 object-cover" alt=""></button>`).join('');
-  g.querySelectorAll('button').forEach(b => b.onclick = () => {
-    document.getElementById('pw-avatar').src = b.dataset.url;
-    document.getElementById('avatar-modal').classList.add('hidden');
-    document.getElementById('avatar-modal').classList.remove('flex');
+// Botón Finish → guarda en DB y cierra
+const _pwFinishBtn = document.getElementById('pw-finish');
+if (_pwFinishBtn) {
+  _pwFinishBtn.onclick = async () => {
+    if (!validatePW()) return;
+
+    const payload = {
+      full_name: document.getElementById('pw-fullname').value.trim(),
+      favorite_team: document.getElementById('pw-team').value,
+      dob: document.getElementById('pw-dob').value,
+      is_adult: document.getElementById('pw-18').checked,
+      avatar_url: document.getElementById('pw-avatar').src,
+      lang: document.getElementById('pw-lang').value,
+      notify_email: document.getElementById('pw-n-email').checked,
+    };
+
+    try {
+      if (pwState.userId) {
+        await sb.from('profiles').upsert({ id: pwState.userId, ...payload });
+      }
+
+      // Reenvío de verificación (si está disponible)
+      try {
+        if (pwState.email) {
+          await sb.auth.resend({ type: 'signup', email: pwState.email });
+        }
+      } catch (_) { /* Ignorar si no aplica */ }
+
+      // Mostrar banner "Check your email" en Sign Up
+      const banner = document.getElementById('su-verify-banner');
+      if (banner) banner.classList.remove('hidden');
+
+      showToast('Perfil guardado. Revisa tu correo para verificar tu cuenta.');
+      closeProfileWizard();
+      // Llévalos al tab "Sign In"
+      if (typeof auth?.setMode === 'function') auth.setMode('signin');
+    } catch (err) {
+      showToast('Could not save profile');
+    }
+  };
+}
+
+/** Selector de avatar dentro del wizard (reutiliza el modal existente) */
+const _pwAvatarBtn = document.getElementById('pw-change-avatar');
+if (_pwAvatarBtn) {
+  _pwAvatarBtn.addEventListener('click', () => {
+    const g = document.getElementById('avatar-grid');
+    g.innerHTML = avatarLibrary.map(u =>
+      `<button data-url="${u}" class="rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary">
+         <img src="${u}" class="w-full h-20 object-cover" alt="">
+       </button>`).join('');
+    g.querySelectorAll('button').forEach(b => b.onclick = () => {
+      document.getElementById('pw-avatar').src = b.dataset.url;
+      document.getElementById('avatar-modal').classList.add('hidden');
+      document.getElementById('avatar-modal').classList.remove('flex');
+      validatePW(); // por si dependes de tener avatar
+    });
+    const av = document.getElementById('avatar-modal');
+    av.classList.remove('hidden');
+    av.classList.add('flex');
   });
-  // abre modal de avatares existente
-  const av = document.getElementById('avatar-modal');
-  av.classList.remove('hidden'); av.classList.add('flex');
-});
-
+}
+	
 /* ===== UTILS FOR RESULTS ===== */
 function labelDateTime(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); const tag = delta===0?'Today':(delta===1?'Tomorrow':(delta===-1?'Yesterday':dt.toLocaleDateString([], {weekday:'short'}))); return `${tag} ${dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;}
 
