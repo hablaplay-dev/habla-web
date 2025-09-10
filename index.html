@@ -701,6 +701,20 @@
 		    <button type="button" data-jump="signin" class="text-primary underline">Sign in here</button>
 		  </p>
 		</form>
+		<form id="form-reset" class="space-y-4 hidden">
+		  <div>
+		    <label class="text-xs text-gray-600">Email</label>
+		    <div class="mt-1 relative">
+		      <input id="re-email" type="email"
+		             class="w-full border rounded-lg px-3 py-2 pr-9"
+		             placeholder="Enter your email" required>
+		      <i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+		    </div>
+		  </div>
+		  <button type="submit" class="w-full bg-primary text-white rounded-lg py-2.5 font-semibold">
+		    Send reset link
+		  </button>
+		</form>
       </div>
     </div>
   </div>
@@ -849,6 +863,8 @@
   </div>
 <script>
 /* ===== AUTH / HEADER ===== */
+let currentView = 'matches';
+let returnView  = null;
 // --- AUTH STATE (real) ---
 let isGuest = false; // modo invitado: navegar sí, enviar ticket no
 let currentUser = null; // objeto supabase user
@@ -1455,8 +1471,6 @@ document.getElementById('btn-guest-signup')?.addEventListener('click', ()=>{
 });
 
 /* ===== NAV / ROUTING ===== */
-let currentView = 'matches';
-let returnView  = null;
 function showView(view){
   // Cierra cualquier overlay/drawer que pudiera bloquear UI
   try { closeTicket(); } catch(_) {}
