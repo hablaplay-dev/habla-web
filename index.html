@@ -1038,9 +1038,9 @@ function buildStripHTML(match,size='md'){
   const h=match.home,a=match.away;
   const leftW=size==='lg'?'w-32':'w-24', imgSz=size==='lg'?'w-16 h-16':'w-12 h-12', py=size==='lg'?'py-5':'py-3', f1=size==='lg'?'text-base':'text-sm', f2=size==='lg'?'text-xs':'text-[11px]';
   return `<div class="strip flex rounded-lg overflow-hidden shadow">
-    <div class="side ${leftW} ${h.color}"><img "${h.logo}" alt="${h.name}" class="${imgSz} rounded-full shadow-md"></div>
+    <div class="side ${leftW} ${h.color}"><img src="${h.logo}" alt="${h.name}" class="${imgSz} rounded-full shadow-md"></div>
     <div class="center flex-1 ${py} text-center"><div class="line-1 ${f1}">${fmtDateLine(match.startISO)}</div><div class="line-2 ${f2} opacity-90">${match.venue}</div><div class="line-3 ${f2} opacity-90">${match.league}</div></div>
-    <div class="side ${leftW} ${a.color}"><img "${a.logo}" alt="${a.name}" class="${imgSz} rounded-full shadow-md"></div>
+    <div class="side ${leftW} ${a.color}"><img src="${a.logo}" alt="${a.name}" class="${imgSz} rounded-full shadow-md"></div>
   </div>`;
 }
 
@@ -1137,9 +1137,9 @@ function buildTable(containerId, items, showDateGroup){
       <div class="grid grid-cols-[1.1fr,1fr,1.4fr,60px,1.4fr,1fr,1.4fr] items-center px-3 py-3">
         <div class="text-sm">${fmtDateLine(m.startISO)}</div>
         <div class="text-sm text-gray-700">${m.league}</div>
-        <div class="flex items-center gap-2"><img "${m.home.logo}" class="w-6 h-6 rounded-full"><span class="font-medium">${m.home.name}</span></div>
+        <div class="flex items-center gap-2"><img src="${m.home.logo}" class="w-6 h-6 rounded-full"><span class="font-medium">${m.home.name}</span></div>
         <div class="text-center text-gray-400">VS</div>
-        <div class="flex items-center gap-2"><img "${m.away.logo}" class="w-6 h-6 rounded-full"><span class="font-medium">${m.away.name}</span></div>
+        <div class="flex items-center gap-2"><img src="${m.away.logo}" class="w-6 h-6 rounded-full"><span class="font-medium">${m.away.name}</span></div>
         <div class="flex justify-center">${statusPill(st,m.startISO)}</div>
         <div class="text-xs">
           <div class="flex items-center gap-2 flex-wrap">
@@ -1181,7 +1181,7 @@ function renderResultsSidebar(m){
   el('res-dist').innerHTML=`<div style="width:${d.home}%;background:#16a34a" class="h-full float-left"></div><div style="width:${d.draw}%;background:#a3a3a3" class="h-full float-left"></div><div style="width:${d.away}%;background:#3b82f6" class="h-full"></div>`;
   el('live-time-label').textContent='Status'; el('live-time').textContent='—';
 }
-function renderPlayers(m){const list=el('players-list'); let arr=[...m.players]; list.innerHTML=arr.map((p,i)=>`<div class="p-3 flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-6 text-xs font-bold text-gray-800">#${i+1}</div><img "${p.avatar}" class="w-8 h-8 rounded-full"><div class="font-medium">${p.name}</div></div><button class="text-xs px-2 py-1 border rounded hover:bg-gray-50">View picks</button></div>`).join('');}
+function renderPlayers(m){const list=el('players-list'); let arr=[...m.players]; list.innerHTML=arr.map((p,i)=>`<div class="p-3 flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-6 text-xs font-bold text-gray-800">#${i+1}</div><img src="${p.avatar}" class="w-8 h-8 rounded-full"><div class="font-medium">${p.name}</div></div><button class="text-xs px-2 py-1 border rounded hover:bg-gray-50">View picks</button></div>`).join('');}
 
 /* ===== DRAWER TICKET (Matches) ===== */
 let selectedMatch=null, picks={}, picksSubmitted=false, score={home:0,away:0};
@@ -1399,14 +1399,17 @@ auth.forms.signup.addEventListener('submit', async (e) => {
     });
     if (error) throw error;
     if (data?.user) {
-      await sb.from('profiles').upsert({
-        id: data.user.id,
-        username,
-        full_name: '',
-        avatar_url: '',
-        favorite_team: null
-      });
-    }
+	  await sb.from('profiles').upsert({
+	    user_id: data.user.id,
+	    full_name: '',
+	    avatar_url: '',
+	    favorite_team: null,
+	    notify_email: true,
+	    notify_push: true,
+	    lang: 'Español',
+	    profile_public: true
+	  });
+	}
     document.getElementById('su-verify-banner').classList.add('hidden');
     openProfileWizard({ userId: data?.user?.id || null, email });
   } catch (err) {
@@ -1645,7 +1648,7 @@ function validateAge(){
 function openAvatarModal(){
   if(!accountEditMode) return;
   const g = el('avatar-grid');
-  g.innerHTML = avatarLibrary.map(u=>`<button data-url="${u}" class="rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary"><img "${u}" class="w-full h-20 object-cover" alt=""></button>`).join('');
+  g.innerHTML = avatarLibrary.map(u=>`<button data-url="${u}" class="rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary"><img src="${u}" class="w-full h-20 object-cover" alt=""></button>`).join('');
   g.querySelectorAll('button').forEach(b=> b.onclick = ()=>{ el('acc-avatar').src = b.dataset.url; closeAvatarModal(); });
   el('avatar-modal').classList.remove('hidden'); el('avatar-modal').classList.add('flex');
 }
@@ -1662,13 +1665,13 @@ async function renderAccount(){
   }
   async function loadProfileFromDB(){
     if (!currentUser) return null;
-    const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+    const { data, error } = await sb.from('profiles').select('*').eq('user_id', currentUser.id).maybeSingle();
     if (error) { console.warn(error); return null; }
     return data;
   }
   async function saveProfileToDB(payload){
     if (!currentUser) return;
-    const row = { id: currentUser.id, ...payload };
+    const row = { user_id: currentUser.id, ...payload };
     const { error } = await sb.from('profiles').upsert(row);
     if (error) throw error;
   }
@@ -1970,34 +1973,15 @@ if (_pwFinishBtn) {
       // 2) Guarda/actualiza perfil SIEMPRE (antes se hacía solo si había pwState.userId)
       const { error: upsertErr } = await sb
         .from('profiles')
-        .upsert({ id: userId, ...payload });
+        .upsert({ user_id: userId, ...payload });
       if (upsertErr) throw upsertErr;
 
-      // 3) (Opcional recomendado) Log de onboarding para auditoría
-      try {
-        await sb.from('onboarding_submissions').insert({
-          user_id: userId,
-          full_name: payload.full_name,
-          favorite_team: payload.favorite_team,
-          dob: payload.dob,
-          is_adult: payload.is_adult,
-          lang: payload.lang,
-          notify_email: payload.notify_email
-        });
-      } catch (_) { /* no bloquear flujo por el log */ }
+      // 3) Log de onboarding (no bloquea el flujo si falla)
+      await logOnboardingSubmission(userId, payload);
 
-      // 4) Enviar correo de confirmación (Edge Function "send-confirmation")
-      if (userEmail) {
-        try {
-          await sb.functions.invoke('send-confirmation', {
-            body: {
-              to: userEmail,
-              name: payload.full_name || 'Jugador/a',
-              lang: payload.lang || 'Español'
-            }
-          });
-        } catch (_) { /* si falla el mail no rompemos el guardado */ }
-      }
+      // 4) Enviar correo de confirmación (Edge Function "send_confirmation")
+	  //    Solo si el usuario consintió emails
+	  if (userEmail && payload.notify_email) {await sendConfirmationEmail(userEmail, payload.full_name, payload.lang);}
 
       // 5) (Si aún deseas reenviar correo de verificación de cuenta)
       try {
@@ -2008,9 +1992,10 @@ if (_pwFinishBtn) {
         }
       } catch (_) { /* opcional */ }
 
-      showToast('Perfil guardado y confirmación enviada a tu correo.');
       closeProfileWizard();
-      if (typeof auth?.setMode === 'function') auth.setMode('signin');
+	  try { auth.close(); } catch (_) {}
+	  showToast('¡Registro completado con éxito! Ya puedes continuar.');
+	  showView(returnView || 'matches');
     } catch (err) {
       console.error(err);
       showToast('No se pudo guardar tu perfil. Intenta nuevamente.');
@@ -2041,7 +2026,42 @@ if (_pwAvatarBtn) {
 	
 /* ===== UTILS FOR RESULTS ===== */
 function labelDateTime(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); const tag = delta===0?'Today':(delta===1?'Tomorrow':(delta===-1?'Yesterday':dt.toLocaleDateString([], {weekday:'short'}))); return `${tag} ${dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;}
+async function logOnboardingSubmission(userId, payload) {
+  try {
+    // Inserta una sola fila; si tu tabla tiene más columnas, agrégalas aquí
+    const { error } = await sb.from('onboarding_submissions').insert([{
+      user_id: userId,
+      full_name: payload.full_name,
+      favorite_team: payload.favorite_team,
+      dob: payload.dob,
+      is_adult: payload.is_adult,
+      avatar_url: payload.avatar_url,
+      lang: payload.lang,
+      notify_email: payload.notify_email
+      // created_at es DEFAULT NOW() en la DB
+    }]);
+    if (error) throw error;
+  } catch (err) {
+    console.warn('[onboarding_submissions] insert failed:', err?.message || err);
+    // No bloqueamos el flujo de usuario si falla el log
+  }
+}
 
+async function sendConfirmationEmail(to, name, lang) {
+  // Edge Function con guion BAJO: send_confirmation
+  try {
+    const { data, error } = await sb.functions.invoke('send_confirmation', {
+      body: { to, name: name || 'Jugador/a', lang: lang || 'Español' }
+    });
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.warn('[send_confirmation] failed:', err?.message || err);
+    // No bloqueamos el flujo si falla el correo
+    return null;
+  }
+}
+	
 /* ===== START ===== */
 initAuth();        // establece currentUser/isGuest, y refresca UI
 showView('matches');
