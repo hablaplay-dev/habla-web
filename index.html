@@ -764,6 +764,28 @@
       </div>
     </div>
   </div> 
+  <!-- Signup complete / verify email -->
+  <div id="signup-complete-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[95]">
+    <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl text-center">
+      <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <h3 class="text-lg font-semibold mt-3">¡Registro completado!</h3>
+      <p class="text-sm text-gray-600 mt-1">
+        Te enviamos un correo con el enlace de verificación. Por favor, revísalo para activar tu cuenta.
+      </p>
+      <div id="sc-email-hint" class="text-xs text-gray-500 mt-2"></div>
+
+      <div class="mt-4 flex gap-2">
+        <button id="sc-resend" class="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50">
+          Reenviar email
+        </button>
+        <button id="sc-continue" class="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold">
+          Continuar
+        </button>
+      </div>
+    </div>
+  </div>
   <!-- ADD: Avatar library modal -->
   <div id="avatar-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[90]">
     <div class="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-xl">
@@ -1653,6 +1675,7 @@ el('rewards-cta-store')?.addEventListener('click', ()=>{
   showToast('Opening Redeem Store…');
 });
 
+
 /* ===== ACCOUNT PAGE (vertical) ===== */
 function calcAgeFromInput(v){ if(!v) return 0; const d=new Date(v); const t=Date.now()-d.getTime(); return Math.abs(new Date(t).getUTCFullYear()-1970); }
 function validateAge(){
@@ -1986,7 +2009,7 @@ if (_pwFinishBtn) {
       // Intento de reenvío de verificación (no bloquea)
       try { if (userEmail) await sb.auth.resend({ type: 'signup', email: userEmail }); } catch {}
       closeProfileWizard();
-      showToast('Tu cuenta fue creada. Revisa tu correo para verificarla.');
+      openSignupCompleteModal(userEmail);
       return;
     }
 
@@ -2002,8 +2025,7 @@ if (_pwFinishBtn) {
       try { if (userEmail && payload.notify_email) await sendConfirmationEmail(userEmail, payload.full_name, payload.lang); } catch {}
 
       closeProfileWizard();
-      showToast('¡Registro completado con éxito! Revisa tu correo para verificar tu cuenta.');
-      showView(returnView || 'matches');
+      openSignupCompleteModal(userEmail);
     } catch (err) {
       console.error(err);
       showToast('No se pudo guardar tu perfil. Intenta nuevamente.');
@@ -2036,7 +2058,44 @@ if (_pwAvatarBtn) {
     av.classList.add('flex');
   });
 }
-	
+
+function openSignupCompleteModal(emailForHint){
+  const m = el('signup-complete-modal');
+  const hint = el('sc-email-hint');
+  hint.textContent = emailForHint ? `Enviado a: ${emailForHint}` : '';
+  m.classList.remove('hidden'); 
+  m.classList.add('flex');
+}
+
+function closeSignupCompleteModal(){
+  const m = el('signup-complete-modal');
+  m.classList.add('hidden'); 
+  m.classList.remove('flex');
+}
+
+// Botón "Continuar": vuelve a lo que el usuario hacía antes
+el('sc-continue')?.addEventListener('click', () => {
+  closeSignupCompleteModal();
+  // Si no había “vista previa”, se queda donde está; si la había, vuelve allí
+  showView(returnView || currentView);
+  returnView = null;
+});
+
+// Botón "Reenviar email"
+el('sc-resend')?.addEventListener('click', async () => {
+  try {
+    const email = (pwState?.email && pwState.email.trim()) || (currentUser?.email ?? '');
+    if (email) {
+      await sb.auth.resend({ type: 'signup', email });
+      showToast('Email reenviado. Revisa tu bandeja.');
+    } else {
+      showToast('No hay un correo para reenviar.');
+    }
+  } catch (e) {
+    showToast('No se pudo reenviar el email.');
+  }
+});
+
 /* ===== UTILS FOR RESULTS ===== */
 function labelDateTime(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); const tag = delta===0?'Today':(delta===1?'Tomorrow':(delta===-1?'Yesterday':dt.toLocaleDateString([], {weekday:'short'}))); return `${tag} ${dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;}
 async function logOnboardingSubmission(userId, payload) {
