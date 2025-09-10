@@ -1368,10 +1368,12 @@ auth.forms.signup.addEventListener('submit', async (e) => {
   const btn = document.getElementById('su-submit');
   const spn = document.getElementById('su-spinner');
 
+  // Limpia errores UI
   ['err-su-username','err-su-email','err-su-pass','err-su-confirm','err-su-terms']
     .forEach(id => document.getElementById(id).classList.add('hidden'));
   [$u,$e,$p,$c].forEach(i => i.classList.remove('is-invalid'));
 
+  // Validaciones rápidas
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($e.value.trim());
   const passOk  = /^(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/.test($p.value);
   const userOk  = $u.value.trim().length >= 3 && $u.value.trim().length <= 20;
@@ -1382,42 +1384,44 @@ auth.forms.signup.addEventListener('submit', async (e) => {
   if (!emailOk){ $e.classList.add('is-invalid'); document.getElementById('err-su-email').classList.remove('hidden'); }
   if (!passOk) { $p.classList.add('is-invalid'); document.getElementById('err-su-pass').classList.remove('hidden'); }
   if (!matchOk){ $c.classList.add('is-invalid'); document.getElementById('err-su-confirm').classList.remove('hidden'); }
-  if (!termsOk){
-    document.getElementById('err-su-terms').classList.remove('hidden');
-    alert('Debes aceptar los Términos de servicio y la Política de privacidad para crear tu cuenta.');
-  }
+  if (!termsOk){ document.getElementById('err-su-terms').classList.remove('hidden'); }
   if (!(userOk && emailOk && passOk && matchOk && termsOk)) return;
+
   btn.disabled = true; spn.classList.remove('hidden');
+
   try {
     const username = $u.value.trim();
     const email    = $e.value.trim();
     const pass     = $p.value;
+
+    // ⚠️ Solo registramos al usuario. NO tocamos "profiles" aquí
+    // para evitar el error RLS cuando aún no hay sesión.
     const { data, error } = await sb.auth.signUp({
       email,
       password: pass,
       options: { data: { username } }
     });
     if (error) throw error;
-    if (data?.user) {
-	  await sb.from('profiles').upsert({
-	    user_id: data.user.id,
-	    full_name: '',
-	    avatar_url: '',
-	    favorite_team: null,
-	    notify_email: true,
-	    notify_push: true,
-	    lang: 'Español',
-	    profile_public: true
-	  });
-	}
-    document.getElementById('su-verify-banner').classList.add('hidden');
-    openProfileWizard({ userId: data?.user?.id || null, email });
+
+    // Si tu proyecto NO exige verificación de email, habrá sesión inmediata
+    if (data?.session && data?.user) {
+      // Abrimos el wizard y ahí se hará el upsert del perfil (ya con sesión)
+      openProfileWizard({ userId: data.user.id, email });
+      auth.close();
+    } else {
+      // Con verificación por email activada: mostramos banner y NO abrimos wizard.
+      const banner = document.getElementById('su-verify-banner');
+      if (banner) banner.classList.remove('hidden');
+      showToast('Check your email to verify your account. Then sign in to continue.');
+      // El usuario verificará, iniciará sesión y desde la cuenta podrá completar perfil.
+    }
   } catch (err) {
     showToast(err?.message || 'Sign up failed');
   } finally {
     btn.disabled = false; spn.classList.add('hidden');
   }
 });
+	
 auth.forms.reset.addEventListener('submit', async (e)=>{e.preventDefault();
   const email = document.getElementById('re-email').value.trim();
   const { error } = await sb.auth.resetPasswordForEmail(email, {
