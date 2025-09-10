@@ -618,32 +618,89 @@
           </button>
           <p class="text-[11px] text-gray-500 text-center">By signing in, you agree to our <a class="underline">Terms</a> and <a class="underline">Privacy Policy</a>.</p>
         </form>
-
-        <form id="form-signup" class="hidden space-y-4">
-          <div><label class="text-xs text-gray-600">Username</label><div class="mt-1 relative"><input id="su-username" type="text" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Choose a username" required><i class="fa-regular fa-user absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
-          <div><label class="text-xs text-gray-600">Email Address</label><div class="mt-1 relative"><input id="su-email" type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="your@email.com" required><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div></div>
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="text-xs text-gray-600">Password</label><div class="mt-1 relative"><input id="su-pass"    type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Create a strong password" required><button type="button" data-toggle="#su-pass" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div></div>
-            <div><label class="text-xs text-gray-600">Confirm Password</label><div class="mt-1 relative"><input id="su-confirm" type="password" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Confirm your password" required><button type="button" data-toggle="#su-confirm" class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-regular fa-eye"></i></button></div></div>
-          </div>
-          <label class="text-xs text-gray-600 flex items-center gap-2"><input id="su-terms" type="checkbox" required class="accent-primary"> I agree to the <a class="underline">Terms of Service</a> and <a class="underline">Privacy Policy</a></label>
-          <button type="submit" class="w-full bg-primary text-white rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2">
-            <i class="fa-solid fa-user-plus"></i> Create Account
-          </button>
-          <button id="btn-guest-signup" type="button" class="w-full bg-gray-100 text-gray-800 rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2">
-            <i class="fa-regular fa-user"></i> Continue as Guest
-          </button>
-          <p class="text-[11px] text-gray-500 text-center">Already have an account? <button type="button" data-jump="signin" class="text-primary underline">Sign in here</button></p>
-        </form>
-
-        <form id="form-reset" class="hidden space-y-4">
-          <h4 class="font-semibold">Reset Password</h4>
-          <p class="text-sm text-gray-600">Enter your email and we’ll send you a link to reset your password.</p>
-          <div class="mt-1 relative"><input id="re-email" type="email" class="w-full border rounded-lg px-3 py-2 pr-9" placeholder="Enter your email address" required><i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i></div>
-          <button class="w-full bg-emerald-600 text-white rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2"><i class="fa-regular fa-paper-plane"></i> Send Reset Link</button>
-          <div class="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800"><b>Check your email</b> – We’ve sent instructions. Also look in your spam folder.</div>
-          <p class="text-sm">Remember your password? <button type="button" data-jump="signin" class="text-primary underline">Back to Sign In</button></p>
-        </form>
+		  
+		<form id="form-signup" class="space-y-4">
+		  <div>
+		    <label class="text-xs text-gray-600">Username</label>
+		    <div class="mt-1 relative">
+		      <input id="su-username" type="text"
+		             class="w-full border rounded-lg px-3 py-2 pr-9"
+		             placeholder="Choose a username" required minlength="3" maxlength="20">
+		      <i class="fa-regular fa-user absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+		    </div>
+		    <p id="err-su-username" class="hidden text-[11px] text-red-600 mt-1">Username must be 3–20 characters.</p>
+		  </div>
+		
+		  <div>
+		    <label class="text-xs text-gray-600">Email Address</label>
+		    <div class="mt-1 relative">
+		      <input id="su-email" type="email"
+		             class="w-full border rounded-lg px-3 py-2 pr-9"
+		             placeholder="your@email.com" required>
+		      <i class="fa-regular fa-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+		    </div>
+		    <p id="err-su-email" class="hidden text-[11px] text-red-600 mt-1">Invalid email format.</p>
+		  </div>
+		
+		  <div class="grid grid-cols-2 gap-3">
+		    <div>
+		      <label class="text-xs text-gray-600">Password</label>
+		      <div class="mt-1 relative">
+		        <input id="su-pass" type="password"
+		               class="w-full border rounded-lg px-3 py-2 pr-9"
+		               placeholder="Create a strong password" required>
+		        <button type="button" data-toggle="#su-pass"
+		                class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+		          <i class="fa-regular fa-eye"></i>
+		        </button>
+		      </div>
+		      <p class="text-[11px] text-gray-500 mt-1">Min 8 chars, 1 number & 1 symbol.</p>
+		      <p id="err-su-pass" class="hidden text-[11px] text-red-600 mt-1">Password is too weak.</p>
+		    </div>
+		    <div>
+		      <label class="text-xs text-gray-600">Confirm Password</label>
+		      <div class="mt-1 relative">
+		        <input id="su-confirm" type="password"
+		               class="w-full border rounded-lg px-3 py-2 pr-9"
+		               placeholder="Confirm your password" required>
+		        <button type="button" data-toggle="#su-confirm"
+		                class="toggle-pass absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+		          <i class="fa-regular fa-eye"></i>
+		        </button>
+		      </div>
+		      <p id="err-su-confirm" class="hidden text-[11px] text-red-600 mt-1">Passwords don’t match.</p>
+		    </div>
+		  </div>
+		
+		  <label class="text-xs text-gray-600 flex items-center gap-2">
+		    <input id="su-terms" type="checkbox" required class="accent-primary">
+		    I agree to the <a class="underline">Terms of Service</a> and <a class="underline">Privacy Policy</a>
+		  </label>
+		  <p id="err-su-terms" class="hidden text-[11px] text-red-600">Please accept the Terms & Privacy.</p>
+		
+		  <!-- Banner de verificación + reenviar -->
+		  <div id="su-verify-banner"
+		       class="hidden bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800">
+		    <b>Check your email</b> – We sent a verification link.
+		    <button id="su-resend" type="button" class="ml-2 text-blue-700 underline">Resend</button>
+		  </div>
+		
+		  <button id="su-submit" type="submit"
+		          class="w-full bg-primary text-white rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2">
+		    <i class="fa-solid fa-user-plus"></i> <span>Create Account</span>
+		    <i id="su-spinner" class="hidden fa-solid fa-spinner animate-spin"></i>
+		  </button>
+		
+		  <button id="btn-guest-signup" type="button"
+		          class="w-full bg-gray-100 text-gray-800 rounded-lg py-2.5 font-semibold flex items-center justify-center gap-2">
+		    <i class="fa-regular fa-user"></i> Continue as Guest
+		  </button>
+		
+		  <p class="text-[11px] text-gray-500 text-center">
+		    Already have an account?
+		    <button type="button" data-jump="signin" class="text-primary underline">Sign in here</button>
+		  </p>
+		</form>
       </div>
     </div>
   </div>
@@ -721,7 +778,75 @@
       <i class="fa-solid fa-check-circle"></i><span id="toast-text">Done!</span>
     </div>
   </div>
-
+  <div id="profile-wizard" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[78]">
+    <div class="bg-white rounded-2xl w-full max-w-xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Complete your profile</h3>
+        <span id="pw-step" class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">Step 1/3</span>
+      </div>
+      <p class="text-sm text-gray-600 mt-1">A few details to get you started.</p>
+      <div id="pw-steps" class="mt-4">
+        <div data-step="1" class="space-y-3">
+          <div>
+            <label class="text-xs text-gray-600">Real name</label>
+            <input id="pw-fullname" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Your real name">
+            <p id="err-pw-fullname" class="hidden text-[11px] text-red-600 mt-1">Please enter your name.</p>
+          </div>
+          <div>
+            <label class="text-xs text-gray-600">Favorite team</label>
+            <select id="pw-team" class="w-full border rounded-lg px-3 py-2 mt-1">
+              <option>Real Madrid</option><option>Barcelona</option><option>Man City</option>
+              <option>Arsenal</option><option>Alianza Lima</option><option>Universitario</option>
+            </select>
+          </div>
+        </div>
+        <div data-step="2" class="hidden space-y-3">
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-600">Date of birth</label>
+              <input id="pw-dob" type="date" class="w-full border rounded-lg px-3 py-2 mt-1">
+            </div>
+            <div class="flex items-end">
+              <label class="flex items-center gap-2 text-sm">
+                <input id="pw-18" type="checkbox" class="accent-primary">
+                I confirm I am 18+ years old
+              </label>
+            </div>
+          </div>
+          <div id="pw-age-error" class="hidden mt-1 text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+            Only adults (18+) can play on Habla!.
+          </div>
+        </div>
+        <div data-step="3" class="hidden space-y-3">
+          <div class="flex items-center gap-4">
+            <img id="pw-avatar" class="w-16 h-16 rounded-full border"
+                 src="https://i.pravatar.cc/120?img=7" alt="avatar">
+            <button id="pw-change-avatar" class="px-3 py-1.5 border rounded-lg text-sm">Choose from library</button>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-600">Language</label>
+              <select id="pw-lang" class="w-full border rounded-lg px-3 py-2 mt-1">
+                <option>Español</option><option>English</option>
+              </select>
+            </div>
+            <label class="flex items-center gap-2 text-sm">
+              <input id="pw-n-email" type="checkbox" class="accent-primary" checked>
+              Email updates
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="mt-5 flex gap-2">
+        <button id="pw-back"  class="flex-1 border rounded-lg py-2">Back</button>
+        <button id="pw-next"  class="flex-1 bg-primary text-white rounded-lg py-2 font-semibold">Next</button>
+        <button id="pw-finish"
+                class="hidden flex-1 bg-primary text-white rounded-lg py-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+          Finish
+        </button>
+      </div>
+    </div>
+  </div>
 <script>
 /* ===== AUTH / HEADER ===== */
 // --- AUTH STATE (real) ---
@@ -1212,39 +1337,93 @@ auth.forms.signin.addEventListener('submit', async (e)=>{
   showView(returnView || currentView);
   returnView = null;
 });
-auth.forms.signup.addEventListener('submit', async (e)=>{
+auth.forms.signup.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const username = document.getElementById('su-username').value.trim();
-  const email    = document.getElementById('su-email').value.trim();
-  const pass     = document.getElementById('su-pass').value;
-  const confirm  = document.getElementById('su-confirm').value;
-  const termsOk  = document.getElementById('su-terms').checked;
+  // refs
+  const $u = document.getElementById('su-username');
+  const $e = document.getElementById('su-email');
+  const $p = document.getElementById('su-pass');
+  const $c = document.getElementById('su-confirm');
+  const $t = document.getElementById('su-terms');
+  const btn = document.getElementById('su-submit');
+  const spn = document.getElementById('su-spinner');
 
-  if (!termsOk) { showToast('Please accept Terms & Privacy'); return; }
-  if (pass !== confirm) { showToast('Passwords do not match'); return; }
+  // reset state
+  ['err-su-username','err-su-email','err-su-pass','err-su-confirm','err-su-terms']
+    .forEach(id => document.getElementById(id).classList.add('hidden'));
+  [$u,$e,$p,$c].forEach(i => i.classList.remove('is-invalid'));
 
-  const { data, error } = await sb.auth.signUp({
-    email,
-    password: pass,
-    options: { data: { username } } // metadata opcional en el JWT
-  });
+  // client validations
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($e.value.trim());
+  const passOk  = /^(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/.test($p.value);
+  const userOk  = $u.value.trim().length >= 3 && $u.value.trim().length <= 20;
+  const matchOk = $p.value === $c.value;
+  const termsOk = $t.checked;
 
-  if (error) { showToast(error.message || 'Sign up failed'); return; }
+  if (!userOk) { $u.classList.add('is-invalid'); document.getElementById('err-su-username').classList.remove('hidden'); }
+  if (!emailOk){ $e.classList.add('is-invalid'); document.getElementById('err-su-email').classList.remove('hidden'); }
+  if (!passOk) { $p.classList.add('is-invalid'); document.getElementById('err-su-pass').classList.remove('hidden'); }
+  if (!matchOk){ $c.classList.add('is-invalid'); document.getElementById('err-su-confirm').classList.remove('hidden'); }
+  if (!termsOk){ document.getElementById('err-su-terms').classList.remove('hidden'); }
 
-  // Crea/actualiza fila de profiles (BC1)
-  if (data.user) {
-    await sb.from('profiles').upsert({
-      id: data.user.id,
-      username,
-      full_name: '',
-      avatar_url: '',
-      favorite_team: null
+  if (!(userOk && emailOk && passOk && matchOk && termsOk)) return;
+
+  // loading UI
+  btn.disabled = true; spn.classList.remove('hidden');
+
+  try {
+    // Sign up
+    const username = $u.value.trim();
+    const email    = $e.value.trim();
+    const pass     = $p.value;
+
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password: pass,
+      options: { data: { username } }
     });
-  }
 
-  showToast('Check your email to verify your account');
-  auth.setMode('signin');
+    if (error) throw error;
+
+    // Crear/actualizar fila en profiles con valores mínimos
+    if (data?.user) {
+      await sb.from('profiles').upsert({
+        id: data.user.id,
+        username,
+        full_name: '',
+        avatar_url: '',
+        favorite_team: null
+      });
+    }
+
+    // Aviso de verificación + opción de reenviar
+    document.getElementById('su-verify-banner').classList.remove('hidden');
+    showToast('Account created. Verify your email.');
+
+    // Abre el wizard para completar perfil (no requiere sesión activa)
+    openProfileWizard({
+      userId: data?.user?.id || null,
+      email
+    });
+  } catch (err) {
+    showToast(err?.message || 'Sign up failed');
+  } finally {
+    btn.disabled = false; spn.classList.add('hidden');
+  }
+});
+
+// ADD: reenviar verificación
+document.getElementById('su-resend')?.addEventListener('click', async () => {
+  const email = document.getElementById('su-email').value.trim();
+  try {
+    // v2: resend()
+    // si tu versión no soporta, atrapará el error sin romper el flujo
+    await sb.auth.resend({ type: 'signup', email });
+    showToast('Verification email sent again.');
+  } catch {
+    showToast('Could not resend verification.');
+  }
 });
 auth.forms.reset.addEventListener('submit', async (e)=>{e.preventDefault();
   const email = document.getElementById('re-email').value.trim();
@@ -1680,7 +1859,116 @@ function isProfileComplete(){
   ].every(Boolean);
   return ageOK && reqFilled;
 }
-                                                             
+
+/* ===== PROFILE WIZARD (post–Sign Up) ===== */
+let pwState = { step: 1, max: 3, userId: null, email: '' };
+
+function openProfileWizard(ctx = {}) {
+  pwState = { step: 1, max: 3, userId: ctx.userId || null, email: ctx.email || '' };
+  updatePWUI();
+  const m = document.getElementById('profile-wizard');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+
+function closeProfileWizard() {
+  const m = document.getElementById('profile-wizard');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+
+function updatePWUI() {
+  // step indicator
+  document.getElementById('pw-step').textContent = `Step ${pwState.step}/${pwState.max}`;
+  // show/hide step contents
+  document.querySelectorAll('#pw-steps [data-step]').forEach(s => {
+    s.classList.toggle('hidden', Number(s.dataset.step) !== pwState.step);
+  });
+  // buttons
+  document.getElementById('pw-back').classList.toggle('hidden', pwState.step === 1);
+  document.getElementById('pw-next').classList.toggle('hidden', pwState.step !== pwState.max);
+  document.getElementById('pw-finish').classList.toggle('hidden', pwState.step !== pwState.max);
+  validatePW(); // revalida en cada paso
+}
+
+// Validaciones del wizard
+function calcAge(dateStr){ if(!dateStr) return 0; const d=new Date(dateStr); const t=Date.now()-d.getTime(); return Math.abs(new Date(t).getUTCFullYear()-1970); }
+function validatePW(){
+  let ok = true;
+  // limpia errores
+  ['pw-fullname','pw-dob'].forEach(id => document.getElementById(id).classList.remove('is-invalid'));
+  ['err-pw-fullname','pw-age-error'].forEach(id => document.getElementById(id).classList.add('hidden'));
+
+  if (pwState.step === 1) {
+    if (!document.getElementById('pw-fullname').value.trim()) {
+      ok = false;
+      document.getElementById('pw-fullname').classList.add('is-invalid');
+      document.getElementById('err-pw-fullname').classList.remove('hidden');
+    }
+  }
+  if (pwState.step === 2) {
+    const dob = document.getElementById('pw-dob').value;
+    const is18 = document.getElementById('pw-18').checked;
+    const ageOK = calcAge(dob) >= 18 && is18;
+    if (!ageOK) { ok = false; document.getElementById('pw-age-error').classList.remove('hidden'); }
+  }
+
+  // habilita/deshabilita botones según paso
+  document.getElementById('pw-next').disabled   = !ok && pwState.step !== pwState.max;
+  document.getElementById('pw-finish').disabled = !ok && pwState.step === pwState.max;
+  return ok;
+}
+
+// Navegación
+document.getElementById('pw-back').addEventListener('click', () => {
+  pwState.step = Math.max(1, pwState.step - 1);
+  updatePWUI();
+});
+document.getElementById('pw-next').addEventListener('click', () => {
+  if (!validatePW()) return;
+  pwState.step = Math.min(pwState.max, pwState.step + 1);
+  updatePWUI();
+});
+
+// Finish → guarda en DB y cierra
+document.getElementById('pw-finish').addEventListener('click', async () => {
+  if (!validatePW()) return;
+
+  const payload = {
+    full_name: document.getElementById('pw-fullname').value.trim(),
+    favorite_team: document.getElementById('pw-team').value,
+    dob: document.getElementById('pw-dob').value,
+    is_adult: document.getElementById('pw-18').checked,
+    avatar_url: document.getElementById('pw-avatar').src,
+    lang: document.getElementById('pw-lang').value,
+    notify_email: document.getElementById('pw-n-email').checked,
+  };
+
+  try {
+    if (pwState.userId) {
+      await sb.from('profiles').upsert({ id: pwState.userId, ...payload });
+    }
+    closeProfileWizard();
+    auth.setMode('signin'); // los llevamos a Sign In hasta que verifiquen el email
+    showToast('Profile saved. Please sign in after verifying your email.');
+  } catch (err) {
+    showToast('Could not save profile');
+  }
+});
+
+// Abrir selector de avatar del propio wizard (reutiliza tu modal)
+document.getElementById('pw-change-avatar').addEventListener('click', () => {
+  // Reutilizamos tu biblioteca de avatares:
+  const g = document.getElementById('avatar-grid');
+  g.innerHTML = avatarLibrary.map(u=>`<button data-url="${u}" class="rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary"><img src="${u}" class="w-full h-20 object-cover" alt=""></button>`).join('');
+  g.querySelectorAll('button').forEach(b => b.onclick = () => {
+    document.getElementById('pw-avatar').src = b.dataset.url;
+    document.getElementById('avatar-modal').classList.add('hidden');
+    document.getElementById('avatar-modal').classList.remove('flex');
+  });
+  // abre modal de avatares existente
+  const av = document.getElementById('avatar-modal');
+  av.classList.remove('hidden'); av.classList.add('flex');
+});
+
 /* ===== UTILS FOR RESULTS ===== */
 function labelDateTime(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); const tag = delta===0?'Today':(delta===1?'Tomorrow':(delta===-1?'Yesterday':dt.toLocaleDateString([], {weekday:'short'}))); return `${tag} ${dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;}
 
