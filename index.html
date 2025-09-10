@@ -420,27 +420,47 @@
             </div>
           </div>
 
-          <!-- Account & Security -->
-          <div class="bg-white rounded-2xl border p-6">
-            <h2 class="text-lg font-semibold mb-4">Account & Security</h2>
-            <div class="grid sm:grid-cols-3 gap-3">
-              <div>
-                <label class="text-xs text-gray-600">Email</label>
-                <input id="acc-email" type="email" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="you@email.com">
-              </div>
-              <div>
-                <label class="text-xs text-gray-600">New password</label>
-                <input id="acc-pass" type="password" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Leave blank to keep">
-              </div>
-              <div class="flex items-end">
-                <label class="flex items-center gap-2 text-sm">
-                  <input id="acc-2fa" type="checkbox" class="accent-primary">
-                  Enable 2-step verification
-                </label>
-              </div>
-            </div>
-          </div>
-
+		  <!-- Account & Security -->
+		  <div class="bg-white rounded-2xl border p-6">
+		    <h2 class="text-lg font-semibold mb-4">Account & Security</h2>
+		    <div class="grid sm:grid-cols-3 gap-3">
+		      <div>
+		        <label class="text-xs text-gray-600">Email</label>
+		        <input id="acc-email" type="email"
+		               class="w-full border rounded-lg px-3 py-2 mt-1"
+		               placeholder="you@email.com">
+		        <!-- Estado de verificación + reenviar -->
+		        <div class="mt-2 flex items-center gap-2">
+		          <span id="acc-email-status"
+		                class="status-pill bg-gray-100 text-gray-700">
+		            <span class="status-dot bg-gray-500"></span>
+		            Checking…
+		          </span>
+		          <button id="acc-email-resend"
+		                  class="text-xs text-primary underline hidden">
+		            Resend verification
+		          </button>
+		        </div>
+		        <p class="text-[11px] text-gray-500 mt-1">
+		          If you change your email, we’ll send a new verification link.
+		        </p>
+		      </div>
+		
+		      <div>
+		        <label class="text-xs text-gray-600">New password</label>
+		        <input id="acc-pass" type="password"
+		               class="w-full border rounded-lg px-3 py-2 mt-1"
+		               placeholder="Leave blank to keep">
+		      </div>
+		
+		      <div class="flex items-end">
+		        <label class="flex items-center gap-2 text-sm">
+		          <input id="acc-2fa" type="checkbox" class="accent-primary">
+		          Enable 2-step verification
+		        </label>
+		      </div>
+		    </div>
+		  </div>
           <!-- Rewards & Payouts -->
           <div class="bg-white rounded-2xl border p-6">
             <h2 class="text-lg font-semibold mb-4">Rewards & Payouts</h2>
@@ -1437,18 +1457,20 @@ auth.forms.signup.addEventListener('submit', async (e) => {
     });
     if (error) throw error;
 
+    // Guarda credenciales para auto-login luego de "Continuar"
+    try {
+      localStorage.setItem('habla_signup_creds', JSON.stringify({ email, password: pass }));
+    } catch {}
+
     // Mostrar banner “Check your email…”
     const banner = document.getElementById('su-verify-banner');
     if (banner) banner.classList.remove('hidden');
 
-    // ⚠️ IMPORTANTE:
-    // Abrimos el wizard para completar datos de perfil INMEDIATAMENTE,
-    // pero NO escribimos en 'profiles' si no hay sesión (RLS).
-    // Le pasamos el userId y email devueltos por signUp (userId existe aunque no haya sesión).
+    // Abrimos wizard (completa perfil); no escribe si no hay sesión (RLS)
     const uid = data?.user?.id || null;
     openProfileWizard({ userId: uid, email });
 
-    // Cierra el modal principal
+    // Cierra modal principal
     auth.close();
   } catch (err) {
     showToast(err?.message || 'Sign up failed');
@@ -1682,20 +1704,19 @@ function validateAge(){
   const age = calcAgeFromInput(el('acc-dob').value);
   const ok = age >= 18 && el('acc-18').checked;
   el('acc-age-error').classList.toggle('hidden', ok);
-  // save sólo si edición + ok + perfil completo
-  el('acc-save').disabled = !accountEditMode || !ok || !isProfileComplete();
+  updateAccSaveState();
 }
 function openAvatarModal(){
   if(!accountEditMode) return;
   const g = el('avatar-grid');
   g.innerHTML = avatarLibrary.map(u=>`<button data-url="${u}" class="rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary"><img src="${u}" class="w-full h-20 object-cover" alt=""></button>`).join('');
-  g.querySelectorAll('button').forEach(b=> b.onclick = ()=>{ el('acc-avatar').src = b.dataset.url; closeAvatarModal(); });
+  g.querySelectorAll('button').forEach(b=> b.onclick = ()=>{ el('acc-avatar').src = b.dataset.url; closeAvatarModal(); updateAccSaveState(); });
   el('avatar-modal').classList.remove('hidden'); el('avatar-modal').classList.add('flex');
 }
 function closeAvatarModal(){ el('avatar-modal').classList.add('hidden'); el('avatar-modal').classList.remove('flex'); }
 
 async function renderAccount(){
-  // Gate: si no hay sesión, muestra invitación a loguearse
+  // Gate: si no hay sesión, mostrar invitación
   if(!isLoggedIn()){
     el('account-guest')?.classList.remove('hidden');
     el('account-body')?.classList.add('hidden');
@@ -1703,6 +1724,8 @@ async function renderAccount(){
     el('acc-open-signup')?.addEventListener('click',()=>openAuthFlow('signup'));
     return;
   }
+
+  // Helpers de DB
   async function loadProfileFromDB(){
     if (!currentUser) return null;
     const { data, error } = await sb.from('profiles').select('*').eq('user_id', currentUser.id).maybeSingle();
@@ -1715,11 +1738,12 @@ async function renderAccount(){
     const { error } = await sb.from('profiles').upsert(row);
     if (error) throw error;
   }
-  // Con sesión: oculta gate y muestra cuerpo
+
+  // Mostrar cuerpo
   el('account-guest')?.classList.add('hidden');
   el('account-body')?.classList.remove('hidden');
 
-  // Cargar perfil real (o defaults si no existe)
+  // Cargar perfil o defaults
   const dbp = await loadProfileFromDB();
   if (!dbp) {
     savedProfile = {
@@ -1751,12 +1775,13 @@ async function renderAccount(){
       profilePublic: dbp.profile_public ?? true
     };
   }
-  // Carga valores y bloquea edición por defecto
+
+  // Cargar valores y bloquear edición
   fillProfile(savedProfile);
   setAccountEditable(false);
   validateAge();
 
-  // Banner “completa tu perfil” (se crea una sola vez)
+  // Banner “completa tu perfil” (una sola vez)
   if(!el('acc-complete-banner')){
     const banner = document.createElement('div');
     banner.id = 'acc-complete-banner';
@@ -1767,7 +1792,10 @@ async function renderAccount(){
   }
   el('acc-complete-banner').classList.toggle('hidden', isProfileComplete());
 
-  // Listeners de edición
+  // Estado de verificación de email
+  paintEmailVerification();
+
+  // Listeners
   el('acc-edit').onclick = ()=>{ setAccountEditable(true); };
   el('acc-cancel').onclick = ()=>{
     fillProfile(savedProfile);
@@ -1775,13 +1803,29 @@ async function renderAccount(){
     validateAge();
   };
 
-  // Guardar (requiere perfil completo)
   el('acc-save').onclick = async ()=>{
     if(!accountEditMode) return;
     if(!isProfileComplete()){ showToast('Please complete all required fields (18+).'); return; }
+
     const p = readProfile();
-    // Guarda en DB (mapea a columnas reales)
+
     try {
+      // Si cambió el email → actualizar en auth (provoca verificación)
+      if (p.email && p.email !== (currentUser?.email || '')) {
+        const { data, error } = await sb.auth.updateUser({ email: p.email });
+        if (error) throw error;
+        showToast('Email updated. Please verify the new address.');
+      }
+
+      // Si se ingresó un password nuevo → actualizar
+      if (el('acc-pass').value.trim()) {
+        const { error } = await sb.auth.updateUser({ password: el('acc-pass').value.trim() });
+        if (error) throw error;
+        el('acc-pass').value = '';
+        showToast('Password updated.');
+      }
+
+      // Guarda en DB (map columns)
       await saveProfileToDB({
         full_name: p.fullname,
         avatar_url: p.avatar,
@@ -1795,51 +1839,58 @@ async function renderAccount(){
         lang: p.lang,
         profile_public: p.profilePublic
       });
-      savedProfile = p; // cache local para UI
+
+      savedProfile = { ...p };
       setAccountEditable(false);
-      showToast('Account settings saved');
+      paintEmailVerification();
       el('acc-complete-banner').classList.add('hidden');
+      showToast('Account settings saved');
     } catch(err){
       console.error(err);
       showToast('Could not save profile');
     }
   };
 
-  // Re-evaluar habilitación del botón Save en cada cambio
-  const reval = ()=>{ el('acc-save').disabled = !accountEditMode || !isProfileComplete(); };
+  // Re-evaluar habilitación del botón Save en cada cambio (dirty + válido)
+  const reval = ()=>{ validateAge(); updateAccSaveState(); };
   getAccountInputs().forEach(ctrl=>{
-    ctrl.addEventListener('input', ()=>{ validateAge(); reval(); });
-    ctrl.addEventListener('change', ()=>{ validateAge(); reval(); });
+    ctrl.addEventListener('input', reval);
+    ctrl.addEventListener('change', reval);
   });
 
   // Avatar modal
   el('acc-change-avatar').onclick = openAvatarModal;
   el('avatar-cancel').onclick = closeAvatarModal;
-}                                                                       
 
-/* === Account: estado y helpers de edición/validación === */
+  // Reenviar verificación si no verificado
+  el('acc-email-resend')?.addEventListener('click', async ()=>{
+    const target = (readProfile().email || currentUser?.email || '').trim();
+    if (!target) return;
+    try {
+      await sb.auth.resend({ type: 'signup', email: target });
+      showToast('Verification email sent.');
+    } catch {
+      showToast('Could not resend email.');
+    }
+  });
+}
+
+// === Estado y helpers de edición/validación ===
 let accountEditMode = false;
 let savedProfile = null;
 
 function getAccountInputs(){
-  // Todos los campos dentro del cuerpo (excepto los botones de control)
   return el('account-body').querySelectorAll('input, select, textarea');
 }
 
 function setAccountEditable(on){
   accountEditMode = on;
-  // habilita/deshabilita campos
   getAccountInputs().forEach(ctrl => { ctrl.disabled = !on; });
-  // botón de avatar
   const avatarBtn = el('acc-change-avatar');
   if (avatarBtn) avatarBtn.disabled = !on;
-
-  // toggle botones
   el('acc-edit')?.classList.toggle('hidden', on);
   el('acc-cancel')?.classList.toggle('hidden', !on);
-
-  // save se habilita sólo en edición + validación ok
-  el('acc-save').disabled = !on || !isProfileComplete();
+  updateAccSaveState();
 }
 
 function fillProfile(p){
@@ -1849,7 +1900,7 @@ function fillProfile(p){
   el('acc-dob').value = p.dob || '';
   el('acc-18').checked = !!p.is18;
   el('acc-email').value = p.email || '';
-  el('acc-pass').value = '';               // nunca persistimos password
+  el('acc-pass').value = '';
   el('acc-2fa').checked = !!p.twofa;
   el('acc-payout-method').value = p.payoutMethod || 'Bank transfer (PEN)';
   el('acc-payout-detail').value = p.payoutDetail || '';
@@ -1889,6 +1940,37 @@ function isProfileComplete(){
     el('acc-avatar').src
   ].every(Boolean);
   return ageOK && reqFilled;
+}
+
+function isProfileDirty(){
+  if (!savedProfile) return false;
+  const cur = readProfile();
+  const keys = [
+    'avatar','fullname','team','dob','is18','email',
+    'payoutMethod','payoutDetail','nEmail','nPush','lang','profilePublic'
+  ];
+  return keys.some(k => String(cur[k]) !== String(savedProfile[k]));
+}
+
+function updateAccSaveState(){
+  const enabled = accountEditMode && isProfileComplete() && isProfileDirty();
+  el('acc-save').disabled = !enabled;
+}
+
+function paintEmailVerification(){
+  const badge = el('acc-email-status');
+  const resend = el('acc-email-resend');
+  if (!badge) return;
+  const verified = !!(currentUser && currentUser.email_confirmed_at);
+  if (verified) {
+    badge.className = 'status-pill bg-emerald-100 text-emerald-700';
+    badge.innerHTML = '<span class="status-dot bg-emerald-600"></span> Verified';
+    resend?.classList.add('hidden');
+  } else {
+    badge.className = 'status-pill bg-amber-100 text-amber-700';
+    badge.innerHTML = '<span class="status-dot bg-amber-500"></span> Not verified';
+    resend?.classList.remove('hidden');
+  }
 }
 
 /* ===== PROFILE WIZARD (post–Sign Up) — versión sin pasos ===== */
@@ -2073,10 +2155,31 @@ function closeSignupCompleteModal(){
   m.classList.remove('flex');
 }
 
-// Botón "Continuar": vuelve a lo que el usuario hacía antes
-el('sc-continue')?.addEventListener('click', () => {
+// Botón "Continuar": auto-login + guardar perfil pendiente
+el('sc-continue')?.addEventListener('click', async () => {
   closeSignupCompleteModal();
-  // Si no había “vista previa”, se queda donde está; si la había, vuelve allí
+
+  // Intenta auto-login con las credenciales guardadas en sign up
+  let creds = null;
+  try { creds = JSON.parse(localStorage.getItem('habla_signup_creds') || 'null'); } catch {}
+
+  if (creds?.email && creds?.password) {
+    try {
+      const { error } = await sb.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password
+      });
+      if (!error) {
+        showToast('Welcome! You are now signed in.');
+      }
+    } catch (e) {
+      // Si falla (p.e. no verificó aún), seguimos sin bloquear UX
+    } finally {
+      try { localStorage.removeItem('habla_signup_creds'); } catch {}
+    }
+  }
+
+  // Volver a la vista anterior
   showView(returnView || currentView);
   returnView = null;
 });
