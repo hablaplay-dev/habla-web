@@ -887,31 +887,44 @@ async function initAuth() {
   renderAccount();
 
   // suscribe a cambios de sesión
+  // ——— APLICAR PERFIL PENDIENTE TRAS LOGIN ———
+  async function applyPendingProfileOnLogin() {
+    try {
+      const raw = localStorage.getItem('habla_pw_pending');
+      if (!raw) return;
+      const pending = JSON.parse(raw);
+      if (!pending?.payload) return;
+      if (!currentUser) return;
+      // Upsert ahora que sí hay auth.uid()
+      const { error } = await sb.from('profiles').upsert({
+        user_id: currentUser.id,
+        ...pending.payload
+      });
+      if (!error) {
+        try { await logOnboardingSubmission(currentUser.id, pending.payload); } catch {}
+        localStorage.removeItem('habla_pw_pending');
+        showToast('Perfil completado. ¡Bienvenido!');
+      }
+    } catch {}
+  }
+
   sb.auth.onAuthStateChange((_event, sess) => {
     currentUser = sess?.user ?? null;
-    if (currentUser) {
-      isGuest = false; // deja de ser guest
-    }
+    if (currentUser) {isGuest = false;}
     localStorage.setItem('habla_guest', JSON.stringify(isGuest));
     headerAuth();
     renderRewards();
     renderAccount();
-
     // ► Si el user se autenticó en mitad de un intento de envío,
     // retomamos el flujo abriendo el review con sus picks preservados.
     if (currentUser && pendingSubmit?.matchId) {
-      try {
-        auth.close();
-      } catch (_) {}
+      try {auth.close();} catch (_) {}
       // reabrimos el ticket, restauramos picks y abrimos el modal de confirmación
       const { matchId, picksSnapshot } = pendingSubmit;
       pendingSubmit = null;
-
       openTicket(matchId);
-
       // restaurar picks (s1..s4)
-      if (picksSnapshot) {
-        picks = { ...picksSnapshot };
+      if (picksSnapshot) {picks = { ...picksSnapshot };
         // aplica estilos activos a los botones según lo elegido
         Object.entries(picks).forEach(([key, val]) => {
           const btn = document.querySelector(`#predictions-grid button[data-s="${key}"][data-v="${val}"]`);
@@ -938,6 +951,7 @@ async function initAuth() {
         openReviewModal();
       }
     }
+	if (sess?.user) { applyPendingProfileOnLogin(); }
   });
 }
 function isLoggedIn() { return !!currentUser; };  // toggle para probar
@@ -1373,14 +1387,14 @@ auth.forms.signup.addEventListener('submit', async (e) => {
     .forEach(id => document.getElementById(id).classList.add('hidden'));
   [$u,$e,$p,$c].forEach(i => i.classList.remove('is-invalid'));
 
-  // Validaciones rápidas
+  // Validaciones
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($e.value.trim());
   const passOk  = /^(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/.test($p.value);
   const userOk  = $u.value.trim().length >= 3 && $u.value.trim().length <= 20;
   const matchOk = $p.value === $c.value;
   const termsOk = $t.checked;
 
-  if (!userOk) { $u.classList.add('is-invalid'); document.getElementById('err-su-username').classList.remove('hidden'); }
+  if (!userOk)  { $u.classList.add('is-invalid'); document.getElementById('err-su-username').classList.remove('hidden'); }
   if (!emailOk){ $e.classList.add('is-invalid'); document.getElementById('err-su-email').classList.remove('hidden'); }
   if (!passOk) { $p.classList.add('is-invalid'); document.getElementById('err-su-pass').classList.remove('hidden'); }
   if (!matchOk){ $c.classList.add('is-invalid'); document.getElementById('err-su-confirm').classList.remove('hidden'); }
@@ -1394,8 +1408,6 @@ auth.forms.signup.addEventListener('submit', async (e) => {
     const email    = $e.value.trim();
     const pass     = $p.value;
 
-    // ⚠️ Solo registramos al usuario. NO tocamos "profiles" aquí
-    // para evitar el error RLS cuando aún no hay sesión.
     const { data, error } = await sb.auth.signUp({
       email,
       password: pass,
@@ -1403,18 +1415,19 @@ auth.forms.signup.addEventListener('submit', async (e) => {
     });
     if (error) throw error;
 
-    // Si tu proyecto NO exige verificación de email, habrá sesión inmediata
-    if (data?.session && data?.user) {
-      // Abrimos el wizard y ahí se hará el upsert del perfil (ya con sesión)
-      openProfileWizard({ userId: data.user.id, email });
-      auth.close();
-    } else {
-      // Con verificación por email activada: mostramos banner y NO abrimos wizard.
-      const banner = document.getElementById('su-verify-banner');
-      if (banner) banner.classList.remove('hidden');
-      showToast('Check your email to verify your account. Then sign in to continue.');
-      // El usuario verificará, iniciará sesión y desde la cuenta podrá completar perfil.
-    }
+    // Mostrar banner “Check your email…”
+    const banner = document.getElementById('su-verify-banner');
+    if (banner) banner.classList.remove('hidden');
+
+    // ⚠️ IMPORTANTE:
+    // Abrimos el wizard para completar datos de perfil INMEDIATAMENTE,
+    // pero NO escribimos en 'profiles' si no hay sesión (RLS).
+    // Le pasamos el userId y email devueltos por signUp (userId existe aunque no haya sesión).
+    const uid = data?.user?.id || null;
+    openProfileWizard({ userId: uid, email });
+
+    // Cierra el modal principal
+    auth.close();
   } catch (err) {
     showToast(err?.message || 'Sign up failed');
   } finally {
@@ -1954,7 +1967,6 @@ if (_pwFinishBtn) {
   _pwFinishBtn.onclick = async () => {
     if (!validatePW()) return;
 
-    // 1) Prepara payload y resuelve el userId y email pase lo que pase
     const payload = {
       full_name: document.getElementById('pw-fullname').value.trim(),
       favorite_team: document.getElementById('pw-team').value,
@@ -1962,49 +1974,46 @@ if (_pwFinishBtn) {
       is_adult: document.getElementById('pw-18').checked,
       avatar_url: document.getElementById('pw-avatar').src,
       lang: document.getElementById('pw-lang').value,
-      notify_email: document.getElementById('pw-n-email').checked,
+      notify_email: document.getElementById('pw-n-email').checked
     };
 
-    const userId = pwState.userId || (currentUser?.id ?? null);
+    const userId    = pwState.userId || (currentUser?.id ?? null);
     const userEmail = (pwState.email && pwState.email.trim()) || (currentUser?.email ?? '');
 
-    if (!userId) {
-      showToast('No pudimos identificar tu sesión. Inicia sesión e inténtalo de nuevo.');
+    // Caso 1: NO hay sesión (email aún no verificado) -> guardamos “pendiente”
+    if (!currentUser) {
+      savePendingProfileToLocal({ userId, email: userEmail, payload });
+      // Intento de reenvío de verificación (no bloquea)
+      try { if (userEmail) await sb.auth.resend({ type: 'signup', email: userEmail }); } catch {}
+      closeProfileWizard();
+      showToast('Tu cuenta fue creada. Revisa tu correo para verificarla.');
       return;
     }
 
+    // Caso 2: Sí hay sesión -> upsert inmediato (ya no rompe RLS)
     try {
-      // 2) Guarda/actualiza perfil SIEMPRE (antes se hacía solo si había pwState.userId)
-      const { error: upsertErr } = await sb
-        .from('profiles')
-        .upsert({ user_id: userId, ...payload });
+      const { error: upsertErr } = await sb.from('profiles').upsert({ user_id: currentUser.id, ...payload });
       if (upsertErr) throw upsertErr;
 
-      // 3) Log de onboarding (no bloquea el flujo si falla)
-      await logOnboardingSubmission(userId, payload);
+      // Log no bloqueante
+      try { await logOnboardingSubmission(currentUser.id, payload); } catch {}
 
-      // 4) Enviar correo de confirmación (Edge Function "send_confirmation")
-	  //    Solo si el usuario consintió emails
-	  if (userEmail && payload.notify_email) {await sendConfirmationEmail(userEmail, payload.full_name, payload.lang);}
-
-      // 5) (Si aún deseas reenviar correo de verificación de cuenta)
-      try {
-        if (pwState.email) {
-          await sb.auth.resend({ type: 'signup', email: pwState.email });
-          const banner = document.getElementById('su-verify-banner');
-          if (banner) banner.classList.remove('hidden');
-        }
-      } catch (_) { /* opcional */ }
+      // Email de confirmación de onboarding (si consintió email)
+      try { if (userEmail && payload.notify_email) await sendConfirmationEmail(userEmail, payload.full_name, payload.lang); } catch {}
 
       closeProfileWizard();
-	  try { auth.close(); } catch (_) {}
-	  showToast('¡Registro completado con éxito! Ya puedes continuar.');
-	  showView(returnView || 'matches');
+      showToast('¡Registro completado con éxito! Revisa tu correo para verificar tu cuenta.');
+      showView(returnView || 'matches');
     } catch (err) {
       console.error(err);
       showToast('No se pudo guardar tu perfil. Intenta nuevamente.');
     }
   };
+}
+
+// Helpers para “pendiente en localStorage”
+function savePendingProfileToLocal(obj) {
+  try { localStorage.setItem('habla_pw_pending', JSON.stringify(obj)); } catch {}
 }
 
 /** Selector de avatar dentro del wizard (reutiliza el modal existente) */
