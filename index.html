@@ -378,27 +378,41 @@
           
         <div id="account-body" class="space-y-4">
           <!-- Profile -->
-          <div class="bg-white rounded-2xl border p-6">
-            <h2 class="text-lg font-semibold mb-4">Profile</h2>
-            <div class="flex items-center gap-4">
-              <img id="acc-avatar" class="w-16 h-16 rounded-full border" src="" alt="avatar">
-              <button id="acc-change-avatar" class="px-3 py-1.5 border rounded-lg text-sm">Choose from library</button>
-            </div>
-            <div class="grid sm:grid-cols-2 gap-3 mt-4">
-              <div>
-                <label class="text-xs text-gray-600">Real name</label>
-                <input id="acc-fullname" type="text" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Your real name">
-                <p class="text-[11px] text-gray-500 mt-1">Nombre real, visible para otros jugadores.</p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-600">Favorite team</label>
-                <select id="acc-team" class="w-full border rounded-lg px-3 py-2 mt-1">
-                  <option>Real Madrid</option><option>Barcelona</option><option>Man City</option>
-                  <option>Arsenal</option><option>Alianza Lima</option><option>Universitario</option>
-                </select>
-              </div>
-            </div>
-          </div>
+		  <div class="bg-white rounded-2xl border p-6">
+		    <h2 class="text-lg font-semibold mb-4">Profile</h2>
+		
+		    <!-- Username (solo lectura, viene de auth.user.user_metadata.username) -->
+		    <div class="grid sm:grid-cols-2 gap-3">
+		      <div>
+		        <label class="text-xs text-gray-600">Username</label>
+		        <input id="acc-username" type="text" class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-50"
+		               placeholder="Your username" disabled>
+		        <p class="text-[11px] text-gray-500 mt-1">
+		          Se define al crear la cuenta. (Editable en futuras versiones)
+		        </p>
+		      </div>
+		    </div>
+		
+		    <div class="flex items-center gap-4 mt-4">
+		      <img id="acc-avatar" class="w-16 h-16 rounded-full border" src="" alt="avatar">
+		      <button id="acc-change-avatar" class="px-3 py-1.5 border rounded-lg text-sm">Choose from library</button>
+		    </div>
+		
+		    <div class="grid sm:grid-cols-2 gap-3 mt-4">
+		      <div>
+		        <label class="text-xs text-gray-600">Real name</label>
+		        <input id="acc-fullname" type="text" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="Your real name">
+		        <p class="text-[11px] text-gray-500 mt-1">Nombre real, visible para otros jugadores.</p>
+		      </div>
+		      <div>
+		        <label class="text-xs text-gray-600">Favorite team</label>
+		        <select id="acc-team" class="w-full border rounded-lg px-3 py-2 mt-1">
+		          <option>Real Madrid</option><option>Barcelona</option><option>Man City</option>
+		          <option>Arsenal</option><option>Alianza Lima</option><option>Universitario</option>
+		        </select>
+		      </div>
+		    </div>
+		  </div>
 
           <!-- Identity & Age -->
           <div class="bg-white rounded-2xl border p-6">
@@ -744,9 +758,17 @@
     <div class="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
       <h3 class="text-lg font-semibold mb-3">Review your picks</h3>
       <div id="review-list" class="mb-4 text-sm text-gray-800 space-y-2"></div>
-      <div class="flex gap-3"><button id="confirm-submit" class="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-emerald-600">Submit ticket</button><button id="cancel-submit" class="flex-1 border px-4 py-2 rounded-lg hover:bg-gray-50">Go back</button></div>
+      <div class="flex gap-3">
+        <button id="confirm-submit" class="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-emerald-600">
+          Submit ticket
+        </button>
+        <button id="cancel-submit" class="flex-1 border px-4 py-2 rounded-lg hover:bg-gray-50">
+          Go back
+        </button>
+      </div>
     </div>
   </div>
+
   <div id="already-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[65]">
     <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl text-center">
       <h3 class="text-lg font-semibold mb-2">You are already participating</h3>
@@ -754,36 +776,27 @@
       <a href="#" id="go-results" class="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-secondary text-white hover:bg-blue-600">Go to “Results / Follow Live!”</a>
     </div>
   </div>
-  <div id="redeem-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[75]">
-    <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
-      <h3 class="text-lg font-semibold">Redeem Lukas for cash</h3>
-      <p class="text-sm text-gray-600">Rate: <b>1 Luka = 1 Sol (PEN)</b></p>
 
-      <div class="mt-4 space-y-3">
-        <div class="text-sm">Balance: <b id="redeem-balance">—</b></div>
-
-        <div>
-          <label class="text-xs text-gray-600">Amount to redeem (min 100)</label>
-          <input id="redeem-amount" type="number" min="100" step="10"
-                 class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="100">
-        </div>
-
-        <div class="text-xs text-gray-600">
-          You will receive: <b id="redeem-soles">S/ 0</b>
-        </div>
-
-        <div id="redeem-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2"></div>
+  <!-- NUEVO: Modal de éxito -->
+  <div id="success-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[66]">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl text-center">
+      <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto">
+        <i class="fa-solid fa-check"></i>
       </div>
-
+      <h3 class="text-lg font-semibold mt-3">Ticket submitted!</h3>
+      <p id="success-desc" class="text-sm text-gray-600 mt-1">
+        Your predictions were saved successfully.
+      </p>
       <div class="mt-4 flex gap-2">
-        <button id="redeem-confirm"
-                class="flex-1 bg-primary text-white rounded-lg py-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
-          Confirm redeem
+        <button id="success-goto-results" class="flex-1 bg-secondary text-white rounded-lg py-2 text-sm hover:bg-blue-600">
+          Follow Live / Results
         </button>
-        <button id="redeem-close" class="flex-1 border rounded-lg py-2">Cancel</button>
+        <button id="success-close" class="flex-1 border rounded-lg py-2 text-sm">
+          Close
+        </button>
       </div>
     </div>
-  </div> 
+  </div>
   <!-- Signup complete / verify email -->
   <div id="signup-complete-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[95]">
     <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl text-center">
@@ -1241,75 +1254,125 @@ function renderPlayers(m){const list=el('players-list'); let arr=[...m.players];
 
 /* ===== DRAWER TICKET (Matches) ===== */
 let selectedMatch=null, picks={}, picksSubmitted=false, score={home:0,away:0};
-function openTicket(matchOrId){
-  // Resolver el match
+
+async function openTicket(matchOrId){
   const m = (matchOrId && typeof matchOrId === 'object')
     ? matchOrId
     : matches.find(x => String(x.id) === String(matchOrId));
-
-  if (!m) {
-    console.warn('Match not found for:', matchOrId);
-    showToast('Could not open this match. Please try again.');
-    return; // evitar seguir con undefined
-  }
+  if (!m) { showToast('Could not open this match.'); return; }
 
   selectedMatch = m;
   picks = {};
   picksSubmitted = false;
-  score = { home: 0, away: 0 };
+  score = { home:0, away:0 };
 
   el('strip-ticket').innerHTML = buildStripHTML(selectedMatch,'lg');
   el('lukas-balance').textContent = `${(lukasBalance + tournamentLukasPrize).toLocaleString()} Lukas`;
   el('ticket-lock-time').textContent = `Lock at ${fmtTime(selectedMatch.startISO)}`;
 
-  const tick = () => {
+  const tick = ()=>{
     const t = fmtCountdown(new Date(selectedMatch.startISO) - new Date());
     el('time-remaining').textContent = t;
     el('sidebar-clock').textContent = t;
   };
-  tick();
-  if (window._tkTimer) clearInterval(window._tkTimer);
+  tick(); if (window._tkTimer) clearInterval(window._tkTimer);
   window._tkTimer = setInterval(tick, 1000);
 
   renderSponsor(selectedMatch);
   renderStats(selectedMatch.probs || {}, selectedMatch.stats || {});
   renderPredictions(selectedMatch);
 
+  // Si el usuario ya envió ticket para este match, marcamos bandera para bloquear doble envío
+  try {
+    if (isLoggedIn()) {
+      const { data: t } = await sb
+        .from('tickets')
+        .select('id,status')
+        .eq('match_id', selectedMatch.id)
+        .maybeSingle();
+      if (t?.id) { picksSubmitted = true; }
+    }
+  } catch (_) {}
+
   el('overlay').classList.remove('pointer-events-none');
   el('overlay').classList.add('opacity-100');
   el('matches-section').classList.add('opacity-60','blur-[2px]');
-  document.getElementById('ticket-drawer').classList.remove('translate-x-full');
+  el('ticket-drawer').classList.remove('translate-x-full');
   el('error-banner').classList.add('hidden');
 }
-function closeTicket(){ if(window._tkTimer) clearInterval(window._tkTimer); el('overlay').classList.add('pointer-events-none'); el('overlay').classList.remove('opacity-100'); el('matches-section').classList.remove('opacity-60','blur-[2px]'); document.getElementById('ticket-drawer').classList.add('translate-x-full'); selectedMatch=null; picks={}; updateCompleted(); }
-document.getElementById('drawer-back').addEventListener('click',()=>{ if(selectedMatch && !picksSubmitted && Object.keys(picks).length>0){ if(!confirm("You haven't submitted your ticket yet. Leave anyway?")) return;} closeTicket();});
-function renderSponsor(m){
-  if (!m) return; // nada que renderizar
 
+function closeTicket(){
+  if(window._tkTimer) clearInterval(window._tkTimer);
+  el('overlay').classList.add('pointer-events-none');
+  el('overlay').classList.remove('opacity-100');
+  el('matches-section').classList.remove('opacity-60','blur-[2px]');
+  el('ticket-drawer').classList.add('translate-x-full');
+  selectedMatch=null; picks={}; updateCompleted();
+}
+el('drawer-back').addEventListener('click',()=>{
+  if(selectedMatch && !picksSubmitted && Object.keys(picks).length>0){
+    if(!confirm("You haven't submitted your ticket yet. Leave anyway?")) return;
+  }
+  closeTicket();
+});
+
+function renderSponsor(m){
   el('sponsor-name').textContent = `by ${m.sponsor?.name || 'Sponsor'}`;
   if (m.sponsor?.logo) el('sponsor-logo').src = m.sponsor.logo;
-
   el('bonus-list').innerHTML =
-    (m.bonuses || []).map(b => `
-      <div class="text-sm bg-yellow-50 border border-yellow-200 rounded px-2 py-1.5">
+    (m.bonuses || []).map(b =>
+      `<div class="text-sm bg-yellow-50 border border-yellow-200 rounded px-2 py-1.5">
         <i class="fa-solid fa-bolt-lightning text-yellow-500 mr-1"></i>${b}
       </div>`).join('') ||
     `<div class="text-xs text-gray-500">No active bonuses</div>`;
 }
-function renderStats(p,meta){const block=el('stat-probs'); const bar=(l,v,i)=>`<div><div class="flex justify-between text-xs text-gray-600 mb-1"><span>${i} ${l}</span><span>${v||0}%</span></div><div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden"><div class="h-2 bg-primary" style="width:${Math.max(0,Math.min(100,v||0))}%"></div></div></div>`; block.innerHTML=[bar('Home win',p.home,'🏠'),bar('Draw',p.draw,'➖'),bar('Away win',p.away,'✈️'),bar('Over 2.5',p.over25,'🚀'),bar('BTTS',p.btts,'🎯')].join(''); el('stat-avg').textContent=meta.avgGoals||'—'; el('stat-form').textContent=meta.form||'—';}
+function renderStats(p,meta){
+  const block=el('stat-probs');
+  const bar=(l,v,i)=>`<div><div class="flex justify-between text-xs text-gray-600 mb-1">
+      <span>${i} ${l}</span><span>${v||0}%</span></div>
+      <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div class="h-2 bg-primary" style="width:${Math.max(0,Math.min(100,v||0))}%"></div>
+      </div></div>`;
+  block.innerHTML=[bar('Home win',p.home,'🏠'),bar('Draw',p.draw,'➖'),
+                   bar('Away win',p.away,'✈️'),bar('Over 2.5',p.over25,'🚀'),
+                   bar('BTTS',p.btts,'🎯')].join('');
+  el('stat-avg').textContent=meta.avgGoals||'—';
+  el('stat-form').textContent=meta.form||'—';
+}
 function renderPredictions(match){
   const h=match.home,a=match.away,grid=el('predictions-grid');
-  const card=(i,pts,body)=>`<div class="border border-gray-200 rounded-lg p-4"><div class="flex items-center justify-between mb-3"><span class="text-sm font-medium text-gray-500">Prediction ${i}/5</span><span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">+${pts} Lukas</span></div>${body}</div>`;
+  const card=(i,pts,body)=>`<div class="border border-gray-200 rounded-lg p-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-medium text-gray-500">Prediction ${i}/5</span>
+        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">+${pts} Lukas</span>
+      </div>${body}</div>`;
   grid.innerHTML =
-    card(1,3,`<div class="flex gap-2"><button data-s="s1" data-v="HOME" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${h.name}</button><button data-s="s1" data-v="DRAW" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">Draw</button><button data-s="s1" data-v="AWAY" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${a.name}</button></div>`) +
-    card(2,2,`<p class="text-lg font-medium text-gray-900 mb-3">Both teams to score?</p><div class="flex gap-2"><button data-s="s2" data-v="YES" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-check mr-2"></i>Yes</button><button data-s="s2" data-v="NO" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-times mr-2"></i>No</button></div>`) +
-    card(3,2,`<p class="text-lg font-medium text-gray-900 mb-3">Over 2.5 total goals?</p><div class="flex gap-2"><button data-s="s3" data-v="OVER" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1">Over 2.5</button><button data-s="s3" data-v="UNDER" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1">Under 2.5</button></div>`) +
-    card(4,6,`<p class="text-lg font-medium text-gray-900 mb-3">Will there be a red card?</p><div class="flex gap-2"><button data-s="s4" data-v="YES" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-check mr-2"></i>Yes</button><button data-s="s4" data-v="NO" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-times mr-2"></i>No</button></div>`) +
+    card(1,3,`<div class="flex gap-2">
+      <button data-s="s1" data-v="HOME" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${h.name}</button>
+      <button data-s="s1" data-v="DRAW" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">Draw</button>
+      <button data-s="s1" data-v="AWAY" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${a.name}</button>
+    </div>`) +
+    card(2,2,`<p class="text-lg font-medium text-gray-900 mb-3">Both teams to score?</p>
+      <div class="flex gap-2">
+        <button data-s="s2" data-v="YES" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-check mr-2"></i>Yes</button>
+        <button data-s="s2" data-v="NO"  class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-times mr-2"></i>No</button>
+      </div>`) +
+    card(3,2,`<p class="text-lg font-medium text-gray-900 mb-3">Over 2.5 total goals?</p>
+      <div class="flex gap-2">
+        <button data-s="s3" data-v="OVER"  class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1">Over 2.5</button>
+        <button data-s="s3" data-v="UNDER" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1">Under 2.5</button>
+      </div>`) +
+    card(4,6,`<p class="text-lg font-medium text-gray-900 mb-3">Will there be a red card?</p>
+      <div class="flex gap-2">
+        <button data-s="s4" data-v="YES" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-check mr-2"></i>Yes</button>
+        <button data-s="s4" data-v="NO"  class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-times mr-2"></i>No</button>
+      </div>`) +
     card(5,8,`<p class="text-lg font-medium text-gray-900 mb-3">Predict the correct score</p>
       <div class="space-y-3">
         <div class="bg-gray-50 rounded-lg p-4">
           <div class="flex items-center justify-center gap-4">
-            <div class="text-center"><div class="text-xs text-gray-600 mb-1">${h.name}</div>
+            <div class="text-center">
+              <div class="text-xs text-gray-600 mb-1">${h.name}</div>
               <div class="flex items-center gap-2">
                 <button class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300" onclick="adjScore('home',-1)"><i class="fa-solid fa-minus text-xs"></i></button>
                 <div id="home-score" class="w-12 h-12 bg-white border-2 border-primary rounded-lg flex items-center justify-center text-xl font-bold text-primary">0</div>
@@ -1317,7 +1380,8 @@ function renderPredictions(match){
               </div>
             </div>
             <div class="text-2xl font-bold text-gray-400">:</div>
-            <div class="text-center"><div class="text-xs text-gray-600 mb-1">${a.name}</div>
+            <div class="text-center">
+              <div class="text-xs text-gray-600 mb-1">${a.name}</div>
               <div class="flex items-center gap-2">
                 <button class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300" onclick="adjScore('away',-1)"><i class="fa-solid fa-minus text-xs"></i></button>
                 <div id="away-score" class="w-12 h-12 bg-white border-2 border-primary rounded-lg flex items-center justify-center text-xl font-bold text-primary">0</div>
@@ -1326,20 +1390,53 @@ function renderPredictions(match){
             </div>
           </div>
         </div>
-        <div><div class="text-sm text-gray-600 mb-2">Quick picks:</div>
-          <div class="grid grid-cols-6 gap-2">${["0-0","1-0","2-0","0-1","1-1","2-1","0-2","1-2","3-0","3-1","2-2","0-3"].map(s=>{const [x,y]=s.split("-");return `<button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm py-1.5 rounded" onclick="quickScore(${x},${y})">${s}</button>`;}).join("")}</div>
+        <div>
+          <div class="text-sm text-gray-600 mb-2">Quick picks:</div>
+          <div class="grid grid-cols-6 gap-2">
+            ${["0-0","1-0","2-0","0-1","1-1","2-1","0-2","1-2","3-0","3-1","2-2","0-3"]
+              .map(s=>{const [x,y]=s.split("-");return `<button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm py-1.5 rounded" onclick="quickScore(${x},${y})">${s}</button>`;})
+              .join("")}
+          </div>
         </div>
       </div>`);
-  grid.querySelectorAll('button[data-s]').forEach(b=>{ b.addEventListener('click',()=>{ const st=b.dataset.s; b.parentElement.querySelectorAll('button[data-s="'+st+'"]').forEach(x=>x.classList.remove('!bg-primary','!text-white')); b.classList.add('!bg-primary','!text-white'); picks[st]=b.dataset.v; updateCompleted(); });});
+  grid.querySelectorAll('button[data-s]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const st=b.dataset.s;
+      b.parentElement.querySelectorAll(`button[data-s="${st}"]`)
+        .forEach(x=>x.classList.remove('!bg-primary','!text-white'));
+      b.classList.add('!bg-primary','!text-white');
+      picks[st]=b.dataset.v;
+      updateCompleted();
+    });
+  });
 }
 function adjScore(side,delta){ score[side]=Math.max(0,score[side]+delta); syncScore(); }
 function quickScore(h,a){ score.home=h; score.away=a; syncScore(); }
-function syncScore(){ const hs=el('home-score'), as=el('away-score'); if(hs) hs.textContent=score.home; if(as) as.textContent=score.away; picks['s5']=`${score.home}-${score.away}`; updateCompleted(); }
+function syncScore(){ const hs=el('home-score'), as=el('away-score');
+  if(hs) hs.textContent=score.home; if(as) as.textContent=score.away;
+  picks['s5']=`${score.home}-${score.away}`; updateCompleted();
+}
 function updateCompleted(){ el('completed-counter').textContent=`${Object.keys(picks).length}/5`; }
 
-/* Submit flow */
+/* Submit flow (con Supabase + duplicados) */
+function openAlreadyModal(){
+  const m = el('already-modal'); m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeAlreadyModal(){
+  const m = el('already-modal'); m.classList.add('hidden'); m.classList.remove('flex');
+}
+function openSuccessModal(ticketId){
+  const m = el('success-modal');
+  el('success-desc').textContent = ticketId
+    ? `Ticket #${ticketId} saved. Good luck! ⚽️`
+    : `Your predictions were saved successfully.`;
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeSuccessModal(){
+  const m = el('success-modal'); m.classList.add('hidden'); m.classList.remove('flex');
+}
 
-el('submit-ticket').addEventListener('click', ()=>{
+el('submit-ticket').addEventListener('click', async ()=>{
   if (!selectedMatch) return;
 
   if (Object.keys(picks).length < 5) {
@@ -1348,24 +1445,19 @@ el('submit-ticket').addEventListener('click', ()=>{
     return;
   }
 
-  // Si NO hay sesión (guest o no autenticado): pedir crear cuenta / login
   if (!isLoggedIn()) {
-    // guardamos el intento para retomarlo tras auth
-    pendingSubmit = {
-      matchId: selectedMatch.id,
-      picksSnapshot: { ...picks }
-    };
-    openAuthFlow('signup'); // muestra tabs; pueden pasar a "Sign In"
+    pendingSubmit = { matchId: selectedMatch.id, picksSnapshot: { ...picks } };
+    openAuthFlow('signup');
     return;
   }
 
-  // Si ya envió, sólo informar
+  // Si ya había ticket, avisar
   if (picksSubmitted) {
     openAlreadyModal();
     return;
   }
 
-  // Con sesión y todo ok → review
+  // Confirmación previa
   openReviewModal();
 });
 
@@ -1381,18 +1473,59 @@ function openReviewModal(){
                   <div><b>Correct score:</b> ${picks.s5||'-'}</div>`;
   r.classList.remove('hidden'); r.classList.add('flex');
 }
-
-el('cancel-submit').addEventListener('click', ()=>{
-  el('review-modal').classList.add('hidden');
-  el('review-modal').classList.remove('flex');
+el('cancel-submit').addEventListener('click',()=>{
+  el('review-modal').classList.add('hidden'); el('review-modal').classList.remove('flex');
 });
 
-el('confirm-submit').addEventListener('click', ()=>{
-  el('review-modal').classList.add('hidden');
-  el('review-modal').classList.remove('flex');
-  picksSubmitted = true;
-  showToast('Predictions submitted successfully!');
+el('confirm-submit').addEventListener('click', async ()=>{
+  // Cerrar review
+  el('review-modal').classList.add('hidden'); el('review-modal').classList.remove('flex');
+
+  if (!isLoggedIn()) { openAuthFlow('signup'); return; }
+  if (!selectedMatch) { showToast('No match selected'); return; }
+
+  try {
+    // Doble chequeo de duplicado por si abrió en paralelo
+    const { data: existing } = await sb
+      .from('tickets')
+      .select('id,status')
+      .eq('match_id', selectedMatch.id)
+      .maybeSingle();
+    if (existing?.id) {
+      picksSubmitted = true;
+      openAlreadyModal();
+      return;
+    }
+
+    // Enviar al RPC transaccional
+    const { data: ticketId, error } = await sb.rpc('submit_ticket', {
+      p_match_id: selectedMatch.id,
+      p_s1: picks.s1, p_s2: picks.s2, p_s3: picks.s3, p_s4: picks.s4, p_s5: picks.s5
+    });
+
+    if (error) {
+      // Si por condición de carrera ya existe (conflicto único), mostramos “ya participas”
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('unique') || msg.includes('duplicate') || msg.includes('already')) {
+        openAlreadyModal();
+      } else {
+        showToast('Could not submit your ticket.');
+      }
+      return;
+    }
+
+    picksSubmitted = true;
+    openSuccessModal(ticketId || null);
+  } catch (e) {
+    showToast('Could not submit your ticket.');
+  }
 });
+
+/* Botones de modales de resultado */
+el('success-goto-results')?.addEventListener('click',()=>{
+  closeSuccessModal(); showView('results'); closeTicket();
+});
+el('success-close')?.addEventListener('click',()=>{ closeSuccessModal(); closeTicket(); });
 	
 /* ===== AUTH (UI) ===== */
 const auth={root:document.getElementById('auth-flow'),tabs:[...document.querySelectorAll('.auth-tab')],forms:{signin:document.getElementById('form-signin'),signup:document.getElementById('form-signup'),reset:document.getElementById('form-reset')},
@@ -1716,7 +1849,7 @@ function openAvatarModal(){
 function closeAvatarModal(){ el('avatar-modal').classList.add('hidden'); el('avatar-modal').classList.remove('flex'); }
 
 async function renderAccount(){
-  // Gate: si no hay sesión, mostrar invitación
+  // Gate: si no hay sesión
   if(!isLoggedIn()){
     el('account-guest')?.classList.remove('hidden');
     el('account-body')?.classList.add('hidden');
@@ -1725,7 +1858,6 @@ async function renderAccount(){
     return;
   }
 
-  // Helpers de DB
   async function loadProfileFromDB(){
     if (!currentUser) return null;
     const { data, error } = await sb.from('profiles').select('*').eq('user_id', currentUser.id).maybeSingle();
@@ -1739,12 +1871,12 @@ async function renderAccount(){
     if (error) throw error;
   }
 
-  // Mostrar cuerpo
   el('account-guest')?.classList.add('hidden');
   el('account-body')?.classList.remove('hidden');
 
-  // Cargar perfil o defaults
   const dbp = await loadProfileFromDB();
+  const usernameFromAuth = currentUser?.user_metadata?.username || '';
+
   if (!dbp) {
     savedProfile = {
       avatar: avatarLibrary[2],
@@ -1776,12 +1908,15 @@ async function renderAccount(){
     };
   }
 
-  // Cargar valores y bloquear edición
+  // Pintar valores (incluye username solo-lectura)
   fillProfile(savedProfile);
+  const uInput = document.getElementById('acc-username');
+  if (uInput) uInput.value = usernameFromAuth;
+
   setAccountEditable(false);
   validateAge();
 
-  // Banner “completa tu perfil” (una sola vez)
+  // Banner completar perfil
   if(!el('acc-complete-banner')){
     const banner = document.createElement('div');
     banner.id = 'acc-complete-banner';
@@ -1792,13 +1927,15 @@ async function renderAccount(){
   }
   el('acc-complete-banner').classList.toggle('hidden', isProfileComplete());
 
-  // Estado de verificación de email
+  // Verificación de email
   paintEmailVerification();
 
   // Listeners
-  el('acc-edit').onclick = ()=>{ setAccountEditable(true); };
+  el('acc-edit').onclick = ()=> setAccountEditable(true);
   el('acc-cancel').onclick = ()=>{
     fillProfile(savedProfile);
+    const u = document.getElementById('acc-username');
+    if (u) u.value = usernameFromAuth;
     setAccountEditable(false);
     validateAge();
   };
@@ -1810,14 +1947,14 @@ async function renderAccount(){
     const p = readProfile();
 
     try {
-      // Si cambió el email → actualizar en auth (provoca verificación)
+      // Si cambió el email
       if (p.email && p.email !== (currentUser?.email || '')) {
-        const { data, error } = await sb.auth.updateUser({ email: p.email });
+        const { error } = await sb.auth.updateUser({ email: p.email });
         if (error) throw error;
         showToast('Email updated. Please verify the new address.');
       }
 
-      // Si se ingresó un password nuevo → actualizar
+      // Si ingresó password
       if (el('acc-pass').value.trim()) {
         const { error } = await sb.auth.updateUser({ password: el('acc-pass').value.trim() });
         if (error) throw error;
@@ -1825,7 +1962,7 @@ async function renderAccount(){
         showToast('Password updated.');
       }
 
-      // Guarda en DB (map columns)
+      // Guarda en DB
       await saveProfileToDB({
         full_name: p.fullname,
         avatar_url: p.avatar,
@@ -1851,7 +1988,7 @@ async function renderAccount(){
     }
   };
 
-  // Re-evaluar habilitación del botón Save en cada cambio (dirty + válido)
+  // Re-evaluar Save al cambiar cualquier control
   const reval = ()=>{ validateAge(); updateAccSaveState(); };
   getAccountInputs().forEach(ctrl=>{
     ctrl.addEventListener('input', reval);
@@ -1862,16 +1999,12 @@ async function renderAccount(){
   el('acc-change-avatar').onclick = openAvatarModal;
   el('avatar-cancel').onclick = closeAvatarModal;
 
-  // Reenviar verificación si no verificado
+  // Reenviar verificación
   el('acc-email-resend')?.addEventListener('click', async ()=>{
     const target = (readProfile().email || currentUser?.email || '').trim();
     if (!target) return;
-    try {
-      await sb.auth.resend({ type: 'signup', email: target });
-      showToast('Verification email sent.');
-    } catch {
-      showToast('Could not resend email.');
-    }
+    try { await sb.auth.resend({ type: 'signup', email: target }); showToast('Verification email sent.'); }
+    catch { showToast('Could not resend email.'); }
   });
 }
 
