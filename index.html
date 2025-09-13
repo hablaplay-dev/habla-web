@@ -727,22 +727,17 @@
       <button id="already-close" class="absolute right-3 top-3 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100" aria-label="Close">
         <i class="fa-solid fa-xmark text-gray-500"></i>
       </button>
-
       <h3 class="text-lg font-semibold mb-2 text-center">You are already participating</h3>
       <p class="text-sm text-gray-600 text-center">Your ticket was submitted. Follow results live now.</p>
-
-      <div class="mt-4 flex gap-2">
+      <!-- Solo un CTA a Results -->
+      <div class="mt-4">
         <a href="#" id="go-results"
-           class="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-secondary text-white hover:bg-blue-600">
+           class="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg bg-secondary text-white hover:bg-blue-600">
           Go to “Results / Follow Live!”
         </a>
-        <button id="already-cancel" class="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50">
-          Close
-        </button>
       </div>
     </div>
   </div>
-
   <!-- NUEVO: Modal de éxito -->
   <div id="success-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[66]">
     <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl text-center">
@@ -1433,14 +1428,14 @@ function closeAlreadyModal(){
 }
 
 // Listeners del modal "already"
-document.addEventListener('click', (ev)=>{
-  if (ev.target?.id === 'already-close' || ev.target?.id === 'already-cancel') {
+document.addEventListener('click', (ev) => {
+  if (ev.target?.id === 'already-close') {
     closeAlreadyModal();
   }
   if (ev.target?.id === 'go-results' || ev.target?.closest?.('#go-results')) {
     ev.preventDefault();
-    closeAlreadyModal();          // ahora sí se cierra
-    showView('results');          // y navega a Results
+    closeAlreadyModal();
+    showView('results');
     try { closeResultsDrawer(); } catch(_) {}
     try { closeTicket(); } catch(_) {}
   }
