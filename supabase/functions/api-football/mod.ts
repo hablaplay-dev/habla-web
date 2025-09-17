@@ -40,6 +40,45 @@ async function afFetch(path: string, params: Record<string, any> = {}) {
   return json?.response ?? [];
 }
 
+async function countRedCards(fixtureId: number) {
+  // API-FOOTBALL: /fixtures/events?fixture=ID
+  const events = await afFetch("/fixtures/events", { fixture: fixtureId });
+  let redHome = 0, redAway = 0;
+
+  for (const ev of events ?? []) {
+    const isCard = ev?.type === "Card";
+    const isRed  = (ev?.detail === "Red Card") || (ev?.detail === "Second Yellow -> Red");
+    if (!isCard || !isRed) continue;
+
+    const teamSide = ev?.team?.id;
+    if (teamSide) {
+      // lo devolvemos como mapa { teamId -> reds } y resolvemos en upsertFixture
+    }
+  }
+
+  // En este helper simple, volvemos a pedir el fixture para mapear team ids a home/away:
+  const resp = await afFetch("/fixtures", { id: fixtureId });
+  const fx = resp?.[0];
+  const homeId = fx?.teams?.home?.id;
+  const awayId = fx?.teams?.away?.id;
+
+  // Reconteo por ids (más robusto):
+  let reds: Record<number, number> = {};
+  for (const ev of events ?? []) {
+    if (ev?.type !== "Card") continue;
+    const isRed  = (ev?.detail === "Red Card") || (ev?.detail === "Second Yellow -> Red");
+    if (!isRed) continue;
+    const teamId = ev?.team?.id;
+    if (!teamId) continue;
+    reds[teamId] = (reds[teamId] ?? 0) + 1;
+  }
+
+  redHome = homeId ? (reds[homeId] ?? 0) : 0;
+  redAway = awayId ? (reds[awayId] ?? 0) : 0;
+
+  return { redHome, redAway };
+}
+
 function normStatus(short?: string): "NS" | "LIVE" | "FT" {
   if (!short) return "NS";
   if (short === "NS" || short === "TBD" || short === "PST") return "NS";
@@ -68,7 +107,7 @@ async function upsertTeam(team: any) {
   });
 }
 
-async function upsertFixture(fx: any) {
+async function upsertFixture(fx, opts?: { redHome?: number; redAway?: number }) {
   const f = fx.fixture;
   const l = fx.league;
   const t = fx.teams;
@@ -98,7 +137,9 @@ async function upsertFixture(fx: any) {
     score_et_away: s.extratime?.away ?? null,
     score_p_home: s.penalty?.home ?? null,
     score_p_away: s.penalty?.away ?? null,
-    last_sync_at: new Date().toISOString(),
+    red_home: opts?.redHome ?? null,
+    red_away: opts?.redAway ?? null,
+    last_sync_at: new Date().toISOString()
   });
 }
 
@@ -173,24 +214,21 @@ async function syncLiveNow() {
       const resp = await afFetch("/fixtures", { id: fid });
       const fx = resp?.[0];
       if (!fx) continue;
+      const reds = await countRedCards(fid);
+      await upsertFixture(fx, { redHome: reds.redHome, redAway: reds.redAway });
 
-      await upsertFixture(fx);
-
-      const short = fx.fixture?.status?.short as string | undefined;
+      const short = fx.fixture?.status?.short;
       const goals = fx.goals ?? {};
       const minute = fx.fixture?.status?.elapsed ?? null;
 
       // Actualizamos el match “bonito” que usa el FE
-      await sb
-        .from("matches")
-        .update({
-          status: normStatus(short),
-          score_home: goals.home ?? null,
-          score_away: goals.away ?? null,
-          live_minute: minute,
-          last_sync_at: new Date().toISOString(),
-        })
-        .eq("af_fixture_id", fid);
+      await sb.from("matches").update({
+        status: normStatus(short),
+        score_home: goals.home ?? null,
+        score_away: goals.away ?? null,
+        live_minute: minute,
+        last_sync_at: new Date().toISOString()
+      }).eq("af_fixture_id", fid);
 
       updated++;
     }
