@@ -1037,36 +1037,117 @@ document.getElementById('dd-logout')?.addEventListener('click', async (e)=>{e.st
   await sb.auth.signOut();isGuest = false;localStorage.removeItem('habla_guest');
   headerAuth(); renderRewards(); renderAccount();showView('matches'); showToast('Logged out');});
 
-/* ===== DEMO MATCH DATA ===== */
-const matches=[
-  { id:1, league:"LaLiga", venue:"Santiago Bernabéu Stadium | Madrid", startISO:addMinutes(new Date(),22).toISOString(), durMin:110,
-    home:{name:"Real Madrid", color:"bg-blue-600", logo:"https://dummyimage.com/60x60/1e3a8a/ffffff&text=RM"},
-    away:{name:"Barcelona",  color:"bg-red-600",  logo:"https://dummyimage.com/60x60/b91c1c/ffffff&text=B"},
-    sponsor:{name:"Bank Pacha", logo:"https://dummyimage.com/28x28/000/fff&text=B"},
-    bonuses:["x1.5 Correct Score booster","x2 if 3+ total goals","+1 Lukas streak"],
-    stats:{avgGoals:"3.2",form:"RM WWWDW / FCB WWDWL"},
-    probs:{home:48,draw:22,away:30,over25:61,btts:55},
-    participants:128, players:samplePlayers()
-  },
-  { id:2, league:"Premier League", venue:"Etihad Stadium | Manchester", startISO:addMinutes(new Date(),-30).toISOString(), durMin:110,
-    home:{name:"Man City", color:"bg-cyan-600", logo:"https://dummyimage.com/60x60/155e75/ffffff&text=MC"},
-    away:{name:"Arsenal",  color:"bg-red-500",  logo:"https://dummyimage.com/60x60/b91c1c/ffffff&text=A"},
-    sponsor:{name:"IncaBet", logo:"https://dummyimage.com/28x28/111/fff&text=I"},
-    bonuses:["x2 Clean Sheet bonus","x1.25 Under 2.5"],
-    stats:{avgGoals:"2.6",form:"MCI WWWWW / ARS WWDWW"},
-    probs:{home:44,draw:26,away:30,over25:54,btts:52},
-    participants:96, players:samplePlayers()
-  },
-  { id:3, league:"Liga 1 Perú", venue:"Estadio Alejandro Villanueva | Lima", startISO:addMinutes(new Date(),-180).toISOString(), durMin:110,
-    home:{name:"Alianza Lima", color:"bg-indigo-700", logo:"https://dummyimage.com/60x60/3730a3/ffffff&text=AL"},
-    away:{name:"Universitario", color:"bg-amber-600", logo:"https://dummyimage.com/60x60/b45309/ffffff&text=U"},
-    sponsor:{name:"Cusqueña", logo:"https://dummyimage.com/28x28/222/fff&text=C"},
-    bonuses:["x1.75 Derby bonus","+2 Lukas if BTTS"],
-    stats:{avgGoals:"2.1",form:"AL WDLWW / U LWWWL"},
-    probs:{home:39,draw:29,away:32,over25:47,btts:49},
-    participants:212, players:samplePlayers()
+// ===== LIVE DATA (Supabase) =====
+// Config general
+const LOOKAHEAD_DAYS = 15;
+// Mapea una fila de matches (DB) a la forma que usa tu UI
+function mapMatchRowToUI(row) {
+  // row: { id, league, home_team, away_team, start_time, lock_time, dur_min, status, score_home, score_away, live_minute, af_fixture_id }
+  return {
+    id: row.id,
+    league: row.league || '—',
+    venue: row.venue || '', // si agregaste venue a matches; si no, queda vacío
+    startISO: row.start_time,
+    durMin: row.dur_min || 110,
+    status: row.status,          // 'NS'|'LIVE'|'FT'
+    score_home: row.score_home,  // para mostrar en results
+    score_away: row.score_away,
+    live_minute: row.live_minute,
+    lock_time: row.lock_time,
+    home: {
+      name: row.home_team,
+      logo: '',  // opcional: podrías poblar desde af_teams si quieres logos
+      color: 'bg-gray-700'
+    },
+    away: {
+      name: row.away_team,
+      logo: '',
+      color: 'bg-gray-500'
+    },
+    sponsor: { name: 'Sponsor', logo: 'https://dummyimage.com/28x28/111/fff&text=S' },
+    bonuses: [],    // si quieres, luego lo llenas
+    probs: {},      // si quieres, luego lo llenas
+    players: []     // lo llenamos al abrir el drawer con leaderboard
+  };
+}
+// Estado en memoria
+let matches = []; // reemplaza al array demo
+// Carga “Upcoming” (NS) de los próximos 15 días
+async function fetchUpcomingMatches() {
+  const now = new Date();
+  const max = new Date(now.getTime() + LOOKAHEAD_DAYS * 86400000).toISOString();
+
+  const { data, error } = await sb
+    .from('matches')
+    .select('*')
+    .eq('status', 'NS')
+    .gt('start_time', now.toISOString())
+    .lt('start_time', max)
+    .order('start_time', { ascending: true });
+
+  if (error) {
+    console.warn('[fetchUpcomingMatches] ', error);
+    return [];
   }
-];
+  return (data || []).map(mapMatchRowToUI);
+}
+// Carga “Live + Finished” para Results
+async function fetchLiveAndFinished() {
+  const nowISO = new Date().toISOString();
+  const { data, error } = await sb
+    .from('matches')
+    .select('*')
+    .or('status.eq.LIVE,status.eq.FT')
+    .order('start_time', { ascending: true });
+
+  if (error) {
+    console.warn('[fetchLiveAndFinished] ', error);
+    return [];
+  }
+  return (data || []).map(mapMatchRowToUI);
+}
+// Carga inicial (ambas páginas)
+async function loadAllMatches() {
+  const [upcoming, other] = await Promise.all([
+    fetchUpcomingMatches(),
+    fetchLiveAndFinished()
+  ]);
+  // Unificamos sin duplicar (por id)
+  const map = new Map();
+  [...upcoming, ...other].forEach(m => map.set(m.id, m));
+  matches = [...map.values()];
+  renderMatches();
+  renderResults();
+}
+// Realtime: escucha cambios en matches (status, score, minute, start/lock)
+function subscribeMatchesRealtime() {
+  const ch = sb.channel('realtime-matches')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'matches' },
+      (payload) => {
+        const row = payload.new || payload.old;
+        if (!row) return;
+        const idx = matches.findIndex(m => m.id === row.id);
+        if (payload.eventType === 'DELETE') {
+          if (idx >= 0) { matches.splice(idx, 1); renderMatches(); renderResults(); }
+          return;
+        }
+        const mapped = mapMatchRowToUI(payload.new || row);
+        if (idx >= 0) {
+          matches[idx] = { ...matches[idx], ...mapped };
+        } else {
+          matches.push(mapped);
+        }
+        renderMatches();
+        renderResults();
+      }
+    );
+  ch.subscribe();
+}
+// Utilidad: saber si un match está lockeado
+function isLocked(m) {return new Date() >= new Date(m.lock_time || m.startISO);}
+// Arranque
+loadAllMatches().then(subscribeMatchesRealtime);
 
 /* ===== REWARDS DATA (historial + badges) ===== */
 const historyData = [
@@ -1220,6 +1301,75 @@ function buildTable(containerId, items, showDateGroup){
 function statusPill(state){ if(state==='live') return `<span class="status-pill bg-red-100 text-red-700"><span class="status-dot bg-red-600 animate-pulse"></span>Live</span>`; if(state==='upcoming') return `<span class="status-pill bg-amber-100 text-amber-700"><span class="status-dot bg-amber-500"></span>Upcoming</span>`; return `<span class="status-pill bg-gray-100 text-gray-700"><span class="status-dot bg-gray-500"></span>Finished</span>`;}
 function groupLabel(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); if(delta===0) return 'Today'; if(delta===1) return 'Tomorrow'; if(delta===-1) return 'Yesterday'; return dt.toLocaleDateString([], {weekday:'long',month:'short',day:'numeric'});}
 
+// ===== LIVE LEADERBOARD (Results) =====
+// Devuelve ranking para un match (RPC security definer)
+async function getLeaderboard(matchId) {
+  const { data, error } = await sb.rpc('get_leaderboard', { p_match_id: matchId });
+  if (error) {
+    console.warn('[get_leaderboard]', error);
+    return [];
+  }
+  return data || [];
+}
+
+// Nos suscribimos a cambios en ticket_scores_live para refrescar sidebar/lista
+let _tslChannel = null;
+function subscribeLeaderboardRealtime(matchId, onUpdate) {
+  if (_tslChannel) { try { sb.removeChannel(_tslChannel); } catch {} }
+  _tslChannel = sb.channel('realtime-tsl-' + matchId)
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'ticket_scores_live', filter: `match_id=eq.${matchId}` },
+      async () => {
+        const lb = await getLeaderboard(matchId);
+        if (typeof onUpdate === 'function') onUpdate(lb);
+      }
+    );
+  _tslChannel.subscribe();
+}
+
+// Pinta participantes (ranking) en el drawer de Results
+async function paintParticipants(matchObj) {
+  const list = document.getElementById('players-list');
+  if (!list) return;
+
+  const leaderboard = await getLeaderboard(matchObj.id);
+
+  // callback para realtime
+  subscribeLeaderboardRealtime(matchObj.id, (lb) => {
+    drawLeaderboard(list, lb);
+  });
+
+  drawLeaderboard(list, leaderboard);
+}
+
+function drawLeaderboard(container, lb) {
+  const arr = Array.isArray(lb) ? lb : [];
+  container.innerHTML = arr.map(row => `
+    <div class="p-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-6 text-xs font-bold text-gray-800">#${row.rank}</div>
+        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">${(row.username||'?').slice(0,2).toUpperCase()}</div>
+        <div class="font-medium">${row.full_name || row.username || 'Player'}</div>
+      </div>
+      <div class="text-sm font-semibold ${row.is_final ? 'text-gray-700' : 'text-emerald-700'}">
+        ${row.points} pts
+      </div>
+    </div>
+  `).join('');
+
+  const pc = document.getElementById('participants-count');
+  if (pc) pc.textContent = `${arr.length} players`;
+}
+
+// Hookea tu existing flow:
+const _openResultsDrawer_orig = openResultsDrawer;
+openResultsDrawer = async (id) => {
+  _openResultsDrawer_orig(id);
+  // Cuando abras el drawer, pintamos ranking live
+  const m = matches.find(mm => String(mm.id) === String(id));
+  if (m) { await paintParticipants(m); }
+};
+	
 /* ===== RESULTS DRAWER ===== */
 let selectedRes=null, liveSorterTimer=null;
 function openResultsDrawer(id){
@@ -1249,126 +1399,208 @@ function renderResultsSidebar(m){
 function renderPlayers(m){const list=el('players-list'); let arr=[...m.players]; list.innerHTML=arr.map((p,i)=>`<div class="p-3 flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-6 text-xs font-bold text-gray-800">#${i+1}</div><img src="${p.avatar}" class="w-8 h-8 rounded-full"><div class="font-medium">${p.name}</div></div><button class="text-xs px-2 py-1 border rounded hover:bg-gray-50">View picks</button></div>`).join('');}
 
 /* ===== DRAWER TICKET (Matches) ===== */
-let selectedMatch=null, picks={}, picksSubmitted=false, score={home:0,away:0};
+let selectedMatch = null;          // fila de DB `matches`
+let picks = {};                    // { s1, s2, s3, s4, s5 }
+let picksSubmitted = false;        // para bloquear doble envío local
+let score = { home: 0, away: 0 };  // para la predicción de marcador
+let _lockTimer = null;
 
-async function openTicket(matchOrId){
-  const m = (matchOrId && typeof matchOrId === 'object')
-    ? matchOrId
-    : matches.find(x => String(x.id) === String(matchOrId));
-  if (!m) { showToast('Could not open this match.'); return; }
-
-  selectedMatch = m;
-  picks = {};
-  picksSubmitted = false;
-  score = { home:0, away:0 };
-
-  el('strip-ticket').innerHTML = buildStripHTML(selectedMatch,'lg');
-  el('lukas-balance').textContent = `${(lukasBalance + tournamentLukasPrize).toLocaleString()} Lukas`;
-  el('ticket-lock-time').textContent = `Lock at ${fmtTime(selectedMatch.startISO)}`;
-
-  const tick = ()=>{
-    const t = fmtCountdown(new Date(selectedMatch.startISO) - new Date());
-    el('time-remaining').textContent = t;
-    el('sidebar-clock').textContent = t;
-  };
-  tick(); if (window._tkTimer) clearInterval(window._tkTimer);
-  window._tkTimer = setInterval(tick, 1000);
-
-  renderSponsor(selectedMatch);
-  renderStats(selectedMatch.probs || {}, selectedMatch.stats || {});
-  renderPredictions(selectedMatch);
-
-  // Si el usuario ya envió ticket para este match, marcamos bandera para bloquear doble envío
-  try {
-    if (isLoggedIn()) {
-      const { data: t } = await sb
-        .from('tickets')
-        .select('id,status')
-        .eq('match_id', selectedMatch.id)
-        .maybeSingle();
-      if (t?.id) { picksSubmitted = true; }
-    }
-  } catch (_) {}
-
-  el('overlay').classList.remove('pointer-events-none');
-  el('overlay').classList.add('opacity-100');
-  el('matches-section').classList.add('opacity-60','blur-[2px]');
-  el('ticket-drawer').classList.remove('translate-x-full');
-  el('error-banner').classList.add('hidden');
+// Helpers de formato
+function fmtCountdown(ms){
+  if (ms < 0) return "00:00:00";
+  const s = Math.floor(ms/1000);
+  const h = String(Math.floor(s/3600)).padStart(2,'0');
+  const m = String(Math.floor((s%3600)/60)).padStart(2,'0');
+  const se= String(s%60).padStart(2,'0');
+  return `${h}:${m}:${se}`;
+}
+function fmtTime(d){ return new Date(d).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+function el(id){ return document.getElementById(id); }
+function showToast(msg){
+  el('toast-text').textContent = msg;
+  const b = el('toast'); b.classList.remove('hidden');
+  setTimeout(()=>b.classList.add('hidden'), 2200);
 }
 
+// Render simple del strip usando datos de DB (sin logos)
+function buildStripFromDB(m){
+  const dt  = new Date(m.start_time);
+  const day = dt.toLocaleDateString([], { weekday:'short' });
+  const md  = dt.toLocaleDateString([], { month:'short', day:'numeric' });
+  const t   = dt.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  const when= `${day}, ${md} • ${t}`;
+  const venue = m.venue || '—';
+  const league= m.league || '—';
+  return `
+    <div class="strip flex rounded-lg overflow-hidden shadow">
+      <div class="side w-24 bg-emerald-600">
+        <div class="text-white text-center font-bold px-2">${(m.home_team||'Home')}</div>
+      </div>
+      <div class="center flex-1 py-4 text-center">
+        <div class="line-1 text-sm font-extrabold">${when}</div>
+        <div class="line-2 text-[11px] opacity-90">${venue}</div>
+        <div class="line-3 text-[11px] opacity-90">${league}</div>
+      </div>
+      <div class="side w-24 bg-sky-600">
+        <div class="text-white text-center font-bold px-2">${(m.away_team||'Away')}</div>
+      </div>
+    </div>`;
+}
+
+// Carga de match por id (desde DB)
+async function fetchMatchById(matchId){
+  const { data, error } = await sb
+    .from('matches')
+    .select('id, start_time, lock_time, dur_min, league, venue, home_team, away_team')
+    .eq('id', matchId)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+// Chequea si ya hay ticket del user (RPC security definer)
+async function fetchExistingTicket(matchId){
+  const { data, error } = await sb.rpc('get_user_ticket', { p_match_id: matchId });
+  if (error) return null;       // si RLS o no logueado, lo ignoramos
+  // la RPC devuelve tabla con 0..1 filas
+  if (Array.isArray(data) && data.length) return data[0];
+  return null;
+}
+
+// Abre drawer de ticket
+async function openTicket(matchOrId){
+  try {
+    // 1) Resolver el ID
+    const matchId = (typeof matchOrId === 'object') ? matchOrId?.id : matchOrId;
+    if (!matchId) { showToast('Could not open this match.'); return; }
+
+    // 2) Cargar desde DB
+    const m = await fetchMatchById(matchId);
+    if (!m) { showToast('Match not found.'); return; }
+
+    // 3) Verificar lock
+    const now  = new Date();
+    const lock = new Date(m.lock_time);
+    if (now >= lock) {
+      showToast('This match is locked. Follow live in Results.');
+      try { showView('results'); } catch(_) {}
+      return;
+    }
+
+    // 4) Estado base del drawer
+    selectedMatch   = m;
+    picks           = {};
+    picksSubmitted  = false;
+    score           = { home: 0, away: 0 };
+
+    // 5) Pintar cabecera del drawer
+    el('strip-ticket').innerHTML = buildStripFromDB(selectedMatch);
+    el('ticket-lock-time').textContent = `Lock at ${fmtTime(selectedMatch.lock_time)}`;
+
+    // 6) Contadores (hasta lock)
+    const tick = ()=>{
+      const ms = new Date(selectedMatch.lock_time) - new Date();
+      const t  = fmtCountdown(ms);
+      el('time-remaining').textContent = t;
+      el('sidebar-clock').textContent  = t;
+      // si pasa el lock mientras está abierto → cerrar
+      if (ms <= 0) {
+        clearInterval(_lockTimer);
+        _lockTimer = null;
+        showToast('Locked. Redirecting to Results.');
+        closeTicket();
+        try { showView('results'); } catch(_) {}
+      }
+    };
+    tick();
+    if (_lockTimer) clearInterval(_lockTimer);
+    _lockTimer = setInterval(tick, 1000);
+
+    // 7) Render de predicciones (UI existente)
+    renderPredictionsForDB(selectedMatch);
+
+    // 8) Revisar duplicado vía RPC (si hay sesión)
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.user) {
+        const t = await fetchExistingTicket(selectedMatch.id);
+        if (t?.ticket_id) { picksSubmitted = true; }
+      }
+    } catch {}
+
+    // 9) Abrir drawer + overlay
+    el('overlay').classList.remove('pointer-events-none');
+    el('overlay').classList.add('opacity-100');
+    el('matches-section').classList.add('opacity-60','blur-[2px]');
+    el('ticket-drawer').classList.remove('translate-x-full');
+    el('error-banner').classList.add('hidden');
+  } catch (e) {
+    console.error(e);
+    showToast('Could not open this match.');
+  }
+}
+
+// Cerrar drawer
 function closeTicket(){
-  if(window._tkTimer) clearInterval(window._tkTimer);
+  if (_lockTimer) { clearInterval(_lockTimer); _lockTimer = null; }
   el('overlay').classList.add('pointer-events-none');
   el('overlay').classList.remove('opacity-100');
   el('matches-section').classList.remove('opacity-60','blur-[2px]');
   el('ticket-drawer').classList.add('translate-x-full');
-  selectedMatch=null; picks={}; updateCompleted();
+  selectedMatch = null; picks = {}; updateCompleted();
 }
-el('drawer-back').addEventListener('click',()=>{
-  if(selectedMatch && !picksSubmitted && Object.keys(picks).length>0){
-    if(!confirm("You haven't submitted your ticket yet. Leave anyway?")) return;
+document.getElementById('drawer-back').addEventListener('click', ()=>{
+  if (selectedMatch && !picksSubmitted && Object.keys(picks).length > 0) {
+    if (!confirm("You haven't submitted your ticket yet. Leave anyway?")) return;
   }
   closeTicket();
 });
 
-function renderSponsor(m){
-  el('sponsor-name').textContent = `by ${m.sponsor?.name || 'Sponsor'}`;
-  if (m.sponsor?.logo) el('sponsor-logo').src = m.sponsor.logo;
-  el('bonus-list').innerHTML =
-    (m.bonuses || []).map(b =>
-      `<div class="text-sm bg-yellow-50 border border-yellow-200 rounded px-2 py-1.5">
-        <i class="fa-solid fa-bolt-lightning text-yellow-500 mr-1"></i>${b}
-      </div>`).join('') ||
-    `<div class="text-xs text-gray-500">No active bonuses</div>`;
-}
-function renderStats(p,meta){
-  const block=el('stat-probs');
-  const bar=(l,v,i)=>`<div><div class="flex justify-between text-xs text-gray-600 mb-1">
-      <span>${i} ${l}</span><span>${v||0}%</span></div>
-      <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div class="h-2 bg-primary" style="width:${Math.max(0,Math.min(100,v||0))}%"></div>
-      </div></div>`;
-  block.innerHTML=[bar('Home win',p.home,'🏠'),bar('Draw',p.draw,'➖'),
-                   bar('Away win',p.away,'✈️'),bar('Over 2.5',p.over25,'🚀'),
-                   bar('BTTS',p.btts,'🎯')].join('');
-  el('stat-avg').textContent=meta.avgGoals||'—';
-  el('stat-form').textContent=meta.form||'—';
-}
-function renderPredictions(match){
-  const h=match.home,a=match.away,grid=el('predictions-grid');
+// Render de tarjetas de predicción (idéntica UX, pero sin datos mock)
+function renderPredictionsForDB(m){
+  const hName = m.home_team || 'Home';
+  const aName = m.away_team || 'Away';
+  const grid  = el('predictions-grid');
+
   const card=(i,pts,body)=>`<div class="border border-gray-200 rounded-lg p-4">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-sm font-medium text-gray-500">Prediction ${i}/5</span>
-        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">+${pts} Lukas</span>
-      </div>${body}</div>`;
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-medium text-gray-500">Prediction ${i}/5</span>
+      <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">+${pts} Lukas</span>
+    </div>${body}
+  </div>`;
+
   grid.innerHTML =
+    // S1: 1X2
     card(1,3,`<div class="flex gap-2">
-      <button data-s="s1" data-v="HOME" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${h.name}</button>
+      <button data-s="s1" data-v="HOME" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${hName}</button>
       <button data-s="s1" data-v="DRAW" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">Draw</button>
-      <button data-s="s1" data-v="AWAY" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${a.name}</button>
+      <button data-s="s1" data-v="AWAY" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 w-1/3">${aName}</button>
     </div>`) +
+    // S2: BTTS
     card(2,2,`<p class="text-lg font-medium text-gray-900 mb-3">Both teams to score?</p>
       <div class="flex gap-2">
         <button data-s="s2" data-v="YES" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-check mr-2"></i>Yes</button>
         <button data-s="s2" data-v="NO"  class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-times mr-2"></i>No</button>
       </div>`) +
+    // S3: Over/Under 2.5
     card(3,2,`<p class="text-lg font-medium text-gray-900 mb-3">Over 2.5 total goals?</p>
       <div class="flex gap-2">
         <button data-s="s3" data-v="OVER"  class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1">Over 2.5</button>
         <button data-s="s3" data-v="UNDER" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1">Under 2.5</button>
       </div>`) +
+    // S4: Tarjeta roja
     card(4,6,`<p class="text-lg font-medium text-gray-900 mb-3">Will there be a red card?</p>
       <div class="flex gap-2">
         <button data-s="s4" data-v="YES" class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-check mr-2"></i>Yes</button>
         <button data-s="s4" data-v="NO"  class="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg font-medium text-sm hover:bg-gray-200 flex-1"><i class="fa-solid fa-times mr-2"></i>No</button>
       </div>`) +
+    // S5: Marcador exacto
     card(5,8,`<p class="text-lg font-medium text-gray-900 mb-3">Predict the correct score</p>
       <div class="space-y-3">
         <div class="bg-gray-50 rounded-lg p-4">
           <div class="flex items-center justify-center gap-4">
             <div class="text-center">
-              <div class="text-xs text-gray-600 mb-1">${h.name}</div>
+              <div class="text-xs text-gray-600 mb-1">${hName}</div>
               <div class="flex items-center gap-2">
                 <button class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300" onclick="adjScore('home',-1)"><i class="fa-solid fa-minus text-xs"></i></button>
                 <div id="home-score" class="w-12 h-12 bg-white border-2 border-primary rounded-lg flex items-center justify-center text-xl font-bold text-primary">0</div>
@@ -1377,7 +1609,7 @@ function renderPredictions(match){
             </div>
             <div class="text-2xl font-bold text-gray-400">:</div>
             <div class="text-center">
-              <div class="text-xs text-gray-600 mb-1">${a.name}</div>
+              <div class="text-xs text-gray-600 mb-1">${aName}</div>
               <div class="flex items-center gap-2">
                 <button class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300" onclick="adjScore('away',-1)"><i class="fa-solid fa-minus text-xs"></i></button>
                 <div id="away-score" class="w-12 h-12 bg-white border-2 border-primary rounded-lg flex items-center justify-center text-xl font-bold text-primary">0</div>
@@ -1395,39 +1627,45 @@ function renderPredictions(match){
           </div>
         </div>
       </div>`);
+
+  // Wire de botones de s1..s4
   grid.querySelectorAll('button[data-s]').forEach(b=>{
-    b.addEventListener('click',()=>{
-      const st=b.dataset.s;
+    b.addEventListener('click', ()=>{
+      const st = b.dataset.s;
       b.parentElement.querySelectorAll(`button[data-s="${st}"]`)
         .forEach(x=>x.classList.remove('!bg-primary','!text-white'));
       b.classList.add('!bg-primary','!text-white');
-      picks[st]=b.dataset.v;
+      picks[st] = b.dataset.v;
       updateCompleted();
     });
   });
 }
-function adjScore(side,delta){ score[side]=Math.max(0,score[side]+delta); syncScore(); }
-function quickScore(h,a){ score.home=h; score.away=a; syncScore(); }
-function syncScore(){ const hs=el('home-score'), as=el('away-score');
-  if(hs) hs.textContent=score.home; if(as) as.textContent=score.away;
-  picks['s5']=`${score.home}-${score.away}`; updateCompleted();
-}
-function updateCompleted(){ el('completed-counter').textContent=`${Object.keys(picks).length}/5`; }
 
-/* Submit flow (con Supabase + duplicados) */
+// Control del score (s5)
+function adjScore(side,delta){ score[side] = Math.max(0, score[side] + delta); syncScore(); }
+function quickScore(h,a){ score.home = h; score.away = a; syncScore(); }
+function syncScore(){
+  const hs = el('home-score'), as = el('away-score');
+  if (hs) hs.textContent = score.home;
+  if (as) as.textContent = score.away;
+  picks['s5'] = `${score.home}-${score.away}`;
+  updateCompleted();
+}
+function updateCompleted(){
+  el('completed-counter').textContent = `${Object.keys(picks).length}/5`;
+}
+
+// Modal “ya participas”
 function openAlreadyModal(){
   const m = el('already-modal');
-  m.classList.remove('hidden'); 
+  m.classList.remove('hidden');
   m.classList.add('flex');
 }
-
 function closeAlreadyModal(){
   const m = el('already-modal');
-  m.classList.add('hidden'); 
+  m.classList.add('hidden');
   m.classList.remove('flex');
 }
-
-// Listeners del modal "already"
 document.addEventListener('click', (ev) => {
   if (ev.target?.id === 'already-close') {
     closeAlreadyModal();
@@ -1435,12 +1673,12 @@ document.addEventListener('click', (ev) => {
   if (ev.target?.id === 'go-results' || ev.target?.closest?.('#go-results')) {
     ev.preventDefault();
     closeAlreadyModal();
-    showView('results');
-    try { closeResultsDrawer(); } catch(_) {}
+    try { showView('results'); } catch(_) {}
     try { closeTicket(); } catch(_) {}
   }
 });
-	
+
+// Modal de éxito
 function openSuccessModal(ticketId){
   const m = el('success-modal');
   el('success-desc').textContent = ticketId
@@ -1451,67 +1689,79 @@ function openSuccessModal(ticketId){
 function closeSuccessModal(){
   const m = el('success-modal'); m.classList.add('hidden'); m.classList.remove('flex');
 }
+el('success-goto-results')?.addEventListener('click', ()=>{
+  closeSuccessModal(); try { showView('results'); } catch(_) {} closeTicket();
+});
+el('success-close')?.addEventListener('click', ()=>{ closeSuccessModal(); closeTicket(); });
 
+// Click del CTA principal “Submit Ticket”
 el('submit-ticket').addEventListener('click', async ()=>{
   if (!selectedMatch) return;
 
+  // Completo 5/5
   if (Object.keys(picks).length < 5) {
     el('error-banner').classList.remove('hidden');
-    setTimeout(()=>el('error-banner').classList.add('hidden'),3000);
+    setTimeout(()=>el('error-banner').classList.add('hidden'), 3000);
     return;
   }
 
-  if (!isLoggedIn()) {
-    pendingSubmit = { matchId: selectedMatch.id, picksSnapshot: { ...picks } };
-    openAuthFlow('signup');
+  // Sesión requerida
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) {
+    // preserva picks para tu flujo de login, si lo usas:
+    window.pendingSubmit = { matchId: selectedMatch.id, picksSnapshot: { ...picks } };
+    try { openAuthFlow('signup'); } catch(_) {}
     return;
   }
 
-  // Si ya había ticket, avisar
-  if (picksSubmitted) {
-    openAlreadyModal();
-    return;
-  }
+  // Doble-check: ya participas
+  const t = await fetchExistingTicket(selectedMatch.id);
+  if (t?.ticket_id) { picksSubmitted = true; openAlreadyModal(); return; }
 
   // Confirmación previa
   openReviewModal();
 });
 
+// Review modal (pre-confirm)
 function openReviewModal(){
-  const r=el('review-modal');
-  const list=el('review-list');
-  const h=selectedMatch.home.name, a=selectedMatch.away.name;
-  const mapS1={HOME:h,DRAW:'Draw',AWAY:a};
-  list.innerHTML=`<div><b>Who wins:</b> ${mapS1[picks.s1]||'-'}</div>
-                  <div><b>BTTS:</b> ${picks.s2||'-'}</div>
-                  <div><b>Over 2.5:</b> ${picks.s3||'-'}</div>
-                  <div><b>Red card:</b> ${picks.s4||'-'}</div>
-                  <div><b>Correct score:</b> ${picks.s5||'-'}</div>`;
+  const r = el('review-modal');
+  const list = el('review-list');
+  const h = selectedMatch.home_team || 'Home';
+  const a = selectedMatch.away_team || 'Away';
+  const mapS1 = { HOME: h, DRAW: 'Draw', AWAY: a };
+  list.innerHTML = `
+    <div><b>Who wins:</b> ${mapS1[picks.s1] || '-'}</div>
+    <div><b>BTTS:</b> ${picks.s2 || '-'}</div>
+    <div><b>Over 2.5:</b> ${picks.s3 || '-'}</div>
+    <div><b>Red card:</b> ${picks.s4 || '-'}</div>
+    <div><b>Correct score:</b> ${picks.s5 || '-'}</div>`;
   r.classList.remove('hidden'); r.classList.add('flex');
 }
-el('cancel-submit').addEventListener('click',()=>{
+el('cancel-submit').addEventListener('click', ()=>{
   el('review-modal').classList.add('hidden'); el('review-modal').classList.remove('flex');
 });
 
+// Confirmación final → RPC submit_ticket
 el('confirm-submit').addEventListener('click', async ()=>{
   // Cerrar review
   el('review-modal').classList.add('hidden'); el('review-modal').classList.remove('flex');
 
-  if (!isLoggedIn()) { openAuthFlow('signup'); return; }
   if (!selectedMatch) { showToast('No match selected'); return; }
 
+  // Re-check lock (por si llegó al límite en este momento)
+  const now  = new Date();
+  const lock = new Date(selectedMatch.lock_time);
+  if (now >= lock) {
+    showToast('Locked while you were reviewing. Try another match.');
+    closeTicket();
+    try { showView('results'); } catch(_) {}
+    return;
+  }
+
   try {
-    // Doble chequeo de duplicado por si abrió en paralelo
-    const { data: existing } = await sb
-      .from('tickets')
-      .select('id,status')
-      .eq('match_id', selectedMatch.id)
-      .maybeSingle();
-    if (existing?.id) {
-      picksSubmitted = true;
-      openAlreadyModal();
-      return;
-    }
+    // Doble-check duplicado
+    const existing = await fetchExistingTicket(selectedMatch.id);
+    if (existing?.ticket_id) { picksSubmitted = true; openAlreadyModal(); return; }
 
     // Enviar al RPC transaccional
     const { data: ticketId, error } = await sb.rpc('submit_ticket', {
@@ -1520,7 +1770,6 @@ el('confirm-submit').addEventListener('click', async ()=>{
     });
 
     if (error) {
-      // Si por condición de carrera ya existe (conflicto único), mostramos “ya participas”
       const msg = (error.message || '').toLowerCase();
       if (msg.includes('unique') || msg.includes('duplicate') || msg.includes('already')) {
         openAlreadyModal();
@@ -1533,15 +1782,10 @@ el('confirm-submit').addEventListener('click', async ()=>{
     picksSubmitted = true;
     openSuccessModal(ticketId || null);
   } catch (e) {
+    console.error(e);
     showToast('Could not submit your ticket.');
   }
 });
-
-/* Botones de modales de resultado */
-el('success-goto-results')?.addEventListener('click',()=>{
-  closeSuccessModal(); showView('results'); closeTicket();
-});
-el('success-close')?.addEventListener('click',()=>{ closeSuccessModal(); closeTicket(); });
 	
 /* ===== AUTH (UI) ===== */
 const auth={root:document.getElementById('auth-flow'),tabs:[...document.querySelectorAll('.auth-tab')],forms:{signin:document.getElementById('form-signin'),signup:document.getElementById('form-signup'),reset:document.getElementById('form-reset')},
