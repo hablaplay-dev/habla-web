@@ -232,6 +232,16 @@ async function syncLiveNow() {
         last_sync_at: new Date().toISOString()
       }).eq("af_fixture_id", fid);
 
+      const { data: rows } = await sb
+        .from("matches")
+        .select("id")
+        .eq("af_fixture_id", fid)
+        .limit(1);
+      const mid = rows?.[0]?.id;
+      if (mid) {
+        await sb.rpc("score_match_live", { p_match_id: mid });
+      }
+
       updated++;
     }
   }
