@@ -1046,7 +1046,6 @@ function mapMatchRowToUI(row) {
   return {
     id: row.id,
     league: row.league || '—',
-    venue: row.venue || '', // si agregaste venue a matches; si no, queda vacío
     startISO: row.start_time,
     durMin: row.dur_min || 110,
     status: row.status,          // 'NS'|'LIVE'|'FT'
@@ -1185,8 +1184,7 @@ const avatarLibrary = Array.from({length: 24}, (_,i)=>`https://i.pravatar.cc/120
 function buildStripHTML(match, size='md'){
   const h = match.home, a = match.away;
 
-  // lados más anchos, centro más angosto
-  const leftW = size==='lg' ? 'w-40' : 'w-32';
+  const leftW = size==='lg' ? 'w-44' : 'w-36';
   const imgSz = size==='lg' ? 'w-16 h-16' : 'w-12 h-12';
   const py    = size==='lg' ? 'py-4'      : 'py-3';
   const f1    = size==='lg' ? 'text-sm'   : 'text-xs';
@@ -1196,26 +1194,29 @@ function buildStripHTML(match, size='md'){
     <div class="strip flex rounded-lg overflow-hidden">
       <div class="side ${leftW} ${h.color}">
         <div class="flex flex-col items-center justify-center ${py} text-white">
-          <div class="${imgSz} rounded-full bg-white/10 flex items-center justify-center font-bold text-[10px] leading-none px-2 text-center">${(h.name||'Home').slice(0,14)}</div>
+          <div class="${imgSz} rounded-full bg-white/10 flex items-center justify-center font-bold text-[10px] leading-none px-2 text-center">
+            ${(h.name||'Home').slice(0,14)}
+          </div>
         </div>
       </div>
 
-      <div class="center flex shrink-0 ${py} w-52 text-center">
+      <div class="center flex-1 ${py} text-center">
         <div class="mx-auto">
           <div class="line-1 ${f1}">${fmtDateLine(match.startISO)}</div>
-          <div class="line-2 ${f2} opacity-90">${match.venue||'—'}</div>
           <div class="line-3 ${f2} opacity-90">${match.league||'—'}</div>
         </div>
       </div>
 
       <div class="side ${leftW} ${a.color}">
         <div class="flex flex-col items-center justify-center ${py} text-white">
-          <div class="${imgSz} rounded-full bg-white/10 flex items-center justify-center font-bold text-[10px] leading-none px-2 text-center">${(a.name||'Away').slice(0,14)}</div>
+          <div class="${imgSz} rounded-full bg-white/10 flex items-center justify-center font-bold text-[10px] leading-none px-2 text-center">
+            ${(a.name||'Away').slice(0,14)}
+          </div>
         </div>
       </div>
     </div>`;
 }
-
+	
 /* ===== MATCHES LIST ===== */
 const countdownTimers = new Map();
 
@@ -1242,56 +1243,51 @@ function renderMatches(){
     row.className = "rounded-xl border bg-white hover:shadow-md transition";
     row.setAttribute('data-match-id', m.id);
 
-    // GRID: [strip][players][trending][countdown][cta]
+    // GRID: [strip (>=50%)] [players] [trending] [countdown] [cta]
+    // Usamos 4fr para la 1ª col y 1fr para las demás → 4/(4+1+1+1+1)=50%
     row.innerHTML = `
       <div class="w-full p-0">
-        <div class="relative">
-          ${buildStripHTML(m,'md')}
-          <div class="pill">Kickoff in <span id="cd-${m.id}">--:--:--</span></div>
-        </div>
+        <div class="grid grid-cols-[4fr_1fr_1fr_1fr_1fr] gap-3 items-center px-4 py-3">
+          <!-- Col 1: strip del partido -->
+          <div class="relative">
+            ${buildStripHTML(m,'md')}
+            <div class="pill">Kickoff in <span id="cd-${m.id}">--:--:--</span></div>
+          </div>
 
-        <div class="px-4 py-3">
-          <div class="grid grid-cols-[1fr,140px,220px,140px,160px] gap-3 items-center">
-            <!-- Col 1: meta/badges -->
-            <div class="flex items-center gap-2 flex-wrap text-xs">
-              ${(m.bonuses && m.bonuses.length)
-                ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold"><i class="fa-solid fa-bolt-lightning mr-1"></i>Bonus</span>`
-                : ''
-              }
-              <span class="px-2 py-0.5 rounded-full bg-gray-100">League: <b>${m.league||'—'}</b></span>
-              <span class="px-2 py-0.5 rounded-full bg-gray-100">Venue: <b>${m.venue||'—'}</b></span>
+          <!-- Col 2: players (centrado) -->
+          <div class="flex flex-col items-center justify-center text-center">
+            <div class="text-xs text-gray-600 mb-1">Players</div>
+            <div class="text-sm font-semibold text-gray-800">
+              ${m.participants || m.players.length || 0}
             </div>
+          </div>
 
-            <!-- Col 2: players -->
-            <div class="text-xs text-gray-700">
-              <span class="hidden sm:inline">👥</span>
-              <b>${m.participants || m.players.length || 0}</b> players
+          <!-- Col 3: trending (centrado) -->
+          <div class="hidden sm:flex flex-col items-center justify-center text-center">
+            <div class="text-xs text-gray-600 mb-1">Trending</div>
+            <div class="dist-bar bg-gray-200 w-full max-w-[220px]">
+              <div style="width:${d.home}%" class="h-full float-left bg-green-600"></div>
+              <div style="width:${d.draw}%" class="h-full float-left bg-gray-400"></div>
+              <div style="width:${d.away}%" class="h-full bg-blue-500"></div>
             </div>
+            <div class="mt-1 text-[11px] text-gray-500 w-full max-w-[220px] flex justify-between">
+              <span>H ${d.home}%</span><span>D ${d.draw}%</span><span>A ${d.away}%</span>
+            </div>
+          </div>
 
-            <!-- Col 3: trending -->
-            <div class="hidden sm:flex items-center gap-3">
-              <span class="text-xs text-gray-600">Trending</span>
-              <div class="dist-bar bg-gray-200 w-full">
-                <div style="width:${d.home}%;background:#16a34a" class="h-full float-left"></div>
-                <div style="width:${d.draw}%;background:#a3a3a3" class="h-full float-left"></div>
-                <div style="width:${d.away}%;background:#3b82f6" class="h-full"></div>
-              </div>
-            </div>
+          <!-- Col 4: countdown (centrado) -->
+          <div class="flex flex-col items-center justify-center text-center">
+            <div class="text-xs text-gray-600 mb-1">To lock</div>
+            <div class="text-sm font-semibold text-red-600" id="cd-dup-${m.id}">--:--:--</div>
+          </div>
 
-            <!-- Col 4: countdown (duplicado grande y en la pill arriba) -->
-            <div class="text-center">
-              <div class="text-sm font-semibold text-red-600" id="cd-dup-${m.id}">--:--:--</div>
-              <div class="text-[11px] text-gray-500">to lock</div>
-            </div>
-
-            <!-- Col 5: CTA -->
-            <div class="flex justify-end">
-              <button
-                class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-emerald-600"
-                data-open-ticket="${m.id}">
-                <i class="fa-solid fa-ticket mr-1"></i> Make your picks
-              </button>
-            </div>
+          <!-- Col 5: CTA (centrado) -->
+          <div class="flex items-center justify-center">
+            <button
+              class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-emerald-600"
+              data-open-ticket="${m.id}">
+              <i class="fa-solid fa-ticket mr-1"></i> Make your picks
+            </button>
           </div>
         </div>
       </div>`;
@@ -1316,7 +1312,7 @@ function renderMatches(){
   box.removeEventListener('click', _matchesDelegatedClick, true);
   box.addEventListener('click', _matchesDelegatedClick, true);
 }
-
+	
 // Handler delegado para abrir Ticket
 function _matchesDelegatedClick(ev){
   const btn = ev.target.closest('[data-open-ticket]');
@@ -1547,20 +1543,18 @@ function buildStripFromDB(m){
   const md  = dt.toLocaleDateString([], { month:'short', day:'numeric' });
   const t   = dt.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
   const when= `${day}, ${md} • ${t}`;
-  const venue = m.venue || '—';
   const league= m.league || '—';
   return `
     <div class="strip flex rounded-lg overflow-hidden shadow">
-      <div class="side w-24 bg-emerald-600">
-        <div class="text-white text-center font-bold px-2">${(m.home_team||'Home')}</div>
+      <div class="side w-28 bg-emerald-600">
+        <div class="text-white text-center font-bold px-2 py-3">${(m.home_team||'Home')}</div>
       </div>
       <div class="center flex-1 py-4 text-center">
         <div class="line-1 text-sm font-extrabold">${when}</div>
-        <div class="line-2 text-[11px] opacity-90">${venue}</div>
         <div class="line-3 text-[11px] opacity-90">${league}</div>
       </div>
-      <div class="side w-24 bg-sky-600">
-        <div class="text-white text-center font-bold px-2">${(m.away_team||'Away')}</div>
+      <div class="side w-28 bg-sky-600">
+        <div class="text-white text-center font-bold px-2 py-3">${(m.away_team||'Away')}</div>
       </div>
     </div>`;
 }
@@ -1569,7 +1563,7 @@ function buildStripFromDB(m){
 async function fetchMatchById(matchId){
   const { data, error } = await sb
     .from('matches')
-    .select('id, start_time, lock_time, dur_min, league, venue, home_team, away_team')
+    .select('id, start_time, lock_time, dur_min, league, home_team, away_team')
     .eq('id', matchId)
     .maybeSingle();
   if (error) throw error;
