@@ -227,6 +227,8 @@ async function syncLiveNow() {
         score_home: goals.home ?? null,
         score_away: goals.away ?? null,
         live_minute: minute,
+        red_home: reds.redHome ?? null,
+        red_away: reds.redAway ?? null,
         last_sync_at: new Date().toISOString()
       }).eq("af_fixture_id", fid);
 
