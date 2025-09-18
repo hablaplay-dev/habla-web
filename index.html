@@ -24,9 +24,8 @@
   </script>
 
   <style>
-    ::-webkit-scrollbar{display:none}
-    html,body{-ms-overflow-style:none;scrollbar-width:none}
-    body { font-family: 'Inter',sans-serif}
+    /* ===== Global styles (scroll habilitado) ===== */
+    body { font-family: 'Inter', sans-serif; }
     /* Reusables */
     .strip{position:relative;overflow:hidden;border-radius:12px}
     .strip .side{display:flex;align-items:center;justify-content:center}
@@ -37,6 +36,10 @@
     .status-pill{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
     .status-dot{width:6px;height:6px;border-radius:999px}
     .dist-bar{height:8px;border-radius:999px;overflow:hidden}
+
+    /* Quita estilos que ocultaban el scrollbar (ANTES estaban duplicados) */
+    /* ::-webkit-scrollbar{display:none}
+       html,body{-ms-overflow-style:none;scrollbar-width:none} */
   </style>
   <script>tailwind.config = {
   "theme": {
@@ -60,19 +63,9 @@
     outline: 2px solid #3F20FB;
     background-color: rgba(63, 32, 251, 0.1);
   }
-
   .edit-button {
     position: absolute;
     z-index: 1000;
-  }
-
-  ::-webkit-scrollbar {
-    display: none;
-  }
-
-  html, body {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
   }
   </style></head>
 <body class="bg-gray-50">
@@ -141,7 +134,7 @@
   </header>
 
   <!-- Main -->
-  <main class="pt-20">
+  <main class="pt-20 pb-20">
     <div class="max-w-7xl mx-auto px-4">
 
       <!-- MATCHES (home) -->
@@ -1038,50 +1031,44 @@ document.getElementById('dd-logout')?.addEventListener('click', async (e)=>{e.st
   headerAuth(); renderRewards(); renderAccount();showView('matches'); showToast('Logged out');});
 
 // ===== LIVE DATA (Supabase) =====
-// Config general
-const LOOKAHEAD_DAYS = 15;
+
 // Mapea una fila de matches (DB) a la forma que usa tu UI
 function mapMatchRowToUI(row) {
-  // row: { id, league, home_team, away_team, start_time, lock_time, dur_min, status, score_home, score_away, live_minute, af_fixture_id }
   return {
     id: row.id,
     league: row.league || '—',
     startISO: row.start_time,
     durMin: row.dur_min || 110,
     status: row.status,          // 'NS'|'LIVE'|'FT'
-    score_home: row.score_home,  // para mostrar en results
+    score_home: row.score_home,
     score_away: row.score_away,
     live_minute: row.live_minute,
     lock_time: row.lock_time,
-    home: {
-      name: row.home_team,
-      logo: '',  // opcional: podrías poblar desde af_teams si quieres logos
-      color: 'bg-gray-700'
-    },
-    away: {
-      name: row.away_team,
-      logo: '',
-      color: 'bg-gray-500'
-    },
+    home: { name: row.home_team, logo: '', color: 'bg-gray-700' },
+    away: { name: row.away_team, logo: '', color: 'bg-gray-500' },
     sponsor: { name: 'Sponsor', logo: 'https://dummyimage.com/28x28/111/fff&text=S' },
-    bonuses: [],    // si quieres, luego lo llenas
-    probs: {},      // si quieres, luego lo llenas
-    players: []     // lo llenamos al abrir el drawer con leaderboard
+    bonuses: [],
+    probs: {},
+    players: []
   };
 }
-// Estado en memoria
-let matches = []; // reemplaza al array demo
-// Carga “Upcoming” (NS) de los próximos 15 días
-async function fetchUpcomingMatches() {
-  const now = new Date();
-  const max = new Date(now.getTime() + LOOKAHEAD_DAYS * 86400000).toISOString();
 
+// Estado en memoria
+let matches = [];
+
+/**
+ * Trae TODOS los partidos que aún no se juegan:
+ *  - status = 'NS'
+ *  - start_time >= ahora
+ * (sin límite de días hacia adelante)
+ */
+async function fetchUpcomingMatches() {
+  const nowISO = new Date().toISOString();
   const { data, error } = await sb
     .from('matches')
     .select('*')
     .eq('status', 'NS')
-    .gt('start_time', now.toISOString())
-    .lt('start_time', max)
+    .gte('start_time', nowISO)
     .order('start_time', { ascending: true });
 
   if (error) {
@@ -1090,7 +1077,11 @@ async function fetchUpcomingMatches() {
   }
   return (data || []).map(mapMatchRowToUI);
 }
-// Carga “Live + Finished” para Results
+
+/**
+ * Live + Finished recientes para Results
+ * (mantenemos 3 días hacia atrás para resultados)
+ */
 async function fetchLiveAndFinished() {
   const now = new Date();
   const threeDaysAgo = new Date(now.getTime() - (3 * 86400000)).toISOString();
@@ -1108,11 +1099,12 @@ async function fetchLiveAndFinished() {
   }
   return (data || []).map(mapMatchRowToUI);
 }
+
 // Carga inicial (ambas páginas)
 async function loadAllMatches() {
   const [upcoming, liveFinished] = await Promise.all([
-    fetchUpcomingMatches(),   // NS > now (con LOOKAHEAD)
-    fetchLiveAndFinished()    // LIVE + FT últimos 3 días
+    fetchUpcomingMatches(),   // TODOS los futuros (NS)
+    fetchLiveAndFinished()    // LIVE + FT (últimos 3 días)
   ]);
   const map = new Map();
   [...upcoming, ...liveFinished].forEach(m => map.set(m.id, m));
@@ -1120,6 +1112,7 @@ async function loadAllMatches() {
   renderMatches();
   renderResults();
 }
+
 // Realtime: escucha cambios en matches (status, score, minute, start/lock)
 function subscribeMatchesRealtime() {
   const ch = sb.channel('realtime-matches')
@@ -1129,10 +1122,12 @@ function subscribeMatchesRealtime() {
         const row = payload.new || payload.old;
         if (!row) return;
         const idx = matches.findIndex(m => m.id === row.id);
+
         if (payload.eventType === 'DELETE') {
           if (idx >= 0) { matches.splice(idx, 1); renderMatches(); renderResults(); }
           return;
         }
+
         const mapped = mapMatchRowToUI(payload.new || row);
         if (idx >= 0) {
           matches[idx] = { ...matches[idx], ...mapped };
@@ -1145,8 +1140,7 @@ function subscribeMatchesRealtime() {
     );
   ch.subscribe();
 }
-// Utilidad: saber si un match está lockeado
-function isLocked(m) {return new Date() >= new Date(m.lock_time || m.startISO);}
+
 // Arranque
 loadAllMatches().then(subscribeMatchesRealtime);
 
@@ -1518,23 +1512,6 @@ let picks = {};                    // { s1, s2, s3, s4, s5 }
 let picksSubmitted = false;        // para bloquear doble envío local
 let score = { home: 0, away: 0 };  // para la predicción de marcador
 let _lockTimer = null;
-
-// Helpers de formato
-function fmtCountdown(ms){
-  if (ms < 0) return "00:00:00";
-  const s = Math.floor(ms/1000);
-  const h = String(Math.floor(s/3600)).padStart(2,'0');
-  const m = String(Math.floor((s%3600)/60)).padStart(2,'0');
-  const se= String(s%60).padStart(2,'0');
-  return `${h}:${m}:${se}`;
-}
-function fmtTime(d){ return new Date(d).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
-function el(id){ return document.getElementById(id); }
-function showToast(msg){
-  el('toast-text').textContent = msg;
-  const b = el('toast'); b.classList.remove('hidden');
-  setTimeout(()=>b.classList.add('hidden'), 2200);
-}
 
 // Render simple del strip usando datos de DB (sin logos)
 function buildStripFromDB(m){
@@ -2760,7 +2737,6 @@ el('sc-resend')?.addEventListener('click', async () => {
 function labelDateTime(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); const tag = delta===0?'Today':(delta===1?'Tomorrow':(delta===-1?'Yesterday':dt.toLocaleDateString([], {weekday:'short'}))); return `${tag} ${dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;}
 async function logOnboardingSubmission(userId, payload) {
   try {
-    // Inserta una sola fila; si tu tabla tiene más columnas, agrégalas aquí
     const { error } = await sb.from('onboarding_submissions').insert([{
       user_id: userId,
       full_name: payload.full_name,
@@ -2770,12 +2746,10 @@ async function logOnboardingSubmission(userId, payload) {
       avatar_url: payload.avatar_url,
       lang: payload.lang,
       notify_email: payload.notify_email
-      // created_at es DEFAULT NOW() en la DB
     }]);
     if (error) throw error;
-  } catch (err) {
-    console.warn('[onboarding_submissions] insert failed:', err?.message || err);
-    // No bloqueamos el flujo de usuario si falla el log
+  } catch (e) {
+    console.warn('[logOnboardingSubmission]', e);
   }
 }
 
@@ -2802,5 +2776,35 @@ showView('matches');
 document.getElementById('go-results').addEventListener('click',(e)=>{e.preventDefault(); showView('results'); closeResultsDrawer(); closeTicket();});
 document.getElementById('rewards-cta-play').addEventListener('click',()=>showView('matches'));
 
+<!-- Footer fijo (links) -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 h-14">
+  <div class="max-w-7xl mx-auto px-4 h-full flex items-center justify-between text-sm">
+    <div class="flex items-center gap-4 text-gray-600">
+      <a href="#" id="ft-terms" class="hover:text-gray-900">Términos y Condiciones</a>
+      <a href="#" id="ft-privacy" class="hover:text-gray-900">Privacidad</a>
+      <a href="#" id="ft-about" class="hover:text-gray-900">About</a>
+      <a href="#" id="ft-contact" class="hover:text-gray-900">Contacto</a>
+    </div>
+    <div class="text-gray-500">&copy; <span id="ft-year"></span> Habla! — Todos los derechos reservados</div>
+  </div>
+</footer>
+<script>
+  // utilidades footer
+  (function(){
+    const y = document.getElementById('ft-year');
+    if (y) y.textContent = new Date().getFullYear();
+    // Reusa el modal de Terms existente
+    document.getElementById('ft-terms')?.addEventListener('click', (e)=>{ e.preventDefault(); try{ openTerms(); }catch{} });
+  })();
+  // Stub no-op para evitar errores si aún no tienes backend de emails:
+  async function sendConfirmationEmail(email, name, lang) {
+    console.info('[sendConfirmationEmail]', { email, name, lang });
+    // Aquí podrías integrar tu servicio real de correo
+  }
+
+  // Asegurar arranque de auth al cargar:
+  if (typeof initAuth === 'function') {
+    document.addEventListener('DOMContentLoaded', initAuth);
+  }
 </script>
 </body></html>
