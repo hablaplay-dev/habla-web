@@ -1093,11 +1093,14 @@ async function fetchUpcomingMatches() {
 }
 // Carga “Live + Finished” para Results
 async function fetchLiveAndFinished() {
-  const nowISO = new Date().toISOString();
+  const now = new Date();
+  const threeDaysAgo = new Date(now.getTime() - (3 * 86400000)).toISOString();
+
   const { data, error } = await sb
     .from('matches')
     .select('*')
     .or('status.eq.LIVE,status.eq.FT')
+    .gte('start_time', threeDaysAgo)
     .order('start_time', { ascending: true });
 
   if (error) {
@@ -1108,13 +1111,12 @@ async function fetchLiveAndFinished() {
 }
 // Carga inicial (ambas páginas)
 async function loadAllMatches() {
-  const [upcoming, other] = await Promise.all([
-    fetchUpcomingMatches(),
-    fetchLiveAndFinished()
+  const [upcoming, liveFinished] = await Promise.all([
+    fetchUpcomingMatches(),   // NS > now (con LOOKAHEAD)
+    fetchLiveAndFinished()    // LIVE + FT últimos 3 días
   ]);
-  // Unificamos sin duplicar (por id)
   const map = new Map();
-  [...upcoming, ...other].forEach(m => map.set(m.id, m));
+  [...upcoming, ...liveFinished].forEach(m => map.set(m.id, m));
   matches = [...map.values()];
   renderMatches();
   renderResults();
@@ -1180,50 +1182,149 @@ function showToast(msg){el('toast-text').textContent=msg; const b=el('toast'); b
 const avatarLibrary = Array.from({length: 24}, (_,i)=>`https://i.pravatar.cc/120?img=${i+1}`);
           
 /* ===== STRIP BUILDER ===== */
-function buildStripHTML(match,size='md'){
-  const h=match.home,a=match.away;
-  const leftW=size==='lg'?'w-32':'w-24', imgSz=size==='lg'?'w-16 h-16':'w-12 h-12', py=size==='lg'?'py-5':'py-3', f1=size==='lg'?'text-base':'text-sm', f2=size==='lg'?'text-xs':'text-[11px]';
-  return `<div class="strip flex rounded-lg overflow-hidden shadow">
-    <div class="side ${leftW} ${h.color}"><img src="${h.logo}" alt="${h.name}" class="${imgSz} rounded-full shadow-md"></div>
-    <div class="center flex-1 ${py} text-center"><div class="line-1 ${f1}">${fmtDateLine(match.startISO)}</div><div class="line-2 ${f2} opacity-90">${match.venue}</div><div class="line-3 ${f2} opacity-90">${match.league}</div></div>
-    <div class="side ${leftW} ${a.color}"><img src="${a.logo}" alt="${a.name}" class="${imgSz} rounded-full shadow-md"></div>
-  </div>`;
+function buildStripHTML(match, size='md'){
+  const h = match.home, a = match.away;
+
+  // lados más anchos, centro más angosto
+  const leftW = size==='lg' ? 'w-40' : 'w-32';
+  const imgSz = size==='lg' ? 'w-16 h-16' : 'w-12 h-12';
+  const py    = size==='lg' ? 'py-4'      : 'py-3';
+  const f1    = size==='lg' ? 'text-sm'   : 'text-xs';
+  const f2    = size==='lg' ? 'text-[11px]' : 'text-[10px]';
+
+  return `
+    <div class="strip flex rounded-lg overflow-hidden">
+      <div class="side ${leftW} ${h.color}">
+        <div class="flex flex-col items-center justify-center ${py} text-white">
+          <div class="${imgSz} rounded-full bg-white/10 flex items-center justify-center font-bold text-[10px] leading-none px-2 text-center">${(h.name||'Home').slice(0,14)}</div>
+        </div>
+      </div>
+
+      <div class="center flex shrink-0 ${py} w-52 text-center">
+        <div class="mx-auto">
+          <div class="line-1 ${f1}">${fmtDateLine(match.startISO)}</div>
+          <div class="line-2 ${f2} opacity-90">${match.venue||'—'}</div>
+          <div class="line-3 ${f2} opacity-90">${match.league||'—'}</div>
+        </div>
+      </div>
+
+      <div class="side ${leftW} ${a.color}">
+        <div class="flex flex-col items-center justify-center ${py} text-white">
+          <div class="${imgSz} rounded-full bg-white/10 flex items-center justify-center font-bold text-[10px] leading-none px-2 text-center">${(a.name||'Away').slice(0,14)}</div>
+        </div>
+      </div>
+    </div>`;
 }
 
 /* ===== MATCHES LIST ===== */
-const countdownTimers=new Map();
+const countdownTimers = new Map();
+
 function renderMatches(){
-  const box=el('matches-vertical'); box.innerHTML=''; countdownTimers.forEach(id=>clearInterval(id)); countdownTimers.clear();
-  const ups=[...matches].filter(m=>new Date(m.startISO)>new Date()).sort((a,b)=> new Date(a.startISO)-new Date(b.startISO));
-  el('hero-players').textContent = ups.reduce((acc,m)=>acc+(m.participants||m.players.length),0);
-  ups.forEach(m=>{
-    const d=dist(m.players);
-    const item=document.createElement('div');
-    item.className="rounded-xl border hover:shadow-md transition bg-white";
-    item.innerHTML=`
-      <button class="w-full text-left p-0" data-id="${m.id}">
-        <div class="relative">${buildStripHTML(m,'md')}
+  const box = el('matches-vertical');
+  box.innerHTML = '';
+
+  // Limpia timers previos
+  countdownTimers.forEach(id => clearInterval(id));
+  countdownTimers.clear();
+
+  // Todos los próximos (no sólo hoy)
+  const ups = [...matches]
+    .filter(m => new Date(m.startISO) > new Date())
+    .sort((a,b) => new Date(a.startISO) - new Date(b.startISO));
+
+  // héroe: players totales
+  el('hero-players').textContent = ups.reduce((acc,m)=> acc + (m.participants || m.players.length || 0), 0);
+
+  ups.forEach(m => {
+    const d = dist(m.players);
+
+    const row = document.createElement('div');
+    row.className = "rounded-xl border bg-white hover:shadow-md transition";
+    row.setAttribute('data-match-id', m.id);
+
+    // GRID: [strip][players][trending][countdown][cta]
+    row.innerHTML = `
+      <div class="w-full p-0">
+        <div class="relative">
+          ${buildStripHTML(m,'md')}
           <div class="pill">Kickoff in <span id="cd-${m.id}">--:--:--</span></div>
         </div>
+
         <div class="px-4 py-3">
-          <div class="flex flex-wrap items-center gap-2 text-xs">
-            ${(m.bonuses&&m.bonuses.length)?`<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold"><i class="fa-solid fa-bolt-lightning mr-1"></i>Bonus</span>`:''}
-            <span class="px-2 py-0.5 rounded-full bg-gray-100">👥 ${m.participants||m.players.length} players</span>
-            <span class="hidden sm:inline text-gray-600">Trending:</span>
-            <div class="dist-bar bg-gray-200 w-40 hidden sm:block">
-              <div style="width:${d.home}%;background:#16a34a" class="h-full float-left"></div>
-              <div style="width:${d.draw}%;background:#a3a3a3" class="h-full float-left"></div>
-              <div style="width:${d.away}%;background:#3b82f6" class="h-full"></div>
+          <div class="grid grid-cols-[1fr,140px,220px,140px,160px] gap-3 items-center">
+            <!-- Col 1: meta/badges -->
+            <div class="flex items-center gap-2 flex-wrap text-xs">
+              ${(m.bonuses && m.bonuses.length)
+                ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold"><i class="fa-solid fa-bolt-lightning mr-1"></i>Bonus</span>`
+                : ''
+              }
+              <span class="px-2 py-0.5 rounded-full bg-gray-100">League: <b>${m.league||'—'}</b></span>
+              <span class="px-2 py-0.5 rounded-full bg-gray-100">Venue: <b>${m.venue||'—'}</b></span>
             </div>
-            <span class="ml-auto px-3 py-1 rounded-lg bg-primary/10 text-primary font-medium text-xs">Make your picks</span>
+
+            <!-- Col 2: players -->
+            <div class="text-xs text-gray-700">
+              <span class="hidden sm:inline">👥</span>
+              <b>${m.participants || m.players.length || 0}</b> players
+            </div>
+
+            <!-- Col 3: trending -->
+            <div class="hidden sm:flex items-center gap-3">
+              <span class="text-xs text-gray-600">Trending</span>
+              <div class="dist-bar bg-gray-200 w-full">
+                <div style="width:${d.home}%;background:#16a34a" class="h-full float-left"></div>
+                <div style="width:${d.draw}%;background:#a3a3a3" class="h-full float-left"></div>
+                <div style="width:${d.away}%;background:#3b82f6" class="h-full"></div>
+              </div>
+            </div>
+
+            <!-- Col 4: countdown (duplicado grande y en la pill arriba) -->
+            <div class="text-center">
+              <div class="text-sm font-semibold text-red-600" id="cd-dup-${m.id}">--:--:--</div>
+              <div class="text-[11px] text-gray-500">to lock</div>
+            </div>
+
+            <!-- Col 5: CTA -->
+            <div class="flex justify-end">
+              <button
+                class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-emerald-600"
+                data-open-ticket="${m.id}">
+                <i class="fa-solid fa-ticket mr-1"></i> Make your picks
+              </button>
+            </div>
           </div>
         </div>
-      </button>`;
-	const btn = item.querySelector('button');btn.addEventListener('click', (e) => {  const id = Number(e.currentTarget.dataset.id);  openTicket(id);});
-    box.appendChild(item);
-    const span=item.querySelector(`#cd-${m.id}`), tick=()=>span.textContent=fmtCountdown(new Date(m.startISO)-new Date());
-    tick(); const t=setInterval(tick,1000); countdownTimers.set(m.id,t);
+      </div>`;
+
+    // Timers
+    const pillSpan   = row.querySelector(`#cd-${m.id}`);
+    const dupSpan    = row.querySelector(`#cd-dup-${m.id}`);
+    const tick       = ()=>{
+      const ms = new Date(m.startISO) - new Date();
+      const t  = fmtCountdown(ms);
+      if (pillSpan) pillSpan.textContent = t;
+      if (dupSpan)  dupSpan.textContent  = t;
+    };
+    tick();
+    const tId = setInterval(tick, 1000);
+    countdownTimers.set(m.id, tId);
+
+    box.appendChild(row);
   });
+
+  // Delegación de click (abre tickets logueado o no)
+  box.removeEventListener('click', _matchesDelegatedClick, true);
+  box.addEventListener('click', _matchesDelegatedClick, true);
+}
+
+// Handler delegado para abrir Ticket
+function _matchesDelegatedClick(ev){
+  const btn = ev.target.closest('[data-open-ticket]');
+  if (!btn) return;
+  const id  = Number(btn.getAttribute('data-open-ticket'));
+  if (!Number.isFinite(id)) return;
+  ev.preventDefault();
+  openTicket(id); // mantiene lógica: invitados pueden abrir; submit sólo si logueado
 }
 function dist(players){const t=players.length||1,c={HOME:0,DRAW:0,AWAY:0};players.forEach(p=>c[p.picks.s1]++);return{home:Math.round(c.HOME*100/t),draw:Math.round(c.DRAW*100/t),away:Math.round(c.AWAY*100/t)}}
 
@@ -1231,23 +1332,40 @@ function dist(players){const t=players.length||1,c={HOME:0,DRAW:0,AWAY:0};player
 function renderResults(){
   const now = new Date();
 
+  // Clasificación basada en tiempo + status (coincidente con requisitos)
+  const isLive = (m)=>{
+    const start = new Date(m.startISO);
+    const end   = addMinutes(start, m.durMin || 110);
+    return now >= start && now < end;
+  };
+  const isUpcoming = (m)=> new Date(m.startISO) > now;
+  const isFinished = (m)=>{
+    const end = addMinutes(new Date(m.startISO), m.durMin || 110);
+    return now >= end;
+  };
+
+  // LIVE (todos)
   const live = matches
-    .filter(m => new Date(m.startISO) <= now && now < addMinutes(new Date(m.startISO), m.durMin || 110))
+    .filter(isLive)
     .sort((a,b)=> new Date(a.startISO) - new Date(b.startISO));
 
+  // UPCOMING (todos los que ya mostramos en Matches)
   const upcoming = matches
-    .filter(m => new Date(m.startISO) > now)
+    .filter(isUpcoming)
     .sort((a,b)=> new Date(a.startISO) - new Date(b.startISO));
 
+  // FINISHED (sólo últimos 3 días; ya viene acotado desde el fetch; lo reordenamos)
   const finished = matches
-    .filter(m => now >= addMinutes(new Date(m.startISO), m.durMin || 110))
+    .filter(isFinished)
     .sort((a,b)=> new Date(b.startISO) - new Date(a.startISO));
 
-  // Banner “Hot match”: próximo más cercano
+  // Banner “Hot match”: el próximo más cercano
   if (upcoming[0]) {
-    const d = dist(upcoming[0].players), bonus = (upcoming[0].bonuses || [])[0];
-    el('banner-title').textContent = `${upcoming[0].league}: ${upcoming[0].home.name} vs ${upcoming[0].away.name}`;
-    el('banner-sub').textContent = `${d.home}% Home • ${d.draw}% Draw • ${d.away}% Away • Starts ${fmtTime(upcoming[0].startISO)}`;
+    const u0    = upcoming[0];
+    const d     = dist(u0.players);
+    const bonus = (u0.bonuses || [])[0];
+    el('banner-title').textContent = `${u0.league}: ${u0.home.name} vs ${u0.away.name}`;
+    el('banner-sub').textContent   = `${d.home}% Home • ${d.draw}% Draw • ${d.away}% Away • Starts ${fmtTime(u0.startISO)}`;
     const bb = el('banner-bonus');
     if (bonus){ bb.textContent = bonus; bb.classList.remove('hidden'); } else { bb.classList.add('hidden'); }
   }
@@ -1257,7 +1375,7 @@ function renderResults(){
   el('live-block').classList.toggle('hidden', live.length === 0);
   if (live.length) buildTable('live-table', live, false);
 
-  // Tabla general (agrupada por fecha): upcoming y finished
+  // Tabla general: Upcoming primero y luego Finished (3d)
   buildTable('all-table', [...upcoming, ...finished], true);
 }
 function buildTable(containerId, items, showDateGroup){
