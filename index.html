@@ -1139,32 +1139,9 @@ function subscribeMatchesRealtime() {
     );
   ch.subscribe();
 }
-// Realtime: escucha inserciones/updates/deletes en ticket_scores_live para mantener counts
-let _participantsChannel = null;
-function subscribeParticipantsRealtime() {
-  if (_participantsChannel) {
-    try { sb.removeChannel(_participantsChannel); } catch {}
-    _participantsChannel = null;
-  }
-  _participantsChannel = sb.channel('realtime-participants')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_scores_live' }, async (payload) => {
-      const row = payload.new || payload.old;
-      const matchId = row?.match_id;
-      if (!matchId) return;
-      // cada cambio en ticket_scores_live de este match → recalc leaderboard y participantes
-      await refreshParticipantsFor(matchId);
-    });
-  _participantsChannel.subscribe();
-}
+
 // Arranque
-loadAllMatches().then(async () => {
-  // 1) subs a cambios en matches (status/score/etc.)
-  subscribeMatchesRealtime();
-  // 2) primer llenado de participantes por partido (a partir del leaderboard live)
-  await refreshParticipantsForAll();
-  // 3) subs a cambios en ticket_scores_live para que counts y ranking se auto-actualicen
-  subscribeParticipantsRealtime();
-});
+loadAllMatches().then(subscribeMatchesRealtime);
 
 /* ===== REWARDS DATA (historial + badges) ===== */
 const historyData = [
@@ -1453,38 +1430,6 @@ async function getLeaderboard(matchId) {
   }
   return data || [];
 }
-// === PARTICIPANTS: refresca conteo (y cachea lb) para un match
-async function refreshParticipantsFor(matchId) {
-  try {
-    const lb = await getLeaderboard(matchId);
-    const idx = matches.findIndex(m => String(m.id) === String(matchId));
-    if (idx >= 0) {
-      // guarda participantes y último leaderboard (para reusar en UI)
-      matches[idx].participants = (lb || []).length;
-      matches[idx].__lb = lb || [];
-    }
-    // Redibuja listas (Matches + Results)
-    renderMatches();
-    renderResults();
-
-    // Si el drawer de Results está abierto en este match, repintar ahí también
-    if (selectedRes && String(selectedRes.id) === String(matchId)) {
-      const list = document.getElementById('players-list');
-      if (list) drawLeaderboard(list, lb, matchId);
-      const pc = document.getElementById('participants-count');
-      if (pc) pc.textContent = `${(lb || []).length} players`;
-    }
-  } catch (e) {
-    console.warn('[refreshParticipantsFor]', e);
-  }
-}
-
-// === PARTICIPANTS: refresca todos (llamado tras la primera carga)
-async function refreshParticipantsForAll() {
-  await Promise.all(
-    (matches || []).map(m => refreshParticipantsFor(m.id))
-  );
-}
 
 // Nos suscribimos a cambios en ticket_scores_live para refrescar sidebar/lista
 let _tslChannel = null;
@@ -1507,84 +1452,32 @@ async function paintParticipants(matchObj) {
   if (!list) return;
 
   const leaderboard = await getLeaderboard(matchObj.id);
-  drawLeaderboard(list, leaderboard, matchObj.id);
 
-  // callback realtime ya existente → reajusta para pasar matchId
+  // callback para realtime
   subscribeLeaderboardRealtime(matchObj.id, (lb) => {
-    drawLeaderboard(list, lb, matchObj.id);
+    drawLeaderboard(list, lb);
   });
+
+  drawLeaderboard(list, leaderboard);
 }
 
-function drawLeaderboard(container, lb, matchId = null) {
+function drawLeaderboard(container, lb) {
   const arr = Array.isArray(lb) ? lb : [];
+  container.innerHTML = arr.map(row => `
+    <div class="p-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-6 text-xs font-bold text-gray-800">#${row.rank}</div>
+        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">${(row.username||'?').slice(0,2).toUpperCase()}</div>
+        <div class="font-medium">${row.full_name || row.username || 'Player'}</div>
+      </div>
+      <div class="text-sm font-semibold ${row.is_final ? 'text-gray-700' : 'text-emerald-700'}">
+        ${row.points} pts
+      </div>
+    </div>
+  `).join('');
 
-  container.innerHTML = arr.map(row => {
-    // id estable para abrir/cerrar el panel de picks (usa ticket_id si lo tienes, si no user_id)
-    const rowKey = String(row.ticket_id || row.user_id || `${row.username}-${row.rank}`);
-
-    // Username visible
-    const uname = (row.full_name || row.username || 'Player');
-
-    // Panel desplegable con picks (usa s1..s5 del leaderboard)
-    const picksHTML = `
-      <div class="mt-2 ml-9 rounded-lg border bg-gray-50 p-3 text-xs text-gray-800 grid grid-cols-2 gap-x-4 gap-y-1">
-        <div><b>User:</b> ${uname}</div>
-        <div><b>Points:</b> ${row.points ?? 0}</div>
-        <div><b>1X2:</b> ${row.s1 ?? '—'}</div>
-        <div><b>BTTS:</b> ${row.s2 ?? '—'}</div>
-        <div><b>O/U 2.5:</b> ${row.s3 ?? '—'}</div>
-        <div><b>Red card:</b> ${row.s4 ?? '—'}</div>
-        <div class="col-span-2"><b>Score:</b> ${row.s5 ?? '—'}</div>
-      </div>`;
-
-    return `
-      <div class="p-3 border-b last:border-b-0">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-6 text-xs font-bold text-gray-800">#${row.rank}</div>
-            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">
-              ${(uname || '?').slice(0,2).toUpperCase()}
-            </div>
-            <div class="font-medium">${uname}</div>
-          </div>
-          <div class="flex items-center gap-2">
-            <div class="text-sm font-semibold ${row.is_final ? 'text-gray-700' : 'text-emerald-700'}">
-              ${row.points} pts
-            </div>
-            <button class="text-xs px-2 py-1 border rounded hover:bg-gray-50" data-picks="${rowKey}">
-              View picks
-            </button>
-          </div>
-        </div>
-        <div class="hidden" data-picks-panel="${rowKey}">
-          ${picksHTML}
-        </div>
-      </div>`;
-  }).join('');
-
-  // Wire: toggle de picks
-  container.querySelectorAll('[data-picks]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.getAttribute('data-picks');
-      const panel = container.querySelector(`[data-picks-panel="${CSS.escape(key)}"]`);
-      if (!panel) return;
-      panel.classList.toggle('hidden');
-    });
-  });
-
-  // contador de participantes
   const pc = document.getElementById('participants-count');
   if (pc) pc.textContent = `${arr.length} players`;
-
-  // Si nos pasaron matchId y hay 'matches' en memoria, actualiza su contador también
-  if (matchId) {
-    const idx = matches.findIndex(m => String(m.id) === String(matchId));
-    if (idx >= 0) {
-      matches[idx].participants = arr.length;
-      renderResults();
-      renderMatches();
-    }
-  }
 }
 
 // Hookea tu existing flow:
