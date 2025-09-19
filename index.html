@@ -1067,7 +1067,6 @@ async function fetchUpcomingMatches() {
   const { data, error } = await sb
     .from('matches')
     .select('*')
-    .eq('status', 'NS')
     .gte('start_time', nowISO)
     .order('start_time', { ascending: true });
 
