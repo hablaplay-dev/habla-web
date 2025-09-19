@@ -1169,6 +1169,15 @@ function fmtTime(d){return new Date(d).toLocaleTimeString([], {hour:'2-digit',mi
 function fmtDateLine(d){const dt=new Date(d);const day=dt.toLocaleDateString([], {weekday:'short'});const md=dt.toLocaleDateString([], {month:'short',day:'numeric'}); const t=fmtTime(d);return `${day}, ${md} • ${t}`}
 function el(id){return document.getElementById(id)}
 function showToast(msg){el('toast-text').textContent=msg; const b=el('toast'); b.classList.remove('hidden'); setTimeout(()=>b.classList.add('hidden'),2200);}
+function fmtCountdownWithDays(ms){if (ms < 0) return "00:00:00";
+  const totalSec = Math.floor(ms / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const rem  = totalSec % 86400;
+  const h = String(Math.floor(rem / 3600)).padStart(2,'0');
+  const m = String(Math.floor((rem % 3600) / 60)).padStart(2,'0');
+  const s = String(rem % 60).padStart(2,'0');
+  return days > 0 ? `${days}d ${h}:${m}:${s}` : `${h}:${m}:${s}`;
+}
 
 /* ===== ACCOUNT DATA ===== */
 const avatarLibrary = Array.from({length: 24}, (_,i)=>`https://i.pravatar.cc/120?img=${i+1}`);
@@ -1286,17 +1295,20 @@ function renderMatches(){
       </div>`;
 
     // Timers
-    const pillSpan   = row.querySelector(`#cd-${m.id}`);
-    const dupSpan    = row.querySelector(`#cd-dup-${m.id}`);
-    const tick       = ()=>{
-      const ms = new Date(m.startISO) - new Date();
-      const t  = fmtCountdown(ms);
-      if (pillSpan) pillSpan.textContent = t;
-      if (dupSpan)  dupSpan.textContent  = t;
-    };
-    tick();
-    const tId = setInterval(tick, 1000);
-    countdownTimers.set(m.id, tId);
+	const pillSpan   = row.querySelector(`#cd-${m.id}`);
+	const dupSpan    = row.querySelector(`#cd-dup-${m.id}`);
+	const tick       = ()=>{
+	  const ms = new Date(m.startISO) - new Date();
+	  // Pill "Kickoff in": mismo formato HH:MM:SS
+	  const tKickoff = fmtCountdown(ms);
+	  // Columna "To lock": con días si corresponde
+	  const tLock    = fmtCountdownWithDays(ms);
+	  if (pillSpan) pillSpan.textContent = tKickoff;
+	  if (dupSpan)  dupSpan.textContent  = tLock;
+	};
+	tick();
+	const tId = setInterval(tick, 1000);
+	countdownTimers.set(m.id, tId);
 
     box.appendChild(row);
   });
