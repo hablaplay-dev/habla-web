@@ -548,24 +548,77 @@
             <div id="players-list" class="divide-y"></div>
           </div>
         </div>
-        <div class="space-y-6">
-          <div class="border rounded-lg p-4">
-            <div class="text-xs text-gray-500" id="live-time-label">Status</div>
-            <div id="live-time" class="text-2xl font-bold">—</div>
-          </div>
-          <div class="border rounded-lg p-4">
-            <div class="flex items-center gap-2">
-              <img id="res-sponsor-logo" src="https://dummyimage.com/28x28/000/fff&text=S" class="w-7 h-7 rounded" alt="sponsor">
-              <div><div class="text-sm font-semibold text-gray-900">Bonuses</div><div id="res-sponsor-name" class="text-xs text-gray-500">by Sponsor</div></div>
-            </div>
-            <div id="res-bonus-list" class="mt-3 space-y-2"></div>
-          </div>
-          <div class="border rounded-lg p-4">
-            <h4 class="text-sm font-semibold mb-2">Match result pick share</h4>
-            <div id="res-dist" class="dist-bar bg-gray-200"></div>
-            <div class="mt-2 flex justify-between text-xs text-gray-600"><span>Home</span><span>Draw</span><span>Away</span></div>
-          </div>
-        </div>
+		<div class="space-y-6">
+		  <!-- Status / reloj -->
+		  <div class="border rounded-lg p-4">
+		    <div class="text-xs text-gray-500" id="live-time-label">Status</div>
+		    <div id="live-time" class="text-2xl font-bold">—</div>
+		    <div id="live-score" class="mt-1 text-sm text-gray-700"></div>
+		  </div>
+		
+		  <!-- Leyenda de predicciones -->
+		  <div class="border rounded-lg p-4">
+		    <h4 class="text-sm font-semibold mb-2">Leyenda de predicciones</h4>
+		    <ul class="text-xs text-gray-700 space-y-1" id="pred-legend">
+		      <li>• <b>P1</b>: Resultado del partido — <i>HOME</i> / <i>DRAW</i> / <i>AWAY</i></li>
+		      <li>• <b>P2</b>: Ambos anotan — <i>YES / NO</i></li>
+		      <li>• <b>P3</b>: Total goles — <i>OVER 2.5 / UNDER 2.5</i></li>
+		      <li>• <b>P4</b>: ¿Tarjeta roja? — <i>YES / NO</i></li>
+		      <li>• <b>P5</b>: Marcador exacto — <i>Ej.: 2-1</i></li>
+		    </ul>
+		  </div>
+		
+		  <!-- Distribución de respuestas -->
+		  <div class="border rounded-lg p-4">
+		    <h4 class="text-sm font-semibold mb-3">Distribución de respuestas</h4>
+		
+		    <div class="mb-2 text-xs text-gray-600 font-medium">P1 · 1X2</div>
+		    <div id="dist-p1" class="dist-bar bg-gray-200 mb-2"></div>
+		    <div class="flex justify-between text-[11px] text-gray-600 mb-3"><span>Home</span><span>Draw</span><span>Away</span></div>
+		
+		    <div class="mb-2 text-xs text-gray-600 font-medium">P2 · BTTS</div>
+		    <div id="dist-p2" class="dist-bar bg-gray-200 mb-2"></div>
+		    <div class="flex justify-between text-[11px] text-gray-600 mb-3"><span>Yes</span><span>No</span></div>
+		
+		    <div class="mb-2 text-xs text-gray-600 font-medium">P3 · Over/Under 2.5</div>
+		    <div id="dist-p3" class="dist-bar bg-gray-200 mb-2"></div>
+		    <div class="flex justify-between text-[11px] text-gray-600 mb-3"><span>Over</span><span>Under</span></div>
+		
+		    <div class="mb-2 text-xs text-gray-600 font-medium">P4 · Tarjeta roja</div>
+		    <div id="dist-p4" class="dist-bar bg-gray-200 mb-2"></div>
+		    <div class="flex justify-between text-[11px] text-gray-600 mb-3"><span>Yes</span><span>No</span></div>
+		
+		    <div class="mb-2 text-xs text-gray-600 font-medium">P5 · Marcador exacto</div>
+		    <div id="dist-p5" class="mt-1 space-y-1 text-[11px] text-gray-700"></div>
+		  </div>
+		
+		  <!-- Pozo y premios -->
+		  <div class="border rounded-lg p-4">
+		    <h4 class="text-sm font-semibold mb-2">Pozo y premios</h4>
+		    <div class="text-sm"><b>Pozo acumulado:</b> <span id="pot-amount">—</span></div>
+		    <ul class="mt-2 text-sm text-gray-700" id="prize-breakdown">
+		      <li>🥇 1º: <b id="prize-1">—</b> (50%)</li>
+		      <li>🥈 2º: <b id="prize-2">—</b> (35%)</li>
+		      <li>🥉 3º: <b id="prize-3">—</b> (15%)</li>
+		    </ul>
+		    <p class="mt-3 text-xs text-gray-600">
+		      <b>Empates:</b> si hay empate en un puesto premiado, se reparte en partes iguales la suma de los premios de esos puestos. 
+		      Ej.: si 2 empatan el 1º, reciben por igual la suma del 50% y 35% del pozo.
+		    </p>
+		  </div>
+		
+		  <!-- (se mantiene el panel de Bonus si lo usas) -->
+		  <div class="border rounded-lg p-4">
+		    <div class="flex items-center gap-2">
+		      <img id="res-sponsor-logo" src="https://dummyimage.com/28x28/000/fff&text=S" class="w-7 h-7 rounded" alt="sponsor">
+		      <div>
+		        <div class="text-sm font-semibold text-gray-900">Bonuses</div>
+		        <div id="res-sponsor-name" class="text-xs text-gray-500">by Sponsor</div>
+		      </div>
+		    </div>
+		    <div id="res-bonus-list" class="mt-3 space-y-2"></div>
+		  </div>
+		</div>
       </div>
     </div>
   </aside>
@@ -1383,7 +1436,7 @@ function buildTable(containerId, items, showDateGroup){
   const wrap=el(containerId); wrap.innerHTML='';
   const table=document.createElement('div'); table.className='w-full';
   table.innerHTML=`
-    <div class="grid grid-cols-[1.1fr,1fr,1.4fr,60px,1.4fr,1fr,1.4fr] text-[12px] text-gray-500 px-3 py-2">
+    <div class="grid grid-cols-[1.1fr,1fr,1.4fr,60px,1.4fr,1.6fr,1.2fr] text-[12px] text-gray-500 px-3 py-2">
       <div>Date & Time</div><div>League</div><div class="pl-2">Home</div><div class="text-center">vs</div><div class="pl-2">Away</div><div class="text-center">Status</div><div>Highlights</div>
     </div>
     <div class="divide-y" id="${containerId}-rows"></div>`;
@@ -1399,13 +1452,13 @@ function buildTable(containerId, items, showDateGroup){
     if(showDateGroup && group!==lastGroup){ const g=document.createElement('div'); g.className='bg-gray-50 text-xs font-semibold text-gray-600 px-3 py-1.5'; g.textContent=group; rows.appendChild(g); lastGroup=group; }
     const r=document.createElement('button'); r.className='w-full hover:bg-gray-50';
     r.innerHTML=`
-      <div class="grid grid-cols-[1.1fr,1fr,1.4fr,60px,1.4fr,1fr,1.4fr] items-center px-3 py-3">
+      <div class="grid grid-cols-[1.1fr,1fr,1.4fr,60px,1.4fr,1.6fr,1.2fr] items-center px-3 py-3">
         <div class="text-sm">${fmtDateLine(m.startISO)}</div>
         <div class="text-sm text-gray-700">${m.league}</div>
         <div class="flex items-center gap-2"><img src="${m.home.logo}" class="w-6 h-6 rounded-full"><span class="font-medium">${m.home.name}</span></div>
         <div class="text-center text-gray-400">VS</div>
         <div class="flex items-center gap-2"><img src="${m.away.logo}" class="w-6 h-6 rounded-full"><span class="font-medium">${m.away.name}</span></div>
-        <div class="flex justify-center">${statusPill(st,m.startISO)}</div>
+        <div class="flex justify-center">${statusPill(st,m)}</div>
         <div class="text-xs">
           <div class="flex items-center gap-2 flex-wrap">
             ${(m.bonuses&&m.bonuses.length)?`<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">Bonus</span>`:''}
@@ -1417,7 +1470,33 @@ function buildTable(containerId, items, showDateGroup){
     rows.appendChild(r);
   });
 }
-function statusPill(state){ if(state==='live') return `<span class="status-pill bg-red-100 text-red-700"><span class="status-dot bg-red-600 animate-pulse"></span>Live</span>`; if(state==='upcoming') return `<span class="status-pill bg-amber-100 text-amber-700"><span class="status-dot bg-amber-500"></span>Upcoming</span>`; return `<span class="status-pill bg-gray-100 text-gray-700"><span class="status-dot bg-gray-500"></span>Finished</span>`;}
+function statusPill(state, m){
+  // m puede traer: score_home, score_away, live_minute
+  if (state === 'live') {
+    const score = (Number.isFinite(m.score_home) && Number.isFinite(m.score_away))
+      ? `${m.score_home}-${m.score_away}` : '—';
+    const min = m.live_minute ? `${m.live_minute}’` : '';
+    return `
+      <div class="flex items-center gap-2">
+        <span class="status-pill bg-red-100 text-red-700">
+          <span class="status-dot bg-red-600 animate-pulse"></span> Live
+        </span>
+        <span class="px-2 py-0.5 rounded bg-gray-900 text-white text-[11px] font-bold">${score}</span>
+        <span class="text-[11px] text-gray-600">${min}</span>
+      </div>`;
+  }
+  if (state === 'upcoming') {
+    return `<span class="status-pill bg-amber-100 text-amber-700"><span class="status-dot bg-amber-500"></span>Upcoming</span>`;
+  }
+  // finished
+  const fscore = (Number.isFinite(m.score_home) && Number.isFinite(m.score_away))
+    ? `${m.score_home}-${m.score_away}` : 'FT';
+  return `
+    <div class="flex items-center gap-2">
+      <span class="status-pill bg-gray-100 text-gray-700"><span class="status-dot bg-gray-500"></span>Finished</span>
+      <span class="px-2 py-0.5 rounded bg-gray-800 text-white text-[11px] font-bold">${fscore}</span>
+    </div>`;
+}
 function groupLabel(d){const dt=new Date(d); const today=new Date(); today.setHours(0,0,0,0); const delta=Math.floor((dt - today)/86400000); if(delta===0) return 'Today'; if(delta===1) return 'Tomorrow'; if(delta===-1) return 'Yesterday'; return dt.toLocaleDateString([], {weekday:'long',month:'short',day:'numeric'});}
 
 // ===== LIVE LEADERBOARD (Results) =====
@@ -1446,45 +1525,76 @@ function subscribeLeaderboardRealtime(matchId, onUpdate) {
   _tslChannel.subscribe();
 }
 
-// Pinta participantes (ranking) en el drawer de Results
+// RPC simple y directa: debe existir en el backend
+async function getLeaderboardWithPicks(matchId){
+  const { data, error } = await sb.rpc('get_leaderboard_with_picks', { p_match_id: matchId });
+  if (error) { console.warn('[get_leaderboard_with_picks]', error); return []; }
+  return data || [];
+}
+
+// Pinta lista con columnas: #, user, P1..P5, Premio
 async function paintParticipants(matchObj) {
   const list = document.getElementById('players-list');
   if (!list) return;
 
-  const leaderboard = await getLeaderboard(matchObj.id);
+  const leaderboard = await getLeaderboardWithPicks(matchObj.id);
 
-  // callback para realtime
-  subscribeLeaderboardRealtime(matchObj.id, (lb) => {
+  // Realtime (si cambia el live score o los puntos)
+  subscribeLeaderboardRealtime(matchObj.id, async () => {
+    const lb = await getLeaderboardWithPicks(matchObj.id);
     drawLeaderboard(list, lb);
+    renderRightStats(lb, matchObj); // refresca panel derecho
   });
 
   drawLeaderboard(list, leaderboard);
+  renderRightStats(leaderboard, matchObj); // primer pintado
 }
 
 function drawLeaderboard(container, lb) {
   const arr = Array.isArray(lb) ? lb : [];
-  container.innerHTML = arr.map(row => `
-    <div class="p-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-6 text-xs font-bold text-gray-800">#${row.rank}</div>
-        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">${(row.username||'?').slice(0,2).toUpperCase()}</div>
-        <div class="font-medium">${row.full_name || row.username || 'Player'}</div>
-      </div>
-      <div class="text-sm font-semibold ${row.is_final ? 'text-gray-700' : 'text-emerald-700'}">
-        ${row.points} pts
-      </div>
+  const prizeRanks = new Set([1,2,3]); // resaltar top 3
+
+  // Cabecera compacta
+  container.innerHTML = `
+    <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] px-4 py-2 text-[12px] text-gray-500">
+      <div>#</div><div>User</div><div>P1</div><div>P2</div><div>P3</div><div>P4</div><div>P5</div><div class="text-right">Prize</div>
     </div>
-  `).join('');
+    <div id="players-rows" class="divide-y"></div>`;
+
+  const rows = document.getElementById('players-rows');
+  rows.innerHTML = arr.map(row => {
+    const tag = (v)=> (v ?? '—');
+    const isPrize = Number(row.prize_amount || 0) > 0 || prizeRanks.has(Number(row.rank));
+    const prizeTxt = Number(row.prize_amount || 0) > 0
+      ? `S/ ${Number(row.prize_amount).toLocaleString()}`
+      : (prizeRanks.has(Number(row.rank)) ? '—' : '😞');
+
+    return `
+      <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] items-center px-4 py-2 ${isPrize?'bg-amber-50':''}">
+        <div class="text-xs font-bold text-gray-800">#${row.rank}</div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">
+            ${(row.username||'?').slice(0,2).toUpperCase()}
+          </div>
+          <div class="font-medium text-sm truncate">${row.full_name || row.username || 'Player'}</div>
+        </div>
+        <div class="text-sm">${tag(row.s1)}</div>
+        <div class="text-sm">${tag(row.s2)}</div>
+        <div class="text-sm">${tag(row.s3)}</div>
+        <div class="text-sm">${tag(row.s4)}</div>
+        <div class="text-sm">${tag(row.s5)}</div>
+        <div class="text-sm text-right ${Number(row.prize_amount||0)>0?'text-emerald-700 font-semibold':''}">${prizeTxt}</div>
+      </div>`;
+  }).join('');
 
   const pc = document.getElementById('participants-count');
   if (pc) pc.textContent = `${arr.length} players`;
 }
 
-// Hookea tu existing flow:
-const _openResultsDrawer_orig = openResultsDrawer;
+// Hook en el open: después de abrir el drawer, pedimos lista + stats
+const _openResultsDrawer_base = openResultsDrawer;
 openResultsDrawer = async (id) => {
-  _openResultsDrawer_orig(id);
-  // Cuando abras el drawer, pintamos ranking live
+  _openResultsDrawer_base(id);
   const m = matches.find(mm => String(mm.id) === String(id));
   if (m) { await paintParticipants(m); }
 };
@@ -1509,11 +1619,91 @@ function openResultsDrawer(id){
 function closeResultsDrawer(){ el('overlay').classList.add('pointer-events-none'); el('overlay').classList.remove('opacity-100'); el('results-section').classList.remove('opacity-60','blur-[2px]'); document.getElementById('results-drawer').classList.add('translate-x-full');}
 document.getElementById('results-back').addEventListener('click',closeResultsDrawer);
 function renderResultsSidebar(m){
-  const d=dist(m.players);
   el('res-sponsor-name').textContent='by '+(m.sponsor?.name||'Sponsor');
   el('res-bonus-list').innerHTML=(m.bonuses||[]).map(b=>`<div class="text-sm bg-yellow-50 border border-yellow-200 rounded px-2 py-1.5"><i class="fa-solid fa-bolt-lightning text-yellow-500 mr-1"></i>${b}</div>`).join('')||`<div class="text-xs text-gray-500">No active bonuses</div>`;
-  el('res-dist').innerHTML=`<div style="width:${d.home}%;background:#16a34a" class="h-full float-left"></div><div style="width:${d.draw}%;background:#a3a3a3" class="h-full float-left"></div><div style="width:${d.away}%;background:#3b82f6" class="h-full"></div>`;
-  el('live-time-label').textContent='Status'; el('live-time').textContent='—';
+  el('live-time-label').textContent='Estado';
+  el('live-time').textContent='—';
+  // El resto (distribuciones, pozo, marcador) lo hace renderRightStats()
+}
+// Calcula % por opción
+function pct(n, t){ return t>0 ? Math.round((n*100)/t) : 0; }
+
+// Renderiza barras de distribución (P1..P4) y lista de P5
+function renderRightStats(lb, matchObj){
+  const total = lb.length;
+
+  // P1
+  const c1 = { HOME:0, DRAW:0, AWAY:0 };
+  // P2
+  const c2 = { YES:0, NO:0 };
+  // P3
+  const c3 = { OVER:0, UNDER:0 };
+  // P4
+  const c4 = { YES:0, NO:0 };
+  // P5 (marcadores: top-5)
+  const c5 = {};
+
+  lb.forEach(r=>{
+    if (r.s1 && c1[r.s1] !== undefined) c1[r.s1]++;
+    if (r.s2 && c2[r.s2] !== undefined) c2[r.s2]++;
+    if (r.s3 && c3[r.s3] !== undefined) c3[r.s3]++;
+    if (r.s4 && c4[r.s4] !== undefined) c4[r.s4]++;
+    if (r.s5) c5[r.s5] = (c5[r.s5]||0)+1;
+  });
+
+  // P1 barras
+  const p1h = pct(c1.HOME,total), p1d = pct(c1.DRAW,total), p1a = pct(c1.AWAY,total);
+  el('dist-p1').innerHTML = `
+    <div style="width:${p1h}%;" class="h-full float-left bg-green-600"></div>
+    <div style="width:${p1d}%;" class="h-full float-left bg-gray-400"></div>
+    <div style="width:${p1a}%;" class="h-full bg-blue-500"></div>`;
+
+  // P2 barras
+  const p2y=pct(c2.YES,total), p2n=pct(c2.NO,total);
+  el('dist-p2').innerHTML = `
+    <div style="width:${p2y}%;" class="h-full float-left bg-emerald-600"></div>
+    <div style="width:${p2n}%;" class="h-full bg-gray-400"></div>`;
+
+  // P3 barras
+  const p3o=pct(c3.OVER,total), p3u=pct(c3.UNDER,total);
+  el('dist-p3').innerHTML = `
+    <div style="width:${p3o}%;" class="h-full float-left bg-indigo-600"></div>
+    <div style="width:${p3u}%;" class="h-full bg-gray-400"></div>`;
+
+  // P4 barras
+  const p4y=pct(c4.YES,total), p4n=pct(c4.NO,total);
+  el('dist-p4').innerHTML = `
+    <div style="width:${p4y}%;" class="h-full float-left bg-rose-600"></div>
+    <div style="width:${p4n}%;" class="h-full bg-gray-400"></div>`;
+
+  // P5 top-5 marcadores
+  const p5node = el('dist-p5');
+  const top5 = Object.entries(c5).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  p5node.innerHTML = top5.length
+    ? top5.map(([sc, n])=>`<div class="flex justify-between"><span>${sc}</span><span>${pct(n,total)}%</span></div>`).join('')
+    : `<div class="text-gray-500">—</div>`;
+
+  // Pozo (si tienes entry_fee o pot en DB úsalo; fallback = jugadores * 10)
+  const entryFee = Number(matchObj.entry_fee || 10); // <-- ajusta si ya tienes este campo
+  const pot = total * entryFee;
+  el('pot-amount').textContent = `S/ ${pot.toLocaleString()}`;
+  el('prize-1').textContent = `S/ ${(pot*0.50).toFixed(2)}`;
+  el('prize-2').textContent = `S/ ${(pot*0.35).toFixed(2)}`;
+  el('prize-3').textContent = `S/ ${(pot*0.15).toFixed(2)}`;
+
+  // Marcador / minuto en vivo
+  const live = (()=>{
+    const now = new Date();
+    const start = new Date(matchObj.startISO || matchObj.start_time);
+    const end   = addMinutes(start, matchObj.durMin || 110);
+    return now >= start && now < end;
+  })();
+
+  const scoreTxt = Number.isFinite(matchObj.score_home) && Number.isFinite(matchObj.score_away)
+    ? `${matchObj.score_home}-${matchObj.score_away}` : '—';
+  el('live-score').textContent = live
+    ? `Marcador: ${scoreTxt}  •  ${matchObj.live_minute ? (matchObj.live_minute+"’") : ''}`
+    : (Number.isFinite(matchObj.score_home) ? `Final: ${scoreTxt}` : '');
 }
 function renderPlayers(m){const list=el('players-list'); let arr=[...m.players]; list.innerHTML=arr.map((p,i)=>`<div class="p-3 flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-6 text-xs font-bold text-gray-800">#${i+1}</div><img src="${p.avatar}" class="w-8 h-8 rounded-full"><div class="font-medium">${p.name}</div></div><button class="text-xs px-2 py-1 border rounded hover:bg-gray-50">View picks</button></div>`).join('');}
 
