@@ -1,0 +1,1 @@
+ALTER TABLE public.email_outbox DISABLE ROW LEVEL SECURITY;
