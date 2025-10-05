@@ -1,0 +1,1 @@
+ALTER TABLE public.ticket_answers ENABLE ROW LEVEL SECURITY;
