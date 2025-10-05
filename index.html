@@ -36,6 +36,7 @@
     .status-pill{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
     .status-dot{width:6px;height:6px;border-radius:999px}
     .dist-bar{height:8px;border-radius:999px;overflow:hidden}
+	.card-hover:hover{ transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,.06); }
 
     /* Quita estilos que ocultaban el scrollbar (ANTES estaban duplicados) */
     /* ::-webkit-scrollbar{display:none}
@@ -228,125 +229,136 @@
           </div>
         </div>
       </section>
-
-      <!-- REWARDS (nuevo) -->
-      <section id="rewards-section" class="hidden transition-all">
-        <!-- HERO BALANCE -->
-        <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_.9fr] gap-4 mb-4">
-          <div class="bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl p-6 shadow">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-sm opacity-90">Your Lukas balance</div>
-                <div id="rewards-balance" class="text-4xl font-extrabold leading-tight">0</div>
-                <div class="text-xs opacity-90 mt-1">Keep playing to grow your rewards</div>
-              </div>
-              <div class="text-right">
-                <div class="text-xs opacity-90">Current streak</div>
-                <div id="rewards-streak" class="text-2xl font-extrabold">0</div>
-                <button id="rewards-cta-play" class="mt-3 px-4 py-2 bg-white text-rose-600 rounded-lg font-semibold text-sm hover:bg-rose-50">
-                  Play now
-                </button>
-	      <div class="mt-2 flex gap-2 justify-end">
-  		<button id="rewards-cta-redeem"
-   		        class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                  Redeem for cash 
-		</button>
-		<button id="rewards-cta-store"
-			class="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">
-		  Go to Redeem Store
-		</button>
+	  <!-- REWARDS / REDEEM STORE -->
+	  <section id="rewards-section" class="transition-all">
+	    <!-- HEADER / BALANCE -->
+	    <div class="mb-4 grid grid-cols-1 lg:grid-cols-[1.1fr_.9fr] gap-4">
+	      <div class="bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl p-6 shadow">
+	        <div class="flex items-center justify-between">
+	          <div>
+	            <div class="text-sm opacity-90">Your Lukas balance</div>
+	            <div id="rewards-balance" class="text-4xl font-extrabold leading-tight">0 Lukas</div>
+	            <div class="text-xs opacity-90 mt-1">Earn Lukas in matches and redeem here.</div>
+	          </div>
+	          <div class="text-right">
+	            <div class="text-xs opacity-90">Current streak</div>
+	            <div id="rewards-streak" class="text-2xl font-extrabold">0</div>
+	            <div class="mt-2 flex gap-2 justify-end">
+	              <button id="rewards-cta-matches" class="px-4 py-2 border rounded-lg text-sm bg-white/10 hover:bg-white/20">Go to Matches</button>
+	              <button id="open-orders" class="px-4 py-2 bg-white text-rose-600 rounded-lg font-semibold text-sm hover:bg-rose-50">
+	                My orders
+	              </button>
+	            </div>
+	          </div>
+	        </div>
+	        <div class="grid grid-cols-3 gap-3 mt-5 text-center">
+	          <div class="bg-white/15 rounded-lg py-3">
+	            <div id="rw-lifetime" class="text-xl font-bold">—</div>
+	            <div class="text-xs">Lifetime Lukas</div>
+	          </div>
+	          <div class="bg-white/15 rounded-lg py-3">
+	            <div id="rw-tickets" class="text-xl font-bold">—</div>
+	            <div class="text-xs">Tickets played</div>
+	          </div>
+	          <div class="bg-white/15 rounded-lg py-3">
+	            <div id="rw-avg" class="text-xl font-bold">—</div>
+	            <div class="text-xs">Avg. rank</div>
+	          </div>
+	        </div>
 	      </div>
-              </div>
-            </div>
-            <div class="grid grid-cols-3 gap-3 mt-5 text-center">
-              <div class="bg-white/15 rounded-lg py-3">
-                <div id="rw-lifetime" class="text-xl font-bold">—</div>
-                <div class="text-xs">Lifetime Lukas</div>
-              </div>
-              <div class="bg-white/15 rounded-lg py-3">
-                <div id="rw-tickets" class="text-xl font-bold">—</div>
-                <div class="text-xs">Tickets played</div>
-              </div>
-              <div class="bg-white/15 rounded-lg py-3">
-                <div id="rw-avg" class="text-xl font-bold">—</div>
-                <div class="text-xs">Avg. rank</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- How it works -->
-          <div class="bg-white rounded-2xl border p-6">
-            <h3 class="text-lg font-bold text-gray-900">How rewards work</h3>
-            <ol class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <li class="flex items-start gap-3 p-3 rounded-lg border bg-emerald-50/60">
-                <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center"><i class="fa-solid fa-pen"></i></div>
-                <div class="text-sm"><b>Make your match ticket</b><br><span class="text-gray-600">Answer 5 predictions for each match.</span></div>
-              </li>
-              <li class="flex items-start gap-3 p-3 rounded-lg border bg-yellow-50/60">
-                <div class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center"><i class="fa-solid fa-trophy"></i></div>
-                <div class="text-sm"><b>Finish in prize spots</b><br><span class="text-gray-600">Claim Lukas for correct predictions.</span></div>
-              </li>
-              <li class="flex items-start gap-3 p-3 rounded-lg border bg-sky-50/60">
-                <div class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center"><i class="fa-solid fa-gift"></i></div>
-                <div class="text-sm"><b>Redeem prizes</b><br><span class="text-gray-600">Use Lukas to unlock real rewards.</span></div>
-              </li>
-            </ol>
-            <button id="rewards-cta-matches" class="mt-4 w-full sm:w-auto px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Go to Matches</button>
-          </div>
-        </div>
-
-        <!-- Body: History + Badges -->
-        <div class="grid grid-cols-1 lg:grid-cols-[1.25fr_.75fr] gap-4">
-          <!-- History -->
-          <div class="bg-white rounded-xl border p-6">
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-bold text-gray-900">Tournament history</h3>
-              <div class="flex items-center gap-1 text-sm">
-                <button id="hist-all" class="px-3 py-1 rounded-full bg-gray-900 text-white">All</button>
-                <button id="hist-won" class="px-3 py-1 rounded-full hover:bg-gray-100">Won</button>
-                <button id="hist-noprize" class="px-3 py-1 rounded-full hover:bg-gray-100">No prize</button>
-              </div>
-            </div>
-            <div id="history-empty" class="hidden mt-6 p-4 rounded-lg border text-center text-sm text-gray-600">
-              Sign in to see your rewards history.
-              <div class="mt-3 flex gap-2 justify-center">
-                <button class="px-3 py-1.5 border rounded-lg text-sm" id="rw-open-signin">Sign in</button>
-                <button class="px-3 py-1.5 bg-primary text-white rounded-lg text-sm" id="rw-open-signup">Create account</button>
-              </div>
-            </div>
-
-            <div class="mt-4 overflow-auto">
-              <div class="min-w-[720px]">
-                <div class="grid grid-cols-[1.2fr,1fr,1.6fr,1fr,1fr,1fr] text-[12px] text-gray-500 px-3 py-2">
-                  <div>Date &amp; Time</div><div>League</div><div>Match</div><div class="text-center">Rank</div><div class="text-center">Lukas</div><div class="text-center">Status</div>
-                </div>
-                <div id="history-rows" class="divide-y"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Badges / Streaks -->
-          <aside class="space-y-4">
-            <div class="bg-white rounded-xl border p-6">
-              <div class="flex items-center justify-between mb-2">
-                <h3 class="text-lg font-bold text-gray-900">Streak badges</h3>
-                <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Play daily</span>
-              </div>
-              <div id="badges-grid" class="grid grid-cols-2 gap-3"></div>
-              <div class="text-xs text-gray-500 mt-2">Earn badges by playing consecutive days. Claim to receive extra Lukas.</div>
-            </div>
-
-            <div class="bg-white rounded-xl border p-6">
-              <h3 class="text-sm font-semibold text-gray-900 mb-2">Tips to earn more</h3>
-              <ul class="text-sm space-y-1 text-gray-700">
-                <li>• Join <b>hot matches</b> with sponsor bonuses.</li>
-                <li>• Keep your <b>streak</b> to unlock higher badges.</li>
-                <li>• Aim for <b>correct score</b> for big Lukas.</li>
-              </ul>
-            </div>
-          </aside>
-        </div>
-      </section>
+	
+	      <!-- HOW IT WORKS -->
+	      <div class="bg-white rounded-2xl border p-6">
+	        <h3 class="text-lg font-bold text-gray-900">How redemptions work</h3>
+	        <ol class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+	          <li class="flex items-start gap-3 p-3 rounded-lg border bg-emerald-50/60">
+	            <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center"><i class="fa-solid fa-pen"></i></div>
+	            <div class="text-sm"><b>Play & earn Lukas</b><br><span class="text-gray-600">Compete daily and collect Lukas.</span></div>
+	          </li>
+	          <li class="flex items-start gap-3 p-3 rounded-lg border bg-yellow-50/60">
+	            <div class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center"><i class="fa-solid fa-store"></i></div>
+	            <div class="text-sm"><b>Choose a reward</b><br><span class="text-gray-600">Electronics, gift cards and more.</span></div>
+	          </li>
+	          <li class="flex items-start gap-3 p-3 rounded-lg border bg-sky-50/60">
+	            <div class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center"><i class="fa-solid fa-shield-check"></i></div>
+	            <div class="text-sm"><b>Redeem securely</b><br><span class="text-gray-600">ID/age checks, shipping & tracking.</span></div>
+	          </li>
+	        </ol>
+	      </div>
+	    </div>
+	
+	    <!-- FILTERS -->
+	    <div class="bg-white rounded-2xl border p-4 mb-3">
+	      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+	        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+	          <div>
+	            <label class="text-xs text-gray-600">Category</label>
+	            <select id="flt-category" class="w-full border rounded-lg px-3 py-2 mt-1">
+	              <option value="">All</option>
+	              <option value="phones">Phones</option>
+	              <option value="laptops">Laptops</option>
+	              <option value="consoles">Consoles</option>
+	              <option value="giftcards">Gift cards</option>
+	              <option value="accessories">Accessories</option>
+	            </select>
+	          </div>
+	          <div>
+	            <label class="text-xs text-gray-600">Sort</label>
+	            <select id="flt-sort" class="w-full border rounded-lg px-3 py-2 mt-1">
+	              <option value="popular">Most popular</option>
+	              <option value="low">Cost: Low → High</option>
+	              <option value="high">Cost: High → Low</option>
+	              <option value="new">Newest</option>
+	            </select>
+	          </div>
+	          <div>
+	            <label class="text-xs text-gray-600">Max Lukas</label>
+	            <input id="flt-max" type="number" min="0" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="e.g. 1200">
+	          </div>
+	          <div>
+	            <label class="text-xs text-gray-600">Search</label>
+	            <input id="flt-q" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="iPhone, PS5…">
+	          </div>
+	        </div>
+	        <div class="flex gap-2">
+	          <button id="flt-clear" class="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Clear</button>
+	          <span class="text-xs text-gray-500 self-center" id="store-count">— items</span>
+	        </div>
+	      </div>
+	    </div>
+	
+	    <!-- STORE GRID -->
+	    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="store-grid"></div>
+	
+	    <!-- INFO CARDS -->
+	    <div class="grid md:grid-cols-3 gap-4 mt-4">
+	      <div class="bg-white rounded-xl border p-4">
+	        <h4 class="text-sm font-semibold mb-2">Redemption policy</h4>
+	        <ul class="text-xs text-gray-700 space-y-1">
+	          <li>• One account per person. 18+ only.</li>
+	          <li>• Govt. ID and email verification required.</li>
+	          <li>• Processing time: 1–3 business days (gift cards instant).</li>
+	          <li>• Limited quantities, while supplies last.</li>
+	        </ul>
+	      </div>
+	      <div class="bg-white rounded-xl border p-4">
+	        <h4 class="text-sm font-semibold mb-2">Shipping & delivery</h4>
+	        <ul class="text-xs text-gray-700 space-y-1">
+	          <li>• Peru nationwide shipping (electronics).</li>
+	          <li>• Digital rewards delivered by email.</li>
+	          <li>• Tracking provided once shipped.</li>
+	        </ul>
+	      </div>
+	      <div class="bg-white rounded-xl border p-4">
+	        <h4 class="text-sm font-semibold mb-2">Help</h4>
+	        <ul class="text-xs text-gray-700 space-y-1">
+	          <li>• Keep your email verified and profile complete.</li>
+	          <li>• Mismatched names or addresses may delay delivery.</li>
+	          <li>• Contact support with your Order ID.</li>
+	        </ul>
+	      </div>
+	    </div>
+	  </section>
 
       <!-- ADD: ACCOUNT PAGE -->
       <section id="account-section" class="hidden transition-all">
@@ -2226,113 +2238,299 @@ document.getElementById('nav-rewards').addEventListener('click',()=>showView('re
 document.getElementById('brand-home').addEventListener('click',()=>showView('matches'));
 document.getElementById('nav-account').addEventListener('click',()=>showView('account'));
                                                                                                                                                     
-/* ===== REWARDS RENDER ===== */
+/* ===== REWARDS / REDEEM STORE (NUEVO) ===== */
+
+/** Catálogo base (puedes mover a DB cuando quieras) */
+const STORE_ITEMS = [
+  {
+    id: 'IPH14-128-BLK', sku: 'IPH14-128-BLK', name: 'iPhone 14 128GB (Black)',
+    category: 'phones', cost: 3200, stock: 3, type: 'physical',
+    img: 'https://images.unsplash.com/photo-1603899122830-c1fc36b73455?q=80&w=1200&auto=format&fit=crop',
+    desc: 'Equipo nuevo, sellado. Garantía oficial Apple. Envío nacional.',
+    meta: 'Processing 1–3 business days • Limited qty'
+  },
+  {
+    id: 'MBP-13-M2', sku: 'MBP-13-M2', name: 'MacBook Pro 13" M2 8/256',
+    category: 'laptops', cost: 5200, stock: 2, type: 'physical',
+    img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1200&auto=format&fit=crop',
+    desc: 'Laptop nueva con boleta. Envío asegurado y tracking.',
+    meta: 'Processing 1–3 business days • Signature required'
+  },
+  {
+    id: 'PS5-SLIM', sku: 'PS5-SLIM', name: 'PlayStation 5 Slim',
+    category: 'consoles', cost: 3800, stock: 5, type: 'physical',
+    img: 'https://images.unsplash.com/photo-1606813907291-76a360df2d72?q=80&w=1200&auto=format&fit=crop',
+    desc: 'Consola nueva. Incluye 1 control.',
+    meta: 'Processing 1–3 business days • Limited qty'
+  },
+  {
+    id: 'XBOX-SERIES-S', sku: 'XBOX-S', name: 'Xbox Series S',
+    category: 'consoles', cost: 2200, stock: 6, type: 'physical',
+    img: 'https://images.unsplash.com/photo-1605901309584-818e25960a8b?q=80&w=1200&auto=format&fit=crop',
+    desc: 'Edición estándar. Garantía de fabricante.',
+    meta: 'Processing 1–3 business days'
+  },
+  {
+    id: 'AMZ-100', sku: 'AMZ-100', name: 'Gift Card Amazon US – $100',
+    category: 'giftcards', cost: 550, stock: 40, type: 'digital',
+    img: 'https://images.unsplash.com/photo-1585386959984-a41552231664?q=80&w=1200&auto=format&fit=crop',
+    desc: 'Entrega por email. Solo para cuentas US.',
+    meta: 'Digital delivery • Usually instant'
+  },
+  {
+    id: 'PSN-50', sku: 'PSN-50', name: 'PlayStation Store – $50',
+    category: 'giftcards', cost: 290, stock: 35, type: 'digital',
+    img: 'https://images.unsplash.com/photo-1585247226801-bc613c441316?q=80&w=1200&auto=format&fit=crop',
+    desc: 'Código digital vía email.',
+    meta: 'Digital delivery • Usually instant'
+  },
+  {
+    id: 'AIRPODS-3', sku: 'AIRPODS-3', name: 'AirPods (3rd gen.)',
+    category: 'accessories', cost: 1100, stock: 10, type: 'physical',
+    img: 'https://images.unsplash.com/photo-1518449037230-8f6cfb0f7e8a?q=80&w=1200&auto=format&fit=crop',
+    desc: 'Nuevos, sellados.',
+    meta: 'Processing 1–3 business days'
+  }
+];
+
+/** Mini “DB” de órdenes del usuario actual (en producción: tabla orders) */
+let ORDERS = []; // [{id, itemId, cost, type, status, created_at, detail:{...}}]
+
+/** Render principal de la tienda */
 function renderRewards(){
-  // Hero balance/stats
-  el('rewards-balance').textContent = (isLoggedIn() ? lukasBalance : 0).toLocaleString()+' Lukas';
+  // balance box
+  el('rewards-balance').textContent = (isLoggedIn() ? lukasBalance : 0).toLocaleString() + ' Lukas';
   el('rewards-streak').textContent  = isLoggedIn() ? userStreak : 0;
 
   const ticketsPlayed = isLoggedIn() ? historyData.length : 0;
   const lifetime = isLoggedIn() ? historyData.reduce((a,h)=>a+h.lukas,0) : 0;
   el('rw-lifetime').textContent = lifetime;
   el('rw-tickets').textContent = ticketsPlayed;
-
   const avgRank = isLoggedIn()
     ? Math.round(historyData.reduce((a,h)=>a+(h.rank/h.total),0)/historyData.length*100)
     : 0;
-  el('rw-avg').textContent = isLoggedIn() ? (`#${Math.round(avgRank*historyData[0].total/100)||1}`) : '—';
+  el('rw-avg').textContent = isLoggedIn() ? (`#${Math.max(1, Math.round(avgRank))}`) : '—';
 
-  // History
-  if(!isLoggedIn()){
-    el('history-empty').classList.remove('hidden');
-    el('history-rows').innerHTML='';
+  // filtros
+  bindStoreFilters();
+  drawStoreGrid();
+}
+
+/** Tarjeta de producto */
+function cardHTML(it){
+  const affordable = lukasBalance >= it.cost && isLoggedIn();
+  const disabled = !affordable || it.stock <= 0;
+  const badge = it.type === 'digital' ? 'Digital' : 'Physical';
+  return `
+    <div class="border rounded-2xl bg-white overflow-hidden hover:shadow-md transition">
+      <div class="relative">
+        <img src="${it.img}" class="w-full h-40 object-cover" alt="">
+        <span class="absolute top-2 left-2 text-[11px] px-2 py-1 rounded-full ${it.type==='digital'?'bg-sky-600':'bg-emerald-600'} text-white">${badge}</span>
+        ${it.stock<=0?'<span class="absolute top-2 right-2 text-[11px] px-2 py-1 rounded-full bg-gray-600 text-white">Out of stock</span>':''}
+      </div>
+      <div class="p-3">
+        <div class="text-xs text-gray-500">${it.sku}</div>
+        <div class="font-semibold leading-tight">${it.name}</div>
+        <div class="mt-1 flex items-center justify-between">
+          <span class="text-sm px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold">${it.cost.toLocaleString()} Lukas</span>
+          <span class="text-[11px] text-gray-500">${it.stock} left</span>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button data-prd="${it.id}" class="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Details</button>
+          <button data-buy="${it.id}" class="px-3 py-2 rounded-lg text-sm text-white ${disabled?'bg-gray-300 cursor-not-allowed':'bg-primary hover:bg-emerald-600'}">Redeem</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/** Bind + dibujo de grid con filtros */
+function bindStoreFilters(){
+  const inputs = ['flt-category','flt-sort','flt-max','flt-q'];
+  inputs.forEach(id=>{
+    el(id)?.removeEventListener?.('input', drawStoreGrid);
+    el(id)?.removeEventListener?.('change', drawStoreGrid);
+    el(id)?.addEventListener?.('input', drawStoreGrid);
+    el(id)?.addEventListener?.('change', drawStoreGrid);
+  });
+  el('flt-clear')?.addEventListener('click', ()=>{
+    el('flt-category').value=''; el('flt-sort').value='popular'; el('flt-max').value=''; el('flt-q').value='';
+    drawStoreGrid();
+  });
+  // botones superiores
+  el('rewards-cta-matches').onclick = ()=>showView('matches');
+  el('open-orders').onclick = openOrdersModal;
+}
+
+function drawStoreGrid(){
+  const cat = el('flt-category').value;
+  const sort = el('flt-sort').value;
+  const max = Number(el('flt-max').value||0);
+  const q = (el('flt-q').value||'').toLowerCase();
+
+  let arr = [...STORE_ITEMS];
+
+  if (cat) arr = arr.filter(i=>i.category===cat);
+  if (max>0) arr = arr.filter(i=>i.cost<=max);
+  if (q) arr = arr.filter(i=> (i.name+i.sku).toLowerCase().includes(q));
+
+  if (sort==='low') arr.sort((a,b)=>a.cost-b.cost);
+  if (sort==='high') arr.sort((a,b)=>b.cost-a.cost);
+  if (sort==='new') arr.sort((a,b)=> (a.id<b.id?1:-1)); // proxy simple
+  // popular: como está
+
+  const grid = el('store-grid');
+  grid.innerHTML = arr.map(cardHTML).join('') || `<div class="col-span-full text-center text-sm text-gray-500 py-8">No items match your filters.</div>`;
+  el('store-count').textContent = `${arr.length} items`;
+
+  // eventos
+  grid.querySelectorAll('[data-prd]').forEach(b=> b.onclick = ()=> openProductModal(b.dataset.prd));
+  grid.querySelectorAll('[data-buy]').forEach(b=> b.onclick = ()=> startRedeemFlow(b.dataset.buy));
+}
+
+/** Product Detail modal */
+let _selectedItem = null;
+function openProductModal(id){
+  const it = STORE_ITEMS.find(x=>x.id===id);
+  if(!it) return;
+  _selectedItem = it;
+  el('prd-img').src = it.img;
+  el('prd-sku').textContent = it.sku;
+  el('prd-name').textContent = it.name;
+  el('prd-desc').textContent = it.desc;
+  el('prd-cost').textContent = `${it.cost.toLocaleString()} Lukas`;
+  el('prd-stock').textContent = `${it.stock>0?it.stock+' left':'Out of stock'}`;
+  el('prd-meta').textContent = it.meta || '';
+  const can = isLoggedIn() && lukasBalance>=it.cost && it.stock>0;
+  const btn = el('prd-redeem');
+  btn.disabled = !can;
+  showModal('prd-modal');
+}
+el('prd-close')?.addEventListener('click',()=>hideModal('prd-modal'));
+el('prd-cancel')?.addEventListener('click',()=>hideModal('prd-modal'));
+el('prd-redeem')?.addEventListener('click',()=>{
+  hideModal('prd-modal');
+  if(_selectedItem) startRedeemFlow(_selectedItem.id);
+});
+
+/** Checkout modal (anti-reclamos: validaciones fuertes) */
+function startRedeemFlow(id){
+  const it = STORE_ITEMS.find(x=>x.id===id);
+  if(!it) return;
+
+  // Pre-checks (minimiza reclamos)
+  if (!isLoggedIn() || isGuest) { openAuthFlow('signin'); return; }
+  if (lukasBalance < it.cost) { showToast('Not enough Lukas'); return; }
+  const emailVerified = !!(currentUser && currentUser.email_confirmed_at);
+  if (!emailVerified) { showToast('Please verify your email first'); return; }
+  if (!isProfileComplete()) { showToast('Complete your profile (18+, name, DOB, email)'); return; }
+  if (it.stock<=0) { showToast('Out of stock'); return; }
+
+  // Pintar checkout
+  el('chk-item').textContent = `${it.name} (${it.sku})`;
+  el('chk-cost').textContent = `${it.cost.toLocaleString()} Lukas`;
+  el('chk-spend').textContent = `${it.cost.toLocaleString()} Lukas`;
+  el('chk-ack').checked = false;
+  el('chk-error').classList.add('hidden');
+  // limpiar campos
+  ['chk-name','chk-dni','chk-phone','chk-city','chk-address','chk-email'].forEach(id=>{const n=el(id); if(n) n.value='';});
+  // mostrar secciones según tipo
+  el('chk-ship-box').classList.toggle('hidden', it.type!=='physical');
+  el('chk-digital-box').classList.toggle('hidden', it.type!=='digital');
+
+  // enlazar T&C
+  el('chk-terms-link').onclick = (e)=>{ e.preventDefault(); try{ openTerms(); }catch{} };
+
+  // confirmar
+  const confirm = el('chk-confirm');
+  confirm.disabled = true;
+  const checkEnable = ()=>{
+    const ack = el('chk-ack').checked;
+    if(it.type==='physical'){
+      const ok = ['chk-name','chk-dni','chk-phone','chk-city','chk-address'].every(id=>(el(id).value||'').trim());
+      confirm.disabled = !(ack && ok);
+    } else {
+      const em = (el('chk-email').value||'').trim();
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em);
+      confirm.disabled = !(ack && emailOk);
+    }
+  };
+  ['chk-ack','chk-name','chk-dni','chk-phone','chk-city','chk-address','chk-email']
+    .forEach(id=> el(id)?.addEventListener('input', checkEnable));
+  checkEnable();
+
+  // handlers
+  confirm.onclick = async ()=>{
+    // revalidar por si cambió algo
+    if (confirm.disabled) return;
+
+    // “Crear” orden (en producción: insert en tabla orders con RLS)
+    const order = {
+      id: 'ORD-' + Math.random().toString(36).slice(2,8).toUpperCase(),
+      itemId: it.id,
+      cost: it.cost,
+      type: it.type,
+      status: (it.type==='digital' ? 'processing' : 'pending_shipment'),
+      created_at: new Date().toISOString(),
+      detail: it.type==='physical'
+        ? {
+            name: el('chk-name').value.trim(),
+            dni: el('chk-dni').value.trim(),
+            phone: el('chk-phone').value.trim(),
+            city: el('chk-city').value.trim(),
+            address: el('chk-address').value.trim()
+          }
+        : { email: el('chk-email').value.trim() }
+    };
+
+    // Debita Lukas y stock (optimista)
+    lukasBalance -= it.cost;
+    it.stock = Math.max(0, it.stock - 1);
+    ORDERS.unshift(order);
+    headerAuth();
+    drawStoreGrid();
+    hideModal('chk-modal');
+
+    // Notifica (email opcional si ya tienes edge function configurada)
+    try { await sendConfirmationEmail(currentUser.email, currentUser.user_metadata?.username || 'Player', 'Español'); } catch {}
+
+    showToast(`Order ${order.id} created`);
+  };
+
+  el('chk-cancel').onclick = ()=> hideModal('chk-modal');
+
+  showModal('chk-modal');
+}
+
+/** Órdenes */
+function openOrdersModal(){
+  const box = el('orders-list');
+  if (!ORDERS.length){
+    box.innerHTML = `<div class="py-6 text-center text-sm text-gray-600">No redemptions yet.</div>`;
   } else {
-    el('history-empty').classList.add('hidden');
-    renderHistory('all');
-  }
-
-  // Badges
-  renderBadges();
-
-  // CTAs
-  el('rewards-cta-play').onclick=()=>showView('matches');
-  el('rewards-cta-matches').onclick=()=>showView('matches');
-
-  // Tabs
-  el('hist-all').onclick=()=>{setHistTab('all');renderHistory('all');};
-  el('hist-won').onclick=()=>{setHistTab('won');renderHistory('won');};
-  el('hist-noprize').onclick=()=>{setHistTab('noprize');renderHistory('noprize');};
-
-  // Redeem button
-  const redeemBtn = el('rewards-cta-redeem');
-  if (redeemBtn) {
-    const canRedeem = isLoggedIn() && lukasBalance >= 100;
-    redeemBtn.disabled = !canRedeem;
-    redeemBtn.title = canRedeem ? '' : 'You need at least 100 Lukas and to be signed in';
-  }
-}
-function setHistTab(sel){
-  ['hist-all','hist-won','hist-noprize'].forEach(id=>{
-    const b=el(id); const active=id==='hist-'+sel;
-    b.className = 'px-3 py-1 rounded-full ' + (active?'bg-gray-900 text-white':'hover:bg-gray-100');
-  });
-}
-function renderHistory(filter){
-  const rows=el('history-rows'); rows.innerHTML='';
-  const arr=historyData.filter(h=> filter==='all' ? true : (filter==='won'?h.lukas>0:h.lukas===0));
-  arr.sort((a,b)=>b.date-a.date);
-  arr.forEach(h=>{
-    const medal = h.lukas>0 ? (h.rank===1?'🥇':(h.rank===2?'🥈':'🥉')) : '—';
-    const status = h.lukas>0?'<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">Won</span>':'<span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">No prize</span>';
-    const row=document.createElement('div');
-    row.className='grid grid-cols-[1.2fr,1fr,1.6fr,1fr,1fr,1fr] items-center px-3 py-3 text-sm';
-    row.innerHTML=`
-      <div>${fmtDateLine(h.date)}</div>
-      <div class="text-gray-700">${h.league}</div>
-      <div class="font-medium">${h.match}</div>
-      <div class="text-center">${medal} #${h.rank}/${h.total}</div>
-      <div class="text-center ${h.lukas>0?'text-emerald-600 font-semibold':''}">${h.lukas>0?`+${h.lukas}`:'0'}</div>
-      <div class="text-center">${status}</div>`;
-    rows.appendChild(row);
-  });
-}
-function renderBadges(){
-  const grid=el('badges-grid'); grid.innerHTML='';
-  const data = badgesTemplate.map(b=>({
-    ...b,
-    unlocked: isLoggedIn() && userStreak >= b.days,
-    progress: Math.min(1, (isLoggedIn() ? userStreak : 0) / b.days)
-  }));
-  data.forEach(b=>{
-    const card=document.createElement('div');
-    card.className='p-4 border rounded-lg hover:shadow-sm transition bg-white';
-    card.innerHTML=`
-      <div class="flex items-center justify-between">
+    box.innerHTML = ORDERS.map(o=>{
+      const it = STORE_ITEMS.find(x=>x.id===o.itemId);
+      return `<div class="py-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full ${b.unlocked?'bg-amber-400':'bg-gray-200'} flex items-center justify-center text-white text-lg">★</div>
+          <img src="${it?.img||''}" class="w-14 h-14 object-cover rounded-lg border">
           <div>
-            <div class="text-sm font-semibold">${b.name}</div>
-            <div class="text-xs text-gray-500">${b.days}-day streak</div>
+            <div class="text-sm font-semibold">${it?.name||o.itemId}</div>
+            <div class="text-xs text-gray-500">${o.id} • ${new Date(o.created_at).toLocaleString()}</div>
           </div>
         </div>
-        <div class="text-xs text-gray-600">${Math.round(b.progress*100)}%</div>
-      </div>
-      <div class="mt-3 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div class="h-2 ${b.unlocked?'bg-amber-400':'bg-gray-400'}" style="width:${b.progress*100}%"></div>
-      </div>
-      <div class="mt-3 flex items-center justify-between">
-        <div class="text-xs text-gray-600">Reward: <b>+${b.reward} Lukas</b></div>
-        ${b.unlocked?`<button data-claim="${b.id}" class="px-3 py-1 rounded-lg text-xs ${claimedBadges.has(b.id)?'bg-gray-100 text-gray-500 cursor-default':'bg-primary text-white hover:bg-emerald-600'}">${claimedBadges.has(b.id)?'Claimed':'Claim'}</button>`:`<span class="text-xs text-gray-400">Locked</span>`}
+        <div class="text-right">
+          <div class="text-sm">${o.cost.toLocaleString()} Lukas</div>
+          <div class="text-xs ${o.status.includes('pending')?'text-amber-700':'text-emerald-700'}">${o.status.replace('_',' ')}</div>
+        </div>
       </div>`;
-    grid.appendChild(card);
-  });
-  grid.querySelectorAll('[data-claim]').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const id=btn.getAttribute('data-claim'); if(claimedBadges.has(id)) return;
-      claimedBadges.add(id); const b=badgesTemplate.find(x=>x.id===id); lukasBalance+=b.reward; headerAuth(); renderRewards(); showToast(`Badge claimed! +${b.reward} Lukas`);
-    });
-  });
+    }).join('');
+  }
+  showModal('orders-modal');
 }
+el('orders-close')?.addEventListener('click', ()=> hideModal('orders-modal'));
+
+/** Helpers modales (reusa clases existentes) */
+function showModal(id){ const m=el(id); m.classList.remove('hidden'); m.classList.add('flex'); }
+function hideModal(id){ const m=el(id); m.classList.add('hidden'); m.classList.remove('flex'); }
 
 /* ===== REDEEM MODAL LOGIC ===== */
 function openRedeemModal(){
@@ -3008,4 +3206,100 @@ document.getElementById('rewards-cta-play').addEventListener('click',()=>showVie
     document.addEventListener('DOMContentLoaded', initAuth);
   }
 </script>
+<!-- PRODUCT DETAILS MODAL -->
+<div id="prd-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[85]">
+  <div class="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-xl relative">
+    <button id="prd-close" class="absolute right-3 top-3 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100" aria-label="Close">
+      <i class="fa-solid fa-xmark text-gray-500"></i>
+    </button>
+    <div class="grid md:grid-cols-[1.1fr_.9fr] gap-4">
+      <div>
+        <img id="prd-img" class="w-full h-56 object-cover rounded-xl border" src="" alt="">
+      </div>
+      <div>
+        <div class="text-xs text-gray-500" id="prd-sku"></div>
+        <h3 id="prd-name" class="text-lg font-semibold"></h3>
+        <div class="mt-1 text-sm text-gray-600" id="prd-desc"></div>
+        <div class="mt-3 flex items-center gap-2">
+          <span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold" id="prd-cost"></span>
+          <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs" id="prd-stock"></span>
+        </div>
+        <div class="mt-3 text-xs text-gray-600" id="prd-meta"></div>
+        <div class="mt-4 flex gap-2">
+          <button id="prd-redeem" class="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+            Redeem with Lukas
+          </button>
+          <button id="prd-cancel" class="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT / REDEEM MODAL -->
+<div id="chk-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[90]">
+  <div class="bg-white rounded-2xl w-full max-w-xl p-6 shadow-xl">
+    <h3 class="text-lg font-semibold">Confirm redemption</h3>
+    <p class="text-sm text-gray-600">Review and confirm your details.</p>
+
+    <div class="mt-4 space-y-3">
+      <div class="p-3 rounded-lg bg-gray-50 border">
+        <div class="text-xs text-gray-600">Selected reward</div>
+        <div id="chk-item" class="text-sm font-semibold">—</div>
+        <div id="chk-cost" class="text-xs text-gray-600"></div>
+      </div>
+
+      <!-- SHIPPING (shown only for physical) -->
+      <div id="chk-ship-box" class="hidden border rounded-lg p-3">
+        <div class="text-xs text-gray-600 mb-2">Shipping address (Peru)</div>
+        <div class="grid grid-cols-2 gap-2">
+          <input id="chk-name" class="border rounded-lg px-3 py-2" placeholder="Full name">
+          <input id="chk-dni" class="border rounded-lg px-3 py-2" placeholder="DNI / CE">
+          <input id="chk-phone" class="border rounded-lg px-3 py-2" placeholder="Phone">
+          <input id="chk-city" class="border rounded-lg px-3 py-2" placeholder="City">
+          <input id="chk-address" class="col-span-2 border rounded-lg px-3 py-2" placeholder="Street address">
+        </div>
+        <p class="text-[11px] text-gray-500 mt-2">Name must match your verified profile.</p>
+      </div>
+
+      <!-- DIGITAL DELIVERY -->
+      <div id="chk-digital-box" class="hidden border rounded-lg p-3">
+        <div class="text-xs text-gray-600 mb-1">Delivery email</div>
+        <input id="chk-email" class="border rounded-lg px-3 py-2 w-full" placeholder="you@email.com">
+        <p class="text-[11px] text-gray-500 mt-2">We send codes instantly after review.</p>
+      </div>
+
+      <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+        <div class="text-xs text-emerald-800">You will spend</div>
+        <div id="chk-spend" class="text-lg font-bold text-emerald-700">— Lukas</div>
+      </div>
+
+      <label class="flex items-start gap-2 text-xs">
+        <input id="chk-ack" type="checkbox" class="mt-0.5 accent-primary">
+        <span>I confirm I am 18+, my profile is complete (ID & email verified), and I accept the <a href="#" class="underline" id="chk-terms-link">Terms & Conditions</a>.</span>
+      </label>
+
+      <div id="chk-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2"></div>
+    </div>
+
+    <div class="mt-4 flex gap-2">
+      <button id="chk-confirm" class="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+        Confirm redemption
+      </button>
+      <button id="chk-cancel" class="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIMPLE ORDERS MODAL -->
+<div id="orders-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[80]">
+  <div class="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-xl">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-semibold">My orders</h3>
+      <button id="orders-close" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"><i class="fa-solid fa-xmark text-gray-500"></i></button>
+    </div>
+    <div id="orders-list" class="mt-3 divide-y text-sm"></div>
+    <div class="mt-3 text-xs text-gray-500">Need help? Contact support with your Order ID.</div>
+  </div>
+</div>
 </body></html>
