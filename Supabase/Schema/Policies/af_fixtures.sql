@@ -1,0 +1,1 @@
+ALTER TABLE public.af_fixtures DISABLE ROW LEVEL SECURITY;
