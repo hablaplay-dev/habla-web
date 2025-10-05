@@ -1,0 +1,1 @@
+ALTER TABLE public.match_results DISABLE ROW LEVEL SECURITY;
