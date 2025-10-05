@@ -1,0 +1,1 @@
+ALTER TABLE public.ticket_scores DISABLE ROW LEVEL SECURITY;
