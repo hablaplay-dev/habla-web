@@ -1,0 +1,1 @@
+ALTER TABLE public.af_leagues DISABLE ROW LEVEL SECURITY;
