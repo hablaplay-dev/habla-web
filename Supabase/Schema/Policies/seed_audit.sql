@@ -1,0 +1,1 @@
+ALTER TABLE public.seed_audit DISABLE ROW LEVEL SECURITY;
