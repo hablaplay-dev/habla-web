@@ -23,6 +23,5 @@ CREATE UNIQUE INDEX ticket_scores_live_pkey ON public.ticket_scores_live USING b
 CREATE INDEX idx_tickets_match ON public.tickets USING btree (match_id)
 CREATE INDEX idx_tickets_user ON public.tickets USING btree (user_id)
 CREATE UNIQUE INDEX tickets_pkey ON public.tickets USING btree (id)
-CREATE UNIQUE INDEX tickets_user_id_match_id_key ON public.tickets USING btree (user_id, match_id)
 CREATE INDEX idx_users_user_id ON public.users USING btree (user_id)
 CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)
