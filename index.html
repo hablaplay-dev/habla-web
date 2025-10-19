@@ -1097,6 +1097,99 @@ document.getElementById('dd-logout')?.addEventListener('click', async (e)=>{e.st
 
 // ===== LIVE DATA (Supabase) =====
 
+const matchTicketsCache = new Map();
+
+function getMatchTickets(matchId) {
+  const key = Number(matchId);
+  return matchTicketsCache.get(key) || [];
+}
+
+function mapTicketRpcRowToUI(row) {
+  return {
+    ticketId: row.ticket_id,
+    rank: row.rank,
+    submittedAt: row.submitted_at,
+    user: {
+      id: row.user_id,
+      name: row.full_name || row.username || 'Player',
+      username: row.username,
+      avatar: row.avatar_url || '',
+    },
+    picks: {
+      s1: row.s1 || null,
+      s2: row.s2 || null,
+      s3: row.s3 || null,
+      s4: row.s4 || null,
+      s5: row.s5 || null,
+    },
+    liveScore: {
+      score: row.score,
+      updatedAt: row.score_updated_at,
+      rank: row.rank,
+    },
+  };
+}
+
+let matches = [];
+
+function setMatchTickets(matchId, tickets) {
+  const key = Number(matchId);
+  matchTicketsCache.set(key, tickets);
+  const idx = matches.findIndex(m => Number(m.id) === key);
+  if (idx >= 0) {
+    matches[idx] = { ...matches[idx], tickets };
+  }
+}
+
+function resolveMatchTickets(match) {
+  if (match && Array.isArray(match.tickets)) {
+    return match.tickets;
+  }
+  return getMatchTickets(match?.id);
+}
+
+async function hydrateMatchTickets(matchList = []) {
+  if (!Array.isArray(matchList) || matchList.length === 0) {
+    return;
+  }
+
+  const pending = matchList.filter(m => !matchTicketsCache.has(Number(m.id)));
+  const groups = {
+    LIVE: pending.filter(m => m.status === 'LIVE').map(m => m.id),
+    NS: pending.filter(m => m.status === 'NS').map(m => m.id),
+    FT: pending.filter(m => m.status === 'FT').map(m => m.id),
+    OTHER: pending.filter(m => !['LIVE', 'NS', 'FT'].includes(m.status)).map(m => m.id),
+  };
+
+  const fetchForIds = async (ids) => {
+    if (!ids || !ids.length) return;
+    await Promise.all(ids.map(async (id) => {
+      const { data, error } = await sb.rpc('get_match_tickets_with_picks', { p_match_id: id });
+      if (error) {
+        console.warn('[hydrateMatchTickets]', id, error);
+        return;
+      }
+      const normalized = (data || []).map(mapTicketRpcRowToUI);
+      setMatchTickets(id, normalized);
+    }));
+  };
+
+  await fetchForIds(groups.LIVE);
+  await fetchForIds(groups.NS);
+  await fetchForIds(groups.FT);
+  await fetchForIds(groups.OTHER);
+
+  matchList.forEach((match, idx) => {
+    const tickets = getMatchTickets(match.id);
+    const updated = { ...match, tickets };
+    const stateIdx = matches.findIndex(m => Number(m.id) === Number(match.id));
+    if (stateIdx >= 0) {
+      matches[stateIdx] = updated;
+    }
+    matchList[idx] = updated;
+  });
+}
+
 // Mapea una fila de matches (DB) a la forma que usa tu UI
 function mapMatchRowToUI(row) {
   return {
@@ -1114,12 +1207,9 @@ function mapMatchRowToUI(row) {
     sponsor: { name: 'Sponsor', logo: 'https://dummyimage.com/28x28/111/fff&text=S' },
     bonuses: [],
     probs: {},
-    players: []
+    tickets: getMatchTickets(row.id)
   };
 }
-
-// Estado en memoria
-let matches = [];
 
 /**
  * Trae TODOS los partidos que aún no se juegan:
@@ -1173,6 +1263,7 @@ async function loadAllMatches() {
   const map = new Map();
   [...upcoming, ...liveFinished].forEach(m => map.set(m.id, m));
   matches = [...map.values()];
+  await hydrateMatchTickets(matches);
   renderMatches();
   renderResults();
 }
@@ -1182,21 +1273,25 @@ function subscribeMatchesRealtime() {
   const ch = sb.channel('realtime-matches')
     .on('postgres_changes',
       { event: '*', schema: 'public', table: 'matches' },
-      (payload) => {
+      async (payload) => {
         const row = payload.new || payload.old;
         if (!row) return;
         const idx = matches.findIndex(m => m.id === row.id);
 
         if (payload.eventType === 'DELETE') {
+		  matchTicketsCache.delete(Number(row.id));
           if (idx >= 0) { matches.splice(idx, 1); renderMatches(); renderResults(); }
           return;
         }
 
         const mapped = mapMatchRowToUI(payload.new || row);
         if (idx >= 0) {
-          matches[idx] = { ...matches[idx], ...mapped };
+          const merged = { ...matches[idx], ...mapped };
+          matches[idx] = merged;
+          await hydrateMatchTickets([merged]);
         } else {
           matches.push(mapped);
+		  await hydrateMatchTickets([mapped]);
         }
         renderMatches();
         renderResults();
@@ -1301,11 +1396,16 @@ function renderMatches(){
     .sort((a,b) => new Date(a.startISO) - new Date(b.startISO));
 
   // héroe: players totales
-  el('hero-players').textContent = ups.reduce((acc,m)=> acc + (m.participants || m.players.length || 0), 0);
+  el('hero-players').textContent = ups.reduce((acc,m)=> {
+    const tickets = resolveMatchTickets(m);
+    return acc + (m.participants || tickets.length || 0);
+  }, 0);
 
   ups.forEach(m => {
-    const d = dist(m.players);
-
+	const tickets = resolveMatchTickets(m);
+    const d = dist(tickets);
+    const playerCount = m.participants || tickets.length || 0;
+	
     const row = document.createElement('div');
     row.className = "rounded-xl border bg-white hover:shadow-md transition";
     row.setAttribute('data-match-id', m.id);
@@ -1325,7 +1425,7 @@ function renderMatches(){
           <div class="flex flex-col items-center justify-center text-center">
             <div class="text-xs text-gray-600 mb-1">Players</div>
             <div class="text-sm font-semibold text-gray-800">
-              ${m.participants || m.players.length || 0}
+              ${playerCount}
             </div>
           </div>
 
@@ -1392,8 +1492,23 @@ function _matchesDelegatedClick(ev){
   ev.preventDefault();
   openTicket(id); // mantiene lógica: invitados pueden abrir; submit sólo si logueado
 }
-function dist(players){const t=players.length||1,c={HOME:0,DRAW:0,AWAY:0};players.forEach(p=>c[p.picks.s1]++);return{home:Math.round(c.HOME*100/t),draw:Math.round(c.DRAW*100/t),away:Math.round(c.AWAY*100/t)}}
-
+function dist(tickets){
+  const arr = Array.isArray(tickets) ? tickets : [];
+  const counts = { HOME:0, DRAW:0, AWAY:0 };
+  arr.forEach(t => {
+    const pick = t?.picks?.s1;
+    if (pick && counts[pick] !== undefined) {
+      counts[pick]++;
+    }
+  });
+  const total = arr.length || 1;
+  return {
+    home: Math.round((counts.HOME * 100) / total),
+    draw: Math.round((counts.DRAW * 100) / total),
+    away: Math.round((counts.AWAY * 100) / total)
+  };
+}
+	
 /* ===== RESULTS LIST ===== */
 function renderResults(){
   const now = new Date();
@@ -1428,7 +1543,7 @@ function renderResults(){
   // Banner “Hot match”: el próximo más cercano
   if (upcoming[0]) {
     const u0    = upcoming[0];
-    const d     = dist(u0.players);
+    const d     = dist(resolveMatchTickets(u0));
     const bonus = (u0.bonuses || [])[0];
     el('banner-title').textContent = `${u0.league}: ${u0.home.name} vs ${u0.away.name}`;
     el('banner-sub').textContent   = `${d.home}% Home • ${d.draw}% Draw • ${d.away}% Away • Starts ${fmtTime(u0.startISO)}`;
@@ -1460,6 +1575,8 @@ function buildTable(containerId, items, showDateGroup){
     const st = now < new Date(m.startISO)
       ? 'upcoming'
       : (now < addMinutes(new Date(m.startISO), m.durMin || 110) ? 'live' : 'finished');
+	const tickets = resolveMatchTickets(m);
+    const playerCount = m.participants || (Array.isArray(tickets) ? tickets.length : 0);
     const group=groupLabel(m.startISO);
     if(showDateGroup && group!==lastGroup){ const g=document.createElement('div'); g.className='bg-gray-50 text-xs font-semibold text-gray-600 px-3 py-1.5'; g.textContent=group; rows.appendChild(g); lastGroup=group; }
     const r=document.createElement('button'); r.className='w-full hover:bg-gray-50';
@@ -1474,7 +1591,7 @@ function buildTable(containerId, items, showDateGroup){
         <div class="text-xs">
           <div class="flex items-center gap-2 flex-wrap">
             ${(m.bonuses&&m.bonuses.length)?`<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">Bonus</span>`:''}
-            <span class="px-2 py-0.5 rounded-full bg-gray-100">👥 ${m.participants||m.players.length} players</span>
+            <span class="px-2 py-0.5 rounded-full bg-gray-100">👥 ${playerCount} players</span>
           </div>
         </div>
       </div>`;
@@ -1717,7 +1834,23 @@ function renderRightStats(lb, matchObj){
     ? `Marcador: ${scoreTxt}  •  ${matchObj.live_minute ? (matchObj.live_minute+"’") : ''}`
     : (Number.isFinite(matchObj.score_home) ? `Final: ${scoreTxt}` : '');
 }
-function renderPlayers(m){const list=el('players-list'); let arr=[...m.players]; list.innerHTML=arr.map((p,i)=>`<div class="p-3 flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-6 text-xs font-bold text-gray-800">#${i+1}</div><img src="${p.avatar}" class="w-8 h-8 rounded-full"><div class="font-medium">${p.name}</div></div><button class="text-xs px-2 py-1 border rounded hover:bg-gray-50">View picks</button></div>`).join('');}
+function renderPlayers(m){
+  const list=el('players-list');
+  if (!list) return;
+  const tickets = resolveMatchTickets(m);
+  if (!tickets.length) {
+    list.innerHTML = `<div class="p-3 text-sm text-gray-500">No tickets yet</div>`;
+    return;
+  }
+  list.innerHTML=tickets.map((ticket,i)=>{
+    const user = ticket.user || {};
+    const name = user.name || user.username || 'Player';
+    const avatarId = user.id || user.username || name || `p-${i}`;
+    const avatar = user.avatar || `https://i.pravatar.cc/48?u=${encodeURIComponent(String(avatarId))}`;
+    const position = Number(ticket.rank) || i+1;
+    return `<div class="p-3 flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-6 text-xs font-bold text-gray-800">#${position}</div><img src="${avatar}" class="w-8 h-8 rounded-full"><div class="font-medium">${name}</div></div><button class="text-xs px-2 py-1 border rounded hover:bg-gray-50">View picks</button></div>`;
+  }).join('');
+}
 
 /* ===== DRAWER TICKET (Matches) ===== */
 let selectedMatch = null;          // fila de DB `matches`
