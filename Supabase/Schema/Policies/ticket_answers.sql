@@ -5,3 +5,9 @@ CREATE POLICY answers_insert_own ON public.ticket_answers FOR INSERT TO authenti
 CREATE POLICY answers_select_own ON public.ticket_answers FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
    FROM tickets t
   WHERE ((t.id = ticket_answers.ticket_id) AND (t.user_id = auth.uid())))));
+CREATE POLICY answers_select_submitted ON public.ticket_answers FOR SELECT TO authenticated USING ((EXISTS (
+  SELECT 1
+    FROM public.tickets t
+   WHERE t.id = ticket_answers.ticket_id
+     AND t.status = 'SUBMITTED'
+)));
