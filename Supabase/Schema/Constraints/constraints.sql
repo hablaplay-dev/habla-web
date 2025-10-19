@@ -30,6 +30,5 @@ ALTER TABLE public.tickets ADD CONSTRAINT tickets_match_id_fkey FOREIGN KEY FORE
 ALTER TABLE public.tickets ADD CONSTRAINT tickets_pkey PRIMARY KEY PRIMARY KEY (id);
 ALTER TABLE public.tickets ADD CONSTRAINT tickets_status_check CHECK ((status = ANY (ARRAY['SUBMITTED'::text, 'LOCKED'::text, 'SCORED'::text])));
 ALTER TABLE public.tickets ADD CONSTRAINT tickets_user_id_fkey FOREIGN KEY FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
-ALTER TABLE public.tickets ADD CONSTRAINT tickets_user_id_match_id_key UNIQUE UNIQUE (user_id, match_id);
 ALTER TABLE public.users ADD CONSTRAINT users_pkey PRIMARY KEY PRIMARY KEY (id);
 ALTER TABLE public.users ADD CONSTRAINT users_user_id_fkey FOREIGN KEY FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;

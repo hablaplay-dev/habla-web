@@ -779,23 +779,6 @@
     </div>
   </div>
 
-  <div id="already-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[65]">
-    <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl relative">
-      <!-- Botón X -->
-      <button id="already-close" class="absolute right-3 top-3 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100" aria-label="Close">
-        <i class="fa-solid fa-xmark text-gray-500"></i>
-      </button>
-      <h3 class="text-lg font-semibold mb-2 text-center">You are already participating</h3>
-      <p class="text-sm text-gray-600 text-center">Your ticket was submitted. Follow results live now.</p>
-      <!-- Solo un CTA a Results -->
-      <div class="mt-4">
-        <a href="#" id="go-results"
-           class="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg bg-secondary text-white hover:bg-blue-600">
-          Go to “Results / Follow Live!”
-        </a>
-      </div>
-    </div>
-  </div>
   <!-- NUEVO: Modal de éxito -->
   <div id="success-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[66]">
     <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl text-center">
@@ -2088,64 +2071,80 @@ function drawLeaderboard(container, lb, state = 'upcoming', matchObj = {}, infoO
   }
 
   const showScores = matchState === 'live' || matchState === 'finished';
+  const picksOrder = ['s1', 's2', 's3', 's4', 's5'];
 
-  const cards = arr.map((row, idx) => {
+  const rows = arr.map((row, idx) => {
     const item = normalizeLeaderboardRow(row, idx, info);
-    const picksMarkup = buildTicketPickBadges({ picks: item.picks });
-    const metaSegments = [];
-
-    if (showScores) {
-      metaSegments.push(`
-        <div class="flex flex-col text-left sm:text-right">
-          <span class="text-[11px] uppercase text-gray-500 tracking-wide">Score</span>
-          <span class="text-sm font-semibold text-gray-900">${item.scoreLabel}</span>
-        </div>`);
-      metaSegments.push(`
-        <div class="flex flex-col text-left sm:text-right">
-          <span class="text-[11px] uppercase text-gray-500 tracking-wide">Premio</span>
-          <span class="text-sm font-semibold ${item.prizeAmount > 0 ? 'text-emerald-700' : 'text-gray-700'}">${item.prizeLabel}</span>
-        </div>`);
-      if (item.updatedLabel) {
-        metaSegments.push(`<div class="text-[11px] text-gray-500 sm:text-right">Actualizado ${item.updatedLabel}</div>`);
-      }
-    } else {
-      metaSegments.push(`
-        <div class="flex flex-col">
-          <span class="text-[11px] uppercase text-gray-500 tracking-wide">Comprada</span>
-          <span class="text-sm font-semibold text-gray-900">${item.submittedLabel}</span>
-        </div>`);
-      metaSegments.push('<div class="text-[11px] text-gray-500">Esperando kickoff</div>');
-    }
-
     const highlightClass = (matchState === 'live' && item.rank === 1)
       ? 'bg-emerald-50'
       : ((matchState === 'finished' && item.prizeAmount > 0) ? 'bg-amber-50/60' : '');
+    const highlightDetailClass = [highlightClass, 'border-b border-gray-100'].filter(Boolean).join(' ').trim();
+
+    const pickCells = picksOrder.map(key => {
+      const value = item.picks?.[key] || '—';
+      return `<td class="px-2 py-3 align-top text-sm font-semibold text-gray-900">${value}</td>`;
+    }).join('');
+
+    const detailItems = picksOrder.map((key, orderIdx) => {
+      const label = PICK_LABELS[key] || `P${orderIdx + 1}`;
+      const value = item.picks?.[key] || '—';
+      return `<li class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+        <span class="text-xs font-semibold uppercase text-gray-500">${label}</span>
+        <span class="text-sm font-semibold text-gray-900">${value}</span>
+      </li>`;
+    }).join('');
+
+    const statusLine = showScores
+      ? `Comprada ${item.submittedLabel}${item.updatedLabel ? ` • Actualizado ${item.updatedLabel}` : ''}`
+      : `Comprada ${item.submittedLabel} • Esperando kickoff`;
+
+    const scoreCell = showScores ? item.scoreLabel : '—';
+    const prizeCell = showScores ? item.prizeLabel : '—';
+    const prizeClass = showScores && item.prizeAmount > 0 ? 'text-emerald-700' : 'text-gray-700';
 
     return `
-      <div class="px-4 py-3 ${highlightClass}">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <tr class="${highlightClass} align-top">
+        <td class="px-4 py-3 text-sm font-semibold text-gray-900">#${item.rank}</td>
+        <td class="px-4 py-3">
           <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-xs">#${item.rank}</div>
-              <img src="${item.avatar}" alt="${item.name}" class="w-8 h-8 rounded-full object-cover">
-            </div>
+            <img src="${item.avatar}" alt="${item.name}" class="w-8 h-8 rounded-full object-cover">
             <div>
               <div class="text-sm font-semibold text-gray-900">${item.name}</div>
-              ${item.username ? `<div class="text-[11px] text-gray-500">@${item.username}</div>` : ''}
-              ${showScores ? `<div class="text-[11px] text-gray-400">Comprada ${item.submittedLabel}</div>` : ''}
+              ${item.username ? `<div class="text-xs text-gray-500">@${item.username}</div>` : ''}
             </div>
           </div>
-          <div class="flex flex-wrap gap-4 text-xs text-gray-600 sm:justify-end">
-            ${metaSegments.join('')}
-          </div>
-        </div>
-        <div class="mt-2 flex flex-wrap gap-1.5">
-          ${picksMarkup}
-        </div>
-      </div>`;
+        </td>
+        ${pickCells}
+        <td class="px-4 py-3 text-sm font-semibold ${showScores ? 'text-gray-900' : 'text-gray-500'}">${scoreCell}</td>
+        <td class="px-4 py-3 text-sm font-semibold ${prizeClass}">${prizeCell}</td>
+      </tr>
+      <tr class="${highlightDetailClass}">
+        <td colspan="9" class="px-4 pb-4">
+          <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-gray-700">${detailItems}</ul>
+          <div class="mt-3 text-xs text-gray-500 flex flex-wrap gap-3">${statusLine ? `<span>${statusLine}</span>` : ''}</div>
+        </td>
+      </tr>`;
   }).join('');
 
-  container.innerHTML = cards;
+  container.innerHTML = `
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm text-gray-700">
+        <thead class="bg-gray-50 text-xs font-semibold uppercase text-gray-500 tracking-wide">
+          <tr>
+            <th class="px-4 py-2 text-left">Pos.</th>
+            <th class="px-4 py-2 text-left">Username</th>
+            <th class="px-2 py-2 text-left">P1</th>
+            <th class="px-2 py-2 text-left">P2</th>
+            <th class="px-2 py-2 text-left">P3</th>
+            <th class="px-2 py-2 text-left">P4</th>
+            <th class="px-2 py-2 text-left">P5</th>
+            <th class="px-4 py-2 text-left">Score</th>
+            <th class="px-4 py-2 text-left">Premio</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white">${rows}</tbody>
+      </table>
+    </div>`;
 
   if (pc) {
     const label = arr.length === 1 ? '1 participante' : `${arr.length} participantes`;
@@ -2330,9 +2329,9 @@ function renderPlayers(){
 /* ===== DRAWER TICKET (Matches) ===== */
 let selectedMatch = null;          // fila de DB `matches`
 let picks = {};                    // { s1, s2, s3, s4, s5 }
-let picksSubmitted = false;        // para bloquear doble envío local
 let score = { home: 0, away: 0 };  // para la predicción de marcador
 let _lockTimer = null;
+let isSubmittingTicket = false;    // evita doble envío concurrente
 
 // Render simple del strip usando datos de DB (sin logos)
 function buildStripFromDB(m){
@@ -2368,15 +2367,6 @@ async function fetchMatchById(matchId){
   return data || null;
 }
 
-// Chequea si ya hay ticket del user (RPC security definer)
-async function fetchExistingTicket(matchId){
-  const { data, error } = await sb.rpc('get_user_ticket', { p_match_id: matchId });
-  if (error) return null;       // si RLS o no logueado, lo ignoramos
-  // la RPC devuelve tabla con 0..1 filas
-  if (Array.isArray(data) && data.length) return data[0];
-  return null;
-}
-
 // Abre drawer de ticket
 async function openTicket(matchOrId){
   try {
@@ -2398,10 +2388,10 @@ async function openTicket(matchOrId){
     }
 
     // 4) Estado base del drawer
-    selectedMatch   = m;
-    picks           = {};
-    picksSubmitted  = false;
-    score           = { home: 0, away: 0 };
+    selectedMatch       = m;
+    picks               = {};
+    score               = { home: 0, away: 0 };
+    isSubmittingTicket  = false;
 
     // 5) Pintar cabecera del drawer
     el('strip-ticket').innerHTML = buildStripFromDB(selectedMatch);
@@ -2429,16 +2419,7 @@ async function openTicket(matchOrId){
     // 7) Render de predicciones (UI existente)
     renderPredictionsForDB(selectedMatch);
 
-    // 8) Revisar duplicado vía RPC (si hay sesión)
-    try {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session?.user) {
-        const t = await fetchExistingTicket(selectedMatch.id);
-        if (t?.ticket_id) { picksSubmitted = true; }
-      }
-    } catch {}
-
-    // 9) Abrir drawer + overlay
+    // 8) Abrir drawer + overlay
     el('overlay').classList.remove('pointer-events-none');
     el('overlay').classList.add('opacity-100');
     el('matches-section').classList.add('opacity-60','blur-[2px]');
@@ -2457,10 +2438,10 @@ function closeTicket(){
   el('overlay').classList.remove('opacity-100');
   el('matches-section').classList.remove('opacity-60','blur-[2px]');
   el('ticket-drawer').classList.add('translate-x-full');
-  selectedMatch = null; picks = {}; updateCompleted();
+  selectedMatch = null; picks = {}; isSubmittingTicket = false; updateCompleted();
 }
 document.getElementById('drawer-back').addEventListener('click', ()=>{
-  if (selectedMatch && !picksSubmitted && Object.keys(picks).length > 0) {
+  if (selectedMatch && Object.keys(picks).length > 0) {
     if (!confirm("You haven't submitted your ticket yet. Leave anyway?")) return;
   }
   closeTicket();
@@ -2565,29 +2546,6 @@ function updateCompleted(){
   el('completed-counter').textContent = `${Object.keys(picks).length}/5`;
 }
 
-// Modal “ya participas”
-function openAlreadyModal(){
-  const m = el('already-modal');
-  m.classList.remove('hidden');
-  m.classList.add('flex');
-}
-function closeAlreadyModal(){
-  const m = el('already-modal');
-  m.classList.add('hidden');
-  m.classList.remove('flex');
-}
-document.addEventListener('click', (ev) => {
-  if (ev.target?.id === 'already-close') {
-    closeAlreadyModal();
-  }
-  if (ev.target?.id === 'go-results' || ev.target?.closest?.('#go-results')) {
-    ev.preventDefault();
-    closeAlreadyModal();
-    try { showView('results'); } catch(_) {}
-    try { closeTicket(); } catch(_) {}
-  }
-});
-
 // Modal de éxito
 function openSuccessModal(ticketId){
   const m = el('success-modal');
@@ -2623,10 +2581,6 @@ el('submit-ticket').addEventListener('click', async ()=>{
     try { openAuthFlow('signup'); } catch(_) {}
     return;
   }
-
-  // Doble-check: ya participas
-  const t = await fetchExistingTicket(selectedMatch.id);
-  if (t?.ticket_id) { picksSubmitted = true; openAlreadyModal(); return; }
 
   // Confirmación previa
   openReviewModal();
@@ -2668,11 +2622,10 @@ el('confirm-submit').addEventListener('click', async ()=>{
     return;
   }
 
-  try {
-    // Doble-check duplicado
-    const existing = await fetchExistingTicket(selectedMatch.id);
-    if (existing?.ticket_id) { picksSubmitted = true; openAlreadyModal(); return; }
+  if (isSubmittingTicket) return;
+  isSubmittingTicket = true;
 
+  try {
     // Enviar al RPC transaccional
     const { data: ticketId, error } = await sb.rpc('submit_ticket', {
       p_match_id: selectedMatch.id,
@@ -2680,20 +2633,17 @@ el('confirm-submit').addEventListener('click', async ()=>{
     });
 
     if (error) {
-      const msg = (error.message || '').toLowerCase();
-      if (msg.includes('unique') || msg.includes('duplicate') || msg.includes('already')) {
-        openAlreadyModal();
-      } else {
-        showToast('Could not submit your ticket.');
-      }
+      console.error('[submit_ticket][error]', error);
+      showToast('Could not submit your ticket.');
       return;
     }
 
-    picksSubmitted = true;
     openSuccessModal(ticketId || null);
   } catch (e) {
     console.error(e);
     showToast('Could not submit your ticket.');
+  } finally {
+    isSubmittingTicket = false;
   }
 });
 	
@@ -3780,7 +3730,6 @@ initAuth();        // establece currentUser/isGuest, y refresca UI
 showView('matches');
 
 /* EVENTS extra */
-document.getElementById('go-results').addEventListener('click',(e)=>{e.preventDefault(); showView('results'); closeResultsDrawer(); closeTicket();});
 document.getElementById('rewards-cta-play').addEventListener('click',()=>showView('matches'));
 </script>
 <!-- Footer fijo (links) -->

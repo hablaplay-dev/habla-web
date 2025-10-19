@@ -8,5 +8,5 @@ AS $function$
   from tickets t
   where t.user_id = auth.uid()
     and t.match_id = p_match_id
-  limit 1
+  order by t.submitted_at desc nulls last, t.id desc
 $function$
