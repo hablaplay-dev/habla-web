@@ -1485,15 +1485,21 @@ function renderMatches(){
           </div>
         </div>
         <div class="border-t bg-gray-50">
-          <div class="flex items-center justify-between px-4 py-2">
-            <span class="text-xs font-semibold text-gray-600">Mis combinadas</span>
-            <button type="button" class="text-xs font-semibold text-primary hover:text-emerald-600 flex items-center gap-1" data-toggle-match-tickets="${m.id}">
-              <i class="fa-solid fa-list"></i>
-              <span>Ver combinadas</span>
+          <div class="px-4 py-3 flex flex-col gap-3 text-xs text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-start gap-2 text-left">
+              <i class="fa-solid fa-chart-line text-primary mt-[2px]"></i>
+              <span>
+                ¿Quieres seguir el leaderboard global y los picks en vivo?
+                Pulsa <b>Follow Live</b> para abrir los resultados.
+              </span>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-white px-3 py-2 text-xs font-semibold text-primary transition hover:border-primary hover:bg-primary/5"
+              data-open-results="${m.id}">
+              <i class="fa-solid fa-signal"></i>
+              <span>Follow Live</span>
             </button>
-          </div>
-          <div class="match-tickets hidden px-4 pb-4" id="match-tickets-${m.id}">
-            ${buildMatchTicketsHTML(myTickets, { matchId: m.id })}
           </div>
         </div>
       </div>`;
@@ -1514,23 +1520,6 @@ function renderMatches(){
 	const tId = setInterval(tick, 1000);
 	countdownTimers.set(m.id, tId);
 
-    const toggleBtn = row.querySelector(`[data-toggle-match-tickets="${m.id}"]`);
-    const ticketsPanel = row.querySelector(`#match-tickets-${m.id}`);
-    if (toggleBtn && ticketsPanel) {
-      toggleBtn.addEventListener('click', () => {
-        const isHidden = ticketsPanel.classList.contains('hidden');
-        const label = toggleBtn.querySelector('span');
-        if (isHidden) {
-          ticketsPanel.classList.remove('hidden');
-          ticketsPanel.innerHTML = buildMatchTicketsHTML(getMyTickets(m), { matchId: m.id });
-          if (label) label.textContent = 'Ocultar combinadas';
-        } else {
-          ticketsPanel.classList.add('hidden');
-          if (label) label.textContent = 'Ver combinadas';
-        }
-      });
-    }
-
     box.appendChild(row);
   });
 
@@ -1541,12 +1530,22 @@ function renderMatches(){
 	
 // Handler delegado para abrir Ticket
 function _matchesDelegatedClick(ev){
-  const btn = ev.target.closest('[data-open-ticket]');
-  if (!btn) return;
-  const id  = Number(btn.getAttribute('data-open-ticket'));
-  if (!Number.isFinite(id)) return;
+  const ticketBtn = ev.target.closest('[data-open-ticket]');
+  if (ticketBtn) {
+    const id  = Number(ticketBtn.getAttribute('data-open-ticket'));
+    if (!Number.isFinite(id)) return;
+    ev.preventDefault();
+    openTicket(id); // mantiene lógica: invitados pueden abrir; submit sólo si logueado
+    return;
+  }
+
+  const resultsBtn = ev.target.closest('[data-open-results]');
+  if (!resultsBtn) return;
+  const resId = Number(resultsBtn.getAttribute('data-open-results'));
+  if (!Number.isFinite(resId)) return;
   ev.preventDefault();
-  openTicket(id); // mantiene lógica: invitados pueden abrir; submit sólo si logueado
+  try { showView('results'); } catch(_) {}
+  openResultsDrawer(resId);
 }
 function dist(tickets){
   const arr = Array.isArray(tickets) ? tickets : [];
@@ -1796,25 +1795,59 @@ async function getLeaderboardWithPicks(matchId){
   return data || [];
 }
 
+function resolveMatchState(matchObj = {}) {
+  try {
+    const now = new Date();
+    const startRaw = matchObj.startISO || matchObj.start_time;
+    const start = startRaw ? new Date(startRaw) : null;
+    if (!start || Number.isNaN(start.getTime())) return 'upcoming';
+    const dur = Number(matchObj.durMin || matchObj.dur_min || 110) || 110;
+    const end = addMinutes(start, dur);
+    if (now < start) return 'upcoming';
+    if (now < end) return 'live';
+    return 'finished';
+  } catch (err) {
+    console.warn('[resolveMatchState]', err);
+    return 'upcoming';
+  }
+}
+
 // Pinta lista con columnas: #, user, P1..P5, Premio
 async function paintParticipants(matchObj) {
   const list = document.getElementById('players-list');
   if (!list) return;
 
-  const leaderboard = await getLeaderboardWithPicks(matchObj.id);
+  const pc = document.getElementById('participants-count');
+  if (pc) pc.textContent = 'Loading…';
+  list.innerHTML = `<div class="px-4 py-6 text-sm text-gray-500">Cargando leaderboard…</div>`;
+
+  let leaderboard = [];
+  try {
+    leaderboard = await getLeaderboardWithPicks(matchObj.id);
+  } catch (err) {
+    console.warn('[paintParticipants]', err);
+    leaderboard = [];
+  }
+
+  const initialState = resolveMatchState(matchObj);
 
   // Realtime (si cambia el live score o los puntos)
   subscribeLeaderboardRealtime(matchObj.id, async () => {
-    const lb = await getLeaderboardWithPicks(matchObj.id);
-    drawLeaderboard(list, lb);
-    renderRightStats(lb, matchObj); // refresca panel derecho
+    try {
+      const lb = await getLeaderboardWithPicks(matchObj.id);
+      const state = resolveMatchState(matchObj);
+      drawLeaderboard(list, lb, state);
+      renderRightStats(lb, matchObj, state); // refresca panel derecho
+    } catch (err) {
+      console.warn('[paintParticipants][realtime]', err);
+    }
   });
 
-  drawLeaderboard(list, leaderboard);
-  renderRightStats(leaderboard, matchObj); // primer pintado
+  drawLeaderboard(list, leaderboard, initialState);
+  renderRightStats(leaderboard, matchObj, initialState); // primer pintado
 }
 
-function drawLeaderboard(container, lb) {
+function drawLeaderboard(container, lb, state = 'upcoming') {
   const arr = Array.isArray(lb) ? lb : [];
   const prizeRanks = new Set([1,2,3]); // resaltar top 3
 
@@ -1825,31 +1858,42 @@ function drawLeaderboard(container, lb) {
     </div>
     <div id="players-rows" class="divide-y"></div>`;
 
-  const rows = document.getElementById('players-rows');
-  rows.innerHTML = arr.map(row => {
-    const tag = (v)=> (v ?? '—');
-    const isPrize = Number(row.prize_amount || 0) > 0 || prizeRanks.has(Number(row.rank));
-    const prizeTxt = Number(row.prize_amount || 0) > 0
-      ? `S/ ${Number(row.prize_amount).toLocaleString()}`
-      : (prizeRanks.has(Number(row.rank)) ? '—' : '😞');
+  const rows = container.querySelector('#players-rows');
+  if (!rows) return;
 
-    return `
-      <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] items-center px-4 py-2 ${isPrize?'bg-amber-50':''}">
-        <div class="text-xs font-bold text-gray-800">#${row.rank}</div>
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">
-            ${(row.username||'?').slice(0,2).toUpperCase()}
+  if (!arr.length) {
+    const messages = {
+      upcoming: 'Aún no hay picks registrados para este partido. Vuelve antes del kickoff.',
+      live: 'Todavía no hay picks publicados. Estamos actualizando el leaderboard en vivo.',
+      finished: 'No se registraron picks para este partido.',
+    };
+    rows.innerHTML = `<div class="px-4 py-6 text-sm text-gray-500 text-center">${messages[state] || 'No leaderboard data yet.'}</div>`;
+  } else {
+    rows.innerHTML = arr.map(row => {
+      const tag = (v)=> (v ?? '—');
+      const isPrize = Number(row.prize_amount || 0) > 0 || prizeRanks.has(Number(row.rank));
+      const prizeTxt = Number(row.prize_amount || 0) > 0
+        ? `S/ ${Number(row.prize_amount).toLocaleString()}`
+        : (prizeRanks.has(Number(row.rank)) ? '—' : '😞');
+
+      return `
+        <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] items-center px-4 py-2 ${isPrize?'bg-amber-50':''}">
+          <div class="text-xs font-bold text-gray-800">#${row.rank}</div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">
+              ${(row.username||'?').slice(0,2).toUpperCase()}
+            </div>
+            <div class="font-medium text-sm truncate">${row.full_name || row.username || 'Player'}</div>
           </div>
-          <div class="font-medium text-sm truncate">${row.full_name || row.username || 'Player'}</div>
-        </div>
-        <div class="text-sm">${tag(row.s1)}</div>
-        <div class="text-sm">${tag(row.s2)}</div>
-        <div class="text-sm">${tag(row.s3)}</div>
-        <div class="text-sm">${tag(row.s4)}</div>
-        <div class="text-sm">${tag(row.s5)}</div>
-        <div class="text-sm text-right ${Number(row.prize_amount||0)>0?'text-emerald-700 font-semibold':''}">${prizeTxt}</div>
-      </div>`;
-  }).join('');
+          <div class="text-sm">${tag(row.s1)}</div>
+          <div class="text-sm">${tag(row.s2)}</div>
+          <div class="text-sm">${tag(row.s3)}</div>
+          <div class="text-sm">${tag(row.s4)}</div>
+          <div class="text-sm">${tag(row.s5)}</div>
+          <div class="text-sm text-right ${Number(row.prize_amount||0)>0?'text-emerald-700 font-semibold':''}">${prizeTxt}</div>
+        </div>`;
+    }).join('');
+  }
 
   const pc = document.getElementById('participants-count');
   if (pc) pc.textContent = `${arr.length} players`;
@@ -1893,8 +1937,43 @@ function renderResultsSidebar(m){
 function pct(n, t){ return t>0 ? Math.round((n*100)/t) : 0; }
 
 // Renderiza barras de distribución (P1..P4) y lista de P5
-function renderRightStats(lb, matchObj){
-  const total = lb.length;
+function renderRightStats(lb, matchObj, state = null){
+  const arr = Array.isArray(lb) ? lb : [];
+  const total = arr.length;
+  const matchState = state || resolveMatchState(matchObj);
+
+  const statusLabel = el('live-time-label');
+  const statusValue = el('live-time');
+  const statusScore = el('live-score');
+  const startRef = matchObj?.startISO || matchObj?.start_time;
+  const kickoffLine = startRef ? fmtDateLine(startRef) : '';
+  const scoreVal = (Number.isFinite(matchObj?.score_home) && Number.isFinite(matchObj?.score_away))
+    ? `${matchObj.score_home}-${matchObj.score_away}`
+    : null;
+
+  if (statusLabel) {
+    statusLabel.textContent = matchState === 'live' ? 'En vivo' : (matchState === 'finished' ? 'Finalizado' : 'Kickoff');
+  }
+  if (statusValue) {
+    if (matchState === 'live') {
+      statusValue.textContent = matchObj?.live_minute ? `${matchObj.live_minute}’` : 'Jugándose';
+    } else if (matchState === 'finished') {
+      statusValue.textContent = 'FT';
+    } else {
+      statusValue.textContent = kickoffLine || 'Pendiente';
+    }
+  }
+  if (statusScore) {
+    if (matchState === 'live') {
+      statusScore.textContent = scoreVal ? `Marcador: ${scoreVal}` : 'Actualizando marcador en vivo…';
+    } else if (matchState === 'finished') {
+      statusScore.textContent = scoreVal ? `Marcador final: ${scoreVal}` : 'Marcador final no disponible.';
+    } else {
+      statusScore.textContent = total
+        ? 'Leaderboard listo para el kickoff.'
+        : 'El leaderboard se activará al iniciar el partido.';
+    }
+  }
 
   // P1
   const c1 = { HOME:0, DRAW:0, AWAY:0 };
@@ -1907,7 +1986,7 @@ function renderRightStats(lb, matchObj){
   // P5 (marcadores: top-5)
   const c5 = {};
 
-  lb.forEach(r=>{
+  arr.forEach(r=>{
     if (r.s1 && c1[r.s1] !== undefined) c1[r.s1]++;
     if (r.s2 && c2[r.s2] !== undefined) c2[r.s2]++;
     if (r.s3 && c3[r.s3] !== undefined) c3[r.s3]++;
@@ -1915,60 +1994,60 @@ function renderRightStats(lb, matchObj){
     if (r.s5) c5[r.s5] = (c5[r.s5]||0)+1;
   });
 
-  // P1 barras
-  const p1h = pct(c1.HOME,total), p1d = pct(c1.DRAW,total), p1a = pct(c1.AWAY,total);
-  el('dist-p1').innerHTML = `
-    <div style="width:${p1h}%;" class="h-full float-left bg-green-600"></div>
-    <div style="width:${p1d}%;" class="h-full float-left bg-gray-400"></div>
-    <div style="width:${p1a}%;" class="h-full bg-blue-500"></div>`;
+  const noDataMsg = '<div class="py-2 text-center text-[11px] text-gray-500">Sin picks aún</div>';
 
-  // P2 barras
-  const p2y=pct(c2.YES,total), p2n=pct(c2.NO,total);
-  el('dist-p2').innerHTML = `
-    <div style="width:${p2y}%;" class="h-full float-left bg-emerald-600"></div>
-    <div style="width:${p2n}%;" class="h-full bg-gray-400"></div>`;
+  if (!total) {
+    ['dist-p1','dist-p2','dist-p3','dist-p4'].forEach(id => {
+      const node = el(id);
+      if (node) node.innerHTML = noDataMsg;
+    });
+  } else {
+    // P1 barras
+    const p1h = pct(c1.HOME,total), p1d = pct(c1.DRAW,total), p1a = pct(c1.AWAY,total);
+    el('dist-p1').innerHTML = `
+      <div style="width:${p1h}%;" class="h-full float-left bg-green-600"></div>
+      <div style="width:${p1d}%;" class="h-full float-left bg-gray-400"></div>
+      <div style="width:${p1a}%;" class="h-full bg-blue-500"></div>`;
 
-  // P3 barras
-  const p3o=pct(c3.OVER,total), p3u=pct(c3.UNDER,total);
-  el('dist-p3').innerHTML = `
-    <div style="width:${p3o}%;" class="h-full float-left bg-indigo-600"></div>
-    <div style="width:${p3u}%;" class="h-full bg-gray-400"></div>`;
+    // P2 barras
+    const p2y=pct(c2.YES,total), p2n=pct(c2.NO,total);
+    el('dist-p2').innerHTML = `
+      <div style="width:${p2y}%;" class="h-full float-left bg-emerald-600"></div>
+      <div style="width:${p2n}%;" class="h-full bg-gray-400"></div>`;
 
-  // P4 barras
-  const p4y=pct(c4.YES,total), p4n=pct(c4.NO,total);
-  el('dist-p4').innerHTML = `
-    <div style="width:${p4y}%;" class="h-full float-left bg-rose-600"></div>
-    <div style="width:${p4n}%;" class="h-full bg-gray-400"></div>`;
+    // P3 barras
+    const p3o=pct(c3.OVER,total), p3u=pct(c3.UNDER,total);
+    el('dist-p3').innerHTML = `
+      <div style="width:${p3o}%;" class="h-full float-left bg-indigo-600"></div>
+      <div style="width:${p3u}%;" class="h-full bg-gray-400"></div>`;
+
+    // P4 barras
+    const p4y=pct(c4.YES,total), p4n=pct(c4.NO,total);
+    el('dist-p4').innerHTML = `
+      <div style="width:${p4y}%;" class="h-full float-left bg-rose-600"></div>
+      <div style="width:${p4n}%;" class="h-full bg-gray-400"></div>`;
+  }
 
   // P5 top-5 marcadores
   const p5node = el('dist-p5');
   const top5 = Object.entries(c5).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  p5node.innerHTML = top5.length
-    ? top5.map(([sc, n])=>`<div class="flex justify-between"><span>${sc}</span><span>${pct(n,total)}%</span></div>`).join('')
-    : `<div class="text-gray-500">—</div>`;
+  if (p5node) {
+    p5node.innerHTML = top5.length
+      ? top5.map(([sc, n])=>`<div class="flex justify-between"><span>${sc}</span><span>${pct(n,total)}%</span></div>`).join('')
+      : `<div class="text-gray-500 text-[11px]">Los marcadores aparecerán cuando haya picks.</div>`;
+  }
 
   // Pozo (si tienes entry_fee o pot en DB úsalo; fallback = jugadores * 10)
-  const entryFee = Number(matchObj.entry_fee || 10); // <-- ajusta si ya tienes este campo
+  const entryFee = Number(matchObj?.entry_fee || matchObj?.entryFee || 10) || 10; // <-- ajusta si ya tienes este campo
   const pot = total * entryFee;
-  el('pot-amount').textContent = `S/ ${pot.toLocaleString()}`;
-  el('prize-1').textContent = `S/ ${(pot*0.50).toFixed(2)}`;
-  el('prize-2').textContent = `S/ ${(pot*0.35).toFixed(2)}`;
-  el('prize-3').textContent = `S/ ${(pot*0.15).toFixed(2)}`;
-
-  // Marcador / minuto en vivo
-  const live = (()=>{
-    const now = new Date();
-    const start = new Date(matchObj.startISO || matchObj.start_time);
-    const end   = addMinutes(start, matchObj.durMin || 110);
-    return now >= start && now < end;
-  })();
-
-  const scoreTxt = Number.isFinite(matchObj.score_home) && Number.isFinite(matchObj.score_away)
-    ? `${matchObj.score_home}-${matchObj.score_away}` : '—';
-  el('live-score').textContent = live
-    ? `Marcador: ${scoreTxt}  •  ${matchObj.live_minute ? (matchObj.live_minute+"’") : ''}`
-    : (Number.isFinite(matchObj.score_home) ? `Final: ${scoreTxt}` : '');
+  const formatMoney = (value) => `S/ ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const potNode = el('pot-amount');
+  if (potNode) potNode.textContent = formatMoney(pot);
+  const p1 = el('prize-1'); if (p1) p1.textContent = formatMoney(pot*0.50);
+  const p2 = el('prize-2'); if (p2) p2.textContent = formatMoney(pot*0.35);
+  const p3 = el('prize-3'); if (p3) p3.textContent = formatMoney(pot*0.15);
 }
+
 function renderPlayers(m){
   const list=el('players-list');
   if (!list) return;
