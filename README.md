@@ -30,6 +30,9 @@ Este repo es el **fuente de verdad** del front web y del backend lógico en Supa
 │ │ ├─ enable_force.sql
 │ │ └─ policies/
 │ └─ seeds/ # (añadir) inserts mínimos reproducibles
+│ └─ edge-functions/
+│ └─ api-football/
+│ └─ index.ts
 ├─ docs/
 │ ├─ ai-context.md
 │ ├─ architecture.md
@@ -63,7 +66,7 @@ Este repo es el **fuente de verdad** del front web y del backend lógico en Supa
    - Asegúrate de exponer `SUPABASE_URL` y `SUPABASE_ANON_KEY` en las env vars del proyecto.
 
 4. **Edge Functions (opcional, recomendado)**  
-   - Versiona el fuente en `supabase/edge-functions/<nombre>/index.ts`.  
+   - Versiona el fuente en `supabase/edge-functions/api-football/index.ts`.  
    - Publica manualmente desde Supabase Studio (mientras no uses CLI).
 
 ---
