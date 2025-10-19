@@ -1457,6 +1457,18 @@ function renderMatches(){
             </button>
           </div>
         </div>
+        <div class="border-t bg-gray-50">
+          <div class="flex items-center justify-between px-4 py-2">
+            <span class="text-xs font-semibold text-gray-600">Tickets combinados</span>
+            <button type="button" class="text-xs font-semibold text-primary hover:text-emerald-600 flex items-center gap-1" data-toggle-match-tickets="${m.id}">
+              <i class="fa-solid fa-list"></i>
+              <span>Ver combinadas</span>
+            </button>
+          </div>
+          <div class="match-tickets hidden px-4 pb-4" id="match-tickets-${m.id}">
+            ${buildMatchTicketsHTML(tickets)}
+          </div>
+        </div>
       </div>`;
 
     // Timers
@@ -1474,6 +1486,23 @@ function renderMatches(){
 	tick();
 	const tId = setInterval(tick, 1000);
 	countdownTimers.set(m.id, tId);
+
+    const toggleBtn = row.querySelector(`[data-toggle-match-tickets="${m.id}"]`);
+    const ticketsPanel = row.querySelector(`#match-tickets-${m.id}`);
+    if (toggleBtn && ticketsPanel) {
+      toggleBtn.addEventListener('click', () => {
+        const isHidden = ticketsPanel.classList.contains('hidden');
+        const label = toggleBtn.querySelector('span');
+        if (isHidden) {
+          ticketsPanel.classList.remove('hidden');
+          ticketsPanel.innerHTML = buildMatchTicketsHTML(resolveMatchTickets(m));
+          if (label) label.textContent = 'Ocultar combinadas';
+        } else {
+          ticketsPanel.classList.add('hidden');
+          if (label) label.textContent = 'Ver combinadas';
+        }
+      });
+    }
 
     box.appendChild(row);
   });
@@ -1508,7 +1537,63 @@ function dist(tickets){
     away: Math.round((counts.AWAY * 100) / total)
   };
 }
-	
+
+function buildMatchTicketsHTML(tickets) {
+  const list = Array.isArray(tickets) ? tickets : [];
+  if (!list.length) {
+    return `<div class="px-4 py-3 text-sm text-gray-500 bg-white rounded-lg border">No hay tickets combinados todavía.</div>`;
+  }
+
+  const header = `
+    <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] px-4 py-2 text-[12px] text-gray-500">
+      <div>#</div><div>Jugador</div><div>P1</div><div>P2</div><div>P3</div><div>P4</div><div>P5</div><div class="text-right">Score</div>
+    </div>`;
+
+  const rows = list.map(ticket => {
+    const user = ticket?.user || {};
+    const avatarUrl = user.avatar || '';
+    const initials = (user.name || user.username || 'P').slice(0, 2).toUpperCase();
+    const score = ticket?.liveScore?.score;
+    const formattedScore = (score !== undefined && score !== null) ? score : '—';
+    const p = ticket?.picks || {};
+    const tag = (value) => (value ? value : '—');
+
+    const avatar = avatarUrl
+      ? `<img src="${avatarUrl}" alt="${user.name || 'Player'}" class="w-8 h-8 rounded-full object-cover" />`
+      : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">${initials}</div>`;
+
+    const rankLabel = Number.isFinite(Number(ticket?.rank)) && Number(ticket.rank) > 0
+      ? `#${ticket.rank}`
+      : '—';
+
+    return `
+      <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] items-center px-4 py-2 text-sm">
+        <div class="text-xs font-bold text-gray-800">${rankLabel}</div>
+        <div class="flex items-center gap-2">
+          ${avatar}
+          <div class="flex flex-col">
+            <span class="font-medium text-gray-800 leading-tight">${user.name || user.username || 'Player'}</span>
+            ${user.username ? `<span class="text-[11px] text-gray-500">@${user.username}</span>` : ''}
+          </div>
+        </div>
+        <div class="text-sm">${tag(p.s1)}</div>
+        <div class="text-sm">${tag(p.s2)}</div>
+        <div class="text-sm">${tag(p.s3)}</div>
+        <div class="text-sm">${tag(p.s4)}</div>
+        <div class="text-sm">${tag(p.s5)}</div>
+        <div class="text-sm text-right font-semibold text-gray-700">${formattedScore}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="rounded-lg border bg-white overflow-hidden">
+      ${header}
+      <div class="divide-y">
+        ${rows}
+      </div>
+    </div>`;
+}
+
 /* ===== RESULTS LIST ===== */
 function renderResults(){
   const now = new Date();
