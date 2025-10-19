@@ -560,31 +560,31 @@
             <div id="players-list" class="divide-y"></div>
           </div>
         </div>
-		<div class="space-y-6">
-		  <!-- Status / reloj -->
-		  <div class="border rounded-lg p-4">
-		    <div class="text-xs text-gray-500" id="live-time-label">Status</div>
-		    <div id="live-time" class="text-2xl font-bold">—</div>
-		    <div id="live-score" class="mt-1 text-sm text-gray-700"></div>
-		  </div>
-		
-		  <!-- Leyenda de predicciones -->
-		  <div class="border rounded-lg p-4">
-		    <h4 class="text-sm font-semibold mb-2">Leyenda de predicciones</h4>
-		    <ul class="text-xs text-gray-700 space-y-1" id="pred-legend">
-		      <li>• <b>P1</b>: Resultado del partido — <i>HOME</i> / <i>DRAW</i> / <i>AWAY</i></li>
+                <div class="space-y-6">
+                  <!-- Status / reloj -->
+                  <div id="results-panel-status" class="border rounded-lg p-4">
+                    <div class="text-xs text-gray-500" id="live-time-label">Status</div>
+                    <div id="live-time" class="text-2xl font-bold">—</div>
+                    <div id="live-score" class="mt-1 text-sm text-gray-700"></div>
+                  </div>
+
+                  <!-- Leyenda de predicciones -->
+                  <div id="results-panel-legend" class="border rounded-lg p-4">
+                    <h4 class="text-sm font-semibold mb-2">Leyenda de predicciones</h4>
+                    <ul class="text-xs text-gray-700 space-y-1" id="pred-legend">
+                      <li>• <b>P1</b>: Resultado del partido — <i>HOME</i> / <i>DRAW</i> / <i>AWAY</i></li>
 		      <li>• <b>P2</b>: Ambos anotan — <i>YES / NO</i></li>
 		      <li>• <b>P3</b>: Total goles — <i>OVER 2.5 / UNDER 2.5</i></li>
 		      <li>• <b>P4</b>: ¿Tarjeta roja? — <i>YES / NO</i></li>
 		      <li>• <b>P5</b>: Marcador exacto — <i>Ej.: 2-1</i></li>
 		    </ul>
-		  </div>
-		
-		  <!-- Distribución de respuestas -->
-		  <div class="border rounded-lg p-4">
-		    <h4 class="text-sm font-semibold mb-3">Distribución de respuestas</h4>
-		
-		    <div class="mb-2 text-xs text-gray-600 font-medium">P1 · 1X2</div>
+                  </div>
+
+                  <!-- Distribución de respuestas -->
+                  <div id="results-panel-distribution" class="border rounded-lg p-4">
+                    <h4 class="text-sm font-semibold mb-3">Distribución de respuestas</h4>
+
+                    <div class="mb-2 text-xs text-gray-600 font-medium">P1 · 1X2</div>
 		    <div id="dist-p1" class="dist-bar bg-gray-200 mb-2"></div>
 		    <div class="flex justify-between text-[11px] text-gray-600 mb-3"><span>Home</span><span>Draw</span><span>Away</span></div>
 		
@@ -602,13 +602,13 @@
 		
 		    <div class="mb-2 text-xs text-gray-600 font-medium">P5 · Marcador exacto</div>
 		    <div id="dist-p5" class="mt-1 space-y-1 text-[11px] text-gray-700"></div>
-		  </div>
-		
-		  <!-- Pozo y premios -->
-		  <div class="border rounded-lg p-4">
-		    <h4 class="text-sm font-semibold mb-2">Pozo y premios</h4>
-		    <div class="text-sm"><b>Pozo acumulado:</b> <span id="pot-amount">—</span></div>
-		    <ul class="mt-2 text-sm text-gray-700" id="prize-breakdown">
+                  </div>
+
+                  <!-- Pozo y premios -->
+                  <div id="results-panel-pot" class="border rounded-lg p-4">
+                    <h4 class="text-sm font-semibold mb-2">Pozo y premios</h4>
+                    <div class="text-sm"><b>Pozo acumulado:</b> <span id="pot-amount">—</span></div>
+                    <ul class="mt-2 text-sm text-gray-700" id="prize-breakdown">
 		      <li>🥇 1º: <b id="prize-1">—</b> (50%)</li>
 		      <li>🥈 2º: <b id="prize-2">—</b> (35%)</li>
 		      <li>🥉 3º: <b id="prize-3">—</b> (15%)</li>
@@ -617,12 +617,12 @@
 		      <b>Empates:</b> si hay empate en un puesto premiado, se reparte en partes iguales la suma de los premios de esos puestos. 
 		      Ej.: si 2 empatan el 1º, reciben por igual la suma del 50% y 35% del pozo.
 		    </p>
-		  </div>
-		
-		  <!-- (se mantiene el panel de Bonus si lo usas) -->
-		  <div class="border rounded-lg p-4">
-		    <div class="flex items-center gap-2">
-		      <img id="res-sponsor-logo" src="https://dummyimage.com/28x28/000/fff&text=S" class="w-7 h-7 rounded" alt="sponsor">
+                  </div>
+
+                  <!-- (se mantiene el panel de Bonus si lo usas) -->
+                  <div id="results-panel-bonus" class="border rounded-lg p-4">
+                    <div class="flex items-center gap-2">
+                      <img id="res-sponsor-logo" src="https://dummyimage.com/28x28/000/fff&text=S" class="w-7 h-7 rounded" alt="sponsor">
 		      <div>
 		        <div class="text-sm font-semibold text-gray-900">Bonuses</div>
 		        <div id="res-sponsor-name" class="text-xs text-gray-500">by Sponsor</div>
@@ -1430,8 +1430,8 @@ function renderMatches(){
     const hasTickets = playerCount > 0;
     const buttonLabel = !currentUser
       ? 'Inicia sesión'
-      : (hasTickets ? 'Ver mis picks' : 'Crear mi combinada');
-    const buttonIcon = !currentUser ? 'fa-arrow-right-to-bracket' : 'fa-ticket';
+      : 'Crear nueva combinada';
+    const buttonIcon = !currentUser ? 'fa-arrow-right-to-bracket' : 'fa-plus';
 	
     const row = document.createElement('div');
     row.className = "rounded-xl border bg-white hover:shadow-md transition";
@@ -1485,13 +1485,12 @@ function renderMatches(){
           </div>
         </div>
         <div class="border-t bg-gray-50">
-          <div class="px-4 py-3 flex flex-col gap-3 text-xs text-gray-600 sm:flex-row sm:items-center sm:justify-between">
-            <div class="flex items-start gap-2 text-left">
-              <i class="fa-solid fa-chart-line text-primary mt-[2px]"></i>
-              <span>
-                ¿Quieres seguir el leaderboard global y los picks en vivo?
-                Pulsa <b>Follow Live</b> para abrir los resultados.
-              </span>
+          <div class="px-4 py-3 flex flex-col gap-3 text-xs text-gray-600 sm:flex-row sm:items-start sm:justify-between">
+            <div class="flex-1 flex items-start gap-2 text-left">
+              <i class="fa-solid fa-list-check text-primary mt-[2px]"></i>
+              <div class="w-full">
+                ${buildMatchTicketSummary(m, myTickets)}
+              </div>
             </div>
             <button
               type="button"
@@ -1564,6 +1563,85 @@ function dist(tickets){
   };
 }
 
+const PICK_LABELS = { s1:'P1', s2:'P2', s3:'P3', s4:'P4', s5:'P5' };
+
+function formatTicketDateTime(value, options){
+  if (!value) return null;
+  try {
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return null;
+    return dt.toLocaleString([], options || { dateStyle:'short', timeStyle:'short' });
+  } catch (_) {
+    return null;
+  }
+}
+
+function formatTicketTime(value){
+  return formatTicketDateTime(value, { hour:'2-digit', minute:'2-digit' });
+}
+
+function formatTicketStatus(ticket){
+  const liveScore = ticket?.liveScore || {};
+  const parts = [];
+  const score = Number(liveScore.score);
+  const rank = Number(liveScore.rank);
+  if (Number.isFinite(score)) parts.push(`Score ${score}`);
+  if (Number.isFinite(rank)) parts.push(`Posición #${rank}`);
+  return parts.length ? parts.join(' • ') : 'Esperando resultados';
+}
+
+function buildTicketPickBadges(ticket){
+  const picks = ticket?.picks || {};
+  const badges = Object.keys(PICK_LABELS)
+    .map(key => {
+      const value = picks[key];
+      if (!value) return '';
+      return `<span class="px-2 py-1 rounded-full border border-gray-200 bg-white text-[11px] font-medium text-gray-700">${PICK_LABELS[key]}: <span class="font-semibold text-gray-900">${value}</span></span>`;
+    })
+    .filter(Boolean);
+  return badges.length ? badges.join('') : '<span class="text-[11px] text-gray-500">Sin picks registrados.</span>';
+}
+
+function buildMatchTicketSummary(match, tickets){
+  if (!isLoggedIn()) {
+    return '<div class="text-xs text-gray-600">Inicia sesión para ver tus combinadas y crear nuevas para este partido.</div>';
+  }
+
+  const list = Array.isArray(tickets) ? [...tickets] : [];
+  if (!list.length) {
+    return '<div class="text-xs text-gray-600">Aún no has creado combinadas para este partido. Usa el botón para comenzar.</div>';
+  }
+
+  list.sort((a, b) => {
+    const aDate = a?.submittedAt ? new Date(a.submittedAt) : null;
+    const bDate = b?.submittedAt ? new Date(b.submittedAt) : null;
+    const aTime = aDate && !Number.isNaN(aDate.getTime()) ? aDate.getTime() : 0;
+    const bTime = bDate && !Number.isNaN(bDate.getTime()) ? bDate.getTime() : 0;
+    return aTime - bTime;
+  });
+
+  const cards = list.map((ticket, idx) => {
+    const submittedLabel = formatTicketDateTime(ticket?.submittedAt) || 'Sin enviar';
+    const updatedLabel = formatTicketTime(ticket?.liveScore?.updatedAt);
+    const statusText = formatTicketStatus(ticket);
+    const metaSuffix = updatedLabel ? ` • Actualizado ${updatedLabel}` : '';
+
+    return `
+      <div class="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div class="text-[11px] font-semibold uppercase text-gray-500">Combinada ${idx + 1}</div>
+          <div class="text-[11px] text-gray-500">${submittedLabel}</div>
+        </div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          ${buildTicketPickBadges(ticket)}
+        </div>
+        <div class="mt-2 text-[11px] text-gray-500">${statusText}${metaSuffix}</div>
+      </div>`;
+  }).join('');
+
+  return `<div class="flex flex-col gap-2 w-full">${cards}</div>`;
+}
+
 function buildMatchTicketsHTML(tickets, options = {}) {
   const { matchId = null } = options;
 
@@ -1583,7 +1661,7 @@ function buildMatchTicketsHTML(tickets, options = {}) {
     const cta = Number.isFinite(Number(matchId))
       ? `<button type="button" class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-white hover:bg-emerald-600 flex items-center justify-center gap-1" data-open-ticket="${matchId}">
           <i class="fa-solid fa-plus"></i>
-          Crear mi combinada
+          Crear nueva combinada
         </button>`
       : '';
 
@@ -1596,21 +1674,9 @@ function buildMatchTicketsHTML(tickets, options = {}) {
 
   const rows = list.map(ticket => {
     const picks = ticket?.picks || {};
-    const submittedAt = ticket?.submittedAt
-      ? new Date(ticket.submittedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
-      : '—';
-    const score = ticket?.liveScore?.score;
-    const formattedScore = (score !== undefined && score !== null) ? score : '—';
-    const rank = ticket?.liveScore?.rank;
-    const rankLabel = Number.isFinite(Number(rank)) ? `#${rank}` : null;
-    const updatedAt = ticket?.liveScore?.updatedAt
-      ? new Date(ticket.liveScore.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : null;
-
-    const statusParts = [];
-    if (formattedScore !== '—') statusParts.push(`Score ${formattedScore}`);
-    if (rankLabel) statusParts.push(`Posición ${rankLabel}`);
-    const statusText = statusParts.length ? statusParts.join(' • ') : 'Esperando resultados';
+    const submittedLabel = formatTicketDateTime(ticket?.submittedAt) || '—';
+    const updatedLabel = formatTicketTime(ticket?.liveScore?.updatedAt);
+    const statusText = formatTicketStatus(ticket);
 
     const pickBlocks = ['s1', 's2', 's3', 's4', 's5'].map((key, idx) => {
       const value = picks[key] || '—';
@@ -1626,12 +1692,12 @@ function buildMatchTicketsHTML(tickets, options = {}) {
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <div class="text-xs uppercase text-gray-500">Enviada</div>
-            <div class="text-sm font-semibold text-gray-900">${submittedAt}</div>
+            <div class="text-sm font-semibold text-gray-900">${submittedLabel}</div>
           </div>
           <div class="text-left sm:text-right">
             <div class="text-xs uppercase text-gray-500">Estado</div>
             <div class="text-sm font-semibold text-gray-900">${statusText}</div>
-            ${updatedAt ? `<div class="text-[11px] text-gray-500">Actualizado ${updatedAt}</div>` : ''}
+            ${updatedLabel ? `<div class="text-[11px] text-gray-500">Actualizado ${updatedLabel}</div>` : ''}
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
@@ -1795,6 +1861,69 @@ async function getLeaderboardWithPicks(matchId){
   return data || [];
 }
 
+async function getMatchTicketsDetailed(matchId){
+  try {
+    const { data, error } = await sb.rpc('get_match_tickets_with_picks', { p_match_id: matchId });
+    if (error) {
+      console.warn('[get_match_tickets_with_picks]', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.warn('[get_match_tickets_with_picks][catch]', err);
+    return [];
+  }
+}
+
+function resolveEntryFee(matchObj = {}){
+  const raw = Number(matchObj.entry_fee ?? matchObj.entryFee ?? 10);
+  return Number.isFinite(raw) && raw > 0 ? raw : 10;
+}
+
+function calculatePot(matchObj, participantCount){
+  const count = Number(participantCount) || 0;
+  return resolveEntryFee(matchObj) * count;
+}
+
+function calculatePrizeBreakdown(pot){
+  const base = Number(pot) || 0;
+  return [base * 0.5, base * 0.35, base * 0.15];
+}
+
+function buildPotInfo(matchObj, participantCount){
+  const entryFee = resolveEntryFee(matchObj);
+  const pot = calculatePot(matchObj, participantCount);
+  const breakdown = calculatePrizeBreakdown(pot);
+  const prizeByRank = (rank) => {
+    if (!Number.isFinite(rank)) return 0;
+    const idx = Number(rank) - 1;
+    return idx >= 0 && idx < breakdown.length ? breakdown[idx] : 0;
+  };
+  return { entryFee, participantCount, pot, breakdown, prizeByRank };
+}
+
+function matchEndedWithinDays(matchObj = {}, days = 7){
+  try {
+    const start = new Date(matchObj.startISO || matchObj.start_time);
+    if (Number.isNaN(start.getTime())) return true;
+    const dur = Number(matchObj.durMin || matchObj.dur_min || 110) || 110;
+    const end = addMinutes(start, dur);
+    const now = new Date();
+    if (now < end) return true;
+    const diff = now.getTime() - end.getTime();
+    return diff <= (Number(days) || 0) * 86400000;
+  } catch (err) {
+    console.warn('[matchEndedWithinDays]', err);
+    return false;
+  }
+}
+
+function formatMoney(value){
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 'S/ 0.00';
+  return `S/ ${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 function resolveMatchState(matchObj = {}) {
   try {
     const now = new Date();
@@ -1821,82 +1950,207 @@ async function paintParticipants(matchObj) {
   if (pc) pc.textContent = 'Loading…';
   list.innerHTML = `<div class="px-4 py-6 text-sm text-gray-500">Cargando leaderboard…</div>`;
 
+  const initialState = resolveMatchState(matchObj);
+
+  if (initialState === 'finished' && !matchEndedWithinDays(matchObj, 7)) {
+    drawLeaderboard(list, [], initialState, matchObj, buildPotInfo(matchObj, 0));
+    renderRightStats([], matchObj, initialState, buildPotInfo(matchObj, 0));
+    return;
+  }
+
   let leaderboard = [];
   try {
-    leaderboard = await getLeaderboardWithPicks(matchObj.id);
+    leaderboard = initialState === 'upcoming'
+      ? await getMatchTicketsDetailed(matchObj.id)
+      : await getLeaderboardWithPicks(matchObj.id);
   } catch (err) {
     console.warn('[paintParticipants]', err);
     leaderboard = [];
   }
 
-  const initialState = resolveMatchState(matchObj);
+  const info = buildPotInfo(matchObj, Array.isArray(leaderboard) ? leaderboard.length : 0);
 
   // Realtime (si cambia el live score o los puntos)
   subscribeLeaderboardRealtime(matchObj.id, async () => {
     try {
-      const lb = await getLeaderboardWithPicks(matchObj.id);
-      const state = resolveMatchState(matchObj);
-      drawLeaderboard(list, lb, state);
-      renderRightStats(lb, matchObj, state); // refresca panel derecho
+      const nextState = resolveMatchState(matchObj);
+      if (nextState === 'finished' && !matchEndedWithinDays(matchObj, 7)) {
+        drawLeaderboard(list, [], nextState, matchObj, buildPotInfo(matchObj, 0));
+        renderRightStats([], matchObj, nextState, buildPotInfo(matchObj, 0));
+        return;
+      }
+      const lb = nextState === 'upcoming'
+        ? await getMatchTicketsDetailed(matchObj.id)
+        : await getLeaderboardWithPicks(matchObj.id);
+      const rtInfo = buildPotInfo(matchObj, Array.isArray(lb) ? lb.length : 0);
+      drawLeaderboard(list, lb, nextState, matchObj, rtInfo);
+      renderRightStats(lb, matchObj, nextState, rtInfo); // refresca panel derecho
     } catch (err) {
       console.warn('[paintParticipants][realtime]', err);
     }
   });
 
-  drawLeaderboard(list, leaderboard, initialState);
-  renderRightStats(leaderboard, matchObj, initialState); // primer pintado
+  drawLeaderboard(list, leaderboard, initialState, matchObj, info);
+  renderRightStats(leaderboard, matchObj, initialState, info); // primer pintado
 }
 
-function drawLeaderboard(container, lb, state = 'upcoming') {
+function extractTicketPicks(row){
+  const picks = {};
+  const assignIfValue = (key, value) => {
+    if (value !== undefined && value !== null && value !== '') {
+      picks[key] = value;
+    }
+  };
+
+  Object.keys(PICK_LABELS).forEach(key => {
+    assignIfValue(key, row?.[key]);
+  });
+
+  const fromPicks = row?.picks;
+  if (fromPicks && typeof fromPicks === 'object') {
+    Object.keys(PICK_LABELS).forEach(key => {
+      if (!picks[key]) {
+        assignIfValue(key, fromPicks[key] ?? fromPicks[key.toUpperCase()] ?? fromPicks[`p${key.slice(1)}`]);
+      }
+    });
+  }
+
+  if (!Object.keys(picks).length && row?.details) {
+    let details = row.details;
+    if (typeof details === 'string') {
+      try { details = JSON.parse(details); } catch (_) { details = null; }
+    }
+    if (details && typeof details === 'object') {
+      Object.keys(PICK_LABELS).forEach(key => {
+        if (!picks[key]) {
+          assignIfValue(key, details[key] ?? details[key.toUpperCase()] ?? details[`p${key.slice(1)}`]);
+        }
+      });
+    }
+  }
+
+  return picks;
+}
+
+function normalizeLeaderboardRow(row, idx, info = {}){
+  const rawRank = Number(row?.rank);
+  const rank = Number.isFinite(rawRank) && rawRank > 0 ? rawRank : (idx + 1);
+  const name = row?.full_name || row?.fullName || row?.name || row?.player_name || row?.username || 'Jugador';
+  const username = row?.username || row?.user_name || '';
+  const avatarSeed = row?.avatar_url || row?.avatar || row?.user_id || row?.userId || username || name || `p-${rank}`;
+  const avatar = row?.avatar_url || row?.avatar || `https://i.pravatar.cc/48?u=${encodeURIComponent(String(avatarSeed))}`;
+  const picks = extractTicketPicks(row);
+  const submittedAt = row?.submitted_at || row?.submittedAt || row?.created_at || null;
+  const updatedAt = row?.updated_at || row?.score_updated_at || row?.details_updated_at || null;
+  const scoreRaw = row?.points ?? row?.score ?? row?.total_points ?? null;
+  const score = Number(scoreRaw);
+  const prizeAmount = typeof row?.prize_amount === 'number' ? row.prize_amount : (info?.prizeByRank ? info.prizeByRank(rank) : 0);
+
+  return {
+    rank,
+    name,
+    username,
+    avatar,
+    picks,
+    submittedAt,
+    submittedLabel: formatTicketDateTime(submittedAt) || 'Sin enviar',
+    updatedAt,
+    updatedLabel: formatTicketTime(updatedAt),
+    score: Number.isFinite(score) ? score : null,
+    scoreLabel: Number.isFinite(score) ? String(score) : '—',
+    prizeAmount,
+    prizeLabel: prizeAmount > 0 ? formatMoney(prizeAmount) : '—',
+  };
+}
+
+function drawLeaderboard(container, lb, state = 'upcoming', matchObj = {}, infoOverride = null) {
   const arr = Array.isArray(lb) ? lb : [];
-  const prizeRanks = new Set([1,2,3]); // resaltar top 3
+  const matchState = state || 'upcoming';
+  const info = infoOverride || buildPotInfo(matchObj, arr.length);
+  const withinWindow = matchState !== 'finished' || matchEndedWithinDays(matchObj, 7);
 
-  // Cabecera compacta
-  container.innerHTML = `
-    <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] px-4 py-2 text-[12px] text-gray-500">
-      <div>#</div><div>User</div><div>P1</div><div>P2</div><div>P3</div><div>P4</div><div>P5</div><div class="text-right">Prize</div>
-    </div>
-    <div id="players-rows" class="divide-y"></div>`;
-
-  const rows = container.querySelector('#players-rows');
-  if (!rows) return;
+  const pc = document.getElementById('participants-count');
+  if (!withinWindow) {
+    container.innerHTML = '<div class="px-4 py-6 text-sm text-gray-500">Los resultados de este partido están disponibles solo durante 7 días después del pitazo final.</div>';
+    if (pc) pc.textContent = '—';
+    return;
+  }
 
   if (!arr.length) {
     const messages = {
-      upcoming: 'Aún no hay picks registrados para este partido. Vuelve antes del kickoff.',
-      live: 'Todavía no hay picks publicados. Estamos actualizando el leaderboard en vivo.',
-      finished: 'No se registraron picks para este partido.',
+      upcoming: 'Aún no hay combinadas registradas para este partido. ¡Sé el primero en participar!',
+      live: 'Estamos calculando el leaderboard en vivo. Actualiza en unos segundos.',
+      finished: 'No se registraron combinadas para este partido.',
     };
-    rows.innerHTML = `<div class="px-4 py-6 text-sm text-gray-500 text-center">${messages[state] || 'No leaderboard data yet.'}</div>`;
-  } else {
-    rows.innerHTML = arr.map(row => {
-      const tag = (v)=> (v ?? '—');
-      const isPrize = Number(row.prize_amount || 0) > 0 || prizeRanks.has(Number(row.rank));
-      const prizeTxt = Number(row.prize_amount || 0) > 0
-        ? `S/ ${Number(row.prize_amount).toLocaleString()}`
-        : (prizeRanks.has(Number(row.rank)) ? '—' : '😞');
-
-      return `
-        <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] items-center px-4 py-2 ${isPrize?'bg-amber-50':''}">
-          <div class="text-xs font-bold text-gray-800">#${row.rank}</div>
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">
-              ${(row.username||'?').slice(0,2).toUpperCase()}
-            </div>
-            <div class="font-medium text-sm truncate">${row.full_name || row.username || 'Player'}</div>
-          </div>
-          <div class="text-sm">${tag(row.s1)}</div>
-          <div class="text-sm">${tag(row.s2)}</div>
-          <div class="text-sm">${tag(row.s3)}</div>
-          <div class="text-sm">${tag(row.s4)}</div>
-          <div class="text-sm">${tag(row.s5)}</div>
-          <div class="text-sm text-right ${Number(row.prize_amount||0)>0?'text-emerald-700 font-semibold':''}">${prizeTxt}</div>
-        </div>`;
-    }).join('');
+    container.innerHTML = `<div class="px-4 py-6 text-sm text-gray-500 text-center">${messages[matchState] || 'No hay datos disponibles.'}</div>`;
+    if (pc) pc.textContent = '0 participantes';
+    return;
   }
 
-  const pc = document.getElementById('participants-count');
-  if (pc) pc.textContent = `${arr.length} players`;
+  const showScores = matchState === 'live' || matchState === 'finished';
+
+  const cards = arr.map((row, idx) => {
+    const item = normalizeLeaderboardRow(row, idx, info);
+    const picksMarkup = buildTicketPickBadges({ picks: item.picks });
+    const metaSegments = [];
+
+    if (showScores) {
+      metaSegments.push(`
+        <div class="flex flex-col text-left sm:text-right">
+          <span class="text-[11px] uppercase text-gray-500 tracking-wide">Score</span>
+          <span class="text-sm font-semibold text-gray-900">${item.scoreLabel}</span>
+        </div>`);
+      metaSegments.push(`
+        <div class="flex flex-col text-left sm:text-right">
+          <span class="text-[11px] uppercase text-gray-500 tracking-wide">Premio</span>
+          <span class="text-sm font-semibold ${item.prizeAmount > 0 ? 'text-emerald-700' : 'text-gray-700'}">${item.prizeLabel}</span>
+        </div>`);
+      if (item.updatedLabel) {
+        metaSegments.push(`<div class="text-[11px] text-gray-500 sm:text-right">Actualizado ${item.updatedLabel}</div>`);
+      }
+    } else {
+      metaSegments.push(`
+        <div class="flex flex-col">
+          <span class="text-[11px] uppercase text-gray-500 tracking-wide">Comprada</span>
+          <span class="text-sm font-semibold text-gray-900">${item.submittedLabel}</span>
+        </div>`);
+      metaSegments.push('<div class="text-[11px] text-gray-500">Esperando kickoff</div>');
+    }
+
+    const highlightClass = (matchState === 'live' && item.rank === 1)
+      ? 'bg-emerald-50'
+      : ((matchState === 'finished' && item.prizeAmount > 0) ? 'bg-amber-50/60' : '');
+
+    return `
+      <div class="px-4 py-3 ${highlightClass}">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-xs">#${item.rank}</div>
+              <img src="${item.avatar}" alt="${item.name}" class="w-8 h-8 rounded-full object-cover">
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-gray-900">${item.name}</div>
+              ${item.username ? `<div class="text-[11px] text-gray-500">@${item.username}</div>` : ''}
+              ${showScores ? `<div class="text-[11px] text-gray-400">Comprada ${item.submittedLabel}</div>` : ''}
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-4 text-xs text-gray-600 sm:justify-end">
+            ${metaSegments.join('')}
+          </div>
+        </div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          ${picksMarkup}
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = cards;
+
+  if (pc) {
+    const label = arr.length === 1 ? '1 participante' : `${arr.length} participantes`;
+    pc.textContent = label;
+  }
 }
 
 // Hook en el open: después de abrir el drawer, pedimos lista + stats
@@ -1937,10 +2191,11 @@ function renderResultsSidebar(m){
 function pct(n, t){ return t>0 ? Math.round((n*100)/t) : 0; }
 
 // Renderiza barras de distribución (P1..P4) y lista de P5
-function renderRightStats(lb, matchObj, state = null){
+function renderRightStats(lb, matchObj, state = null, infoOverride = null){
   const arr = Array.isArray(lb) ? lb : [];
   const total = arr.length;
   const matchState = state || resolveMatchState(matchObj);
+  const info = infoOverride || buildPotInfo(matchObj, total);
 
   const statusLabel = el('live-time-label');
   const statusValue = el('live-time');
@@ -1970,8 +2225,8 @@ function renderRightStats(lb, matchObj, state = null){
       statusScore.textContent = scoreVal ? `Marcador final: ${scoreVal}` : 'Marcador final no disponible.';
     } else {
       statusScore.textContent = total
-        ? 'Leaderboard listo para el kickoff.'
-        : 'El leaderboard se activará al iniciar el partido.';
+        ? `Pozo actual: ${formatMoney(info.pot)} • ${total} participante${total === 1 ? '' : 's'}`
+        : 'Aún no hay combinadas registradas.';
     }
   }
 
@@ -2038,32 +2293,38 @@ function renderRightStats(lb, matchObj, state = null){
   }
 
   // Pozo (si tienes entry_fee o pot en DB úsalo; fallback = jugadores * 10)
-  const entryFee = Number(matchObj?.entry_fee || matchObj?.entryFee || 10) || 10; // <-- ajusta si ya tienes este campo
-  const pot = total * entryFee;
-  const formatMoney = (value) => `S/ ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const potNode = el('pot-amount');
-  if (potNode) potNode.textContent = formatMoney(pot);
-  const p1 = el('prize-1'); if (p1) p1.textContent = formatMoney(pot*0.50);
-  const p2 = el('prize-2'); if (p2) p2.textContent = formatMoney(pot*0.35);
-  const p3 = el('prize-3'); if (p3) p3.textContent = formatMoney(pot*0.15);
+  if (potNode) potNode.textContent = formatMoney(info.pot);
+  const breakdown = info.breakdown || calculatePrizeBreakdown(info.pot);
+  const p1 = el('prize-1'); if (p1) p1.textContent = formatMoney(breakdown[0] || 0);
+  const p2 = el('prize-2'); if (p2) p2.textContent = formatMoney(breakdown[1] || 0);
+  const p3 = el('prize-3'); if (p3) p3.textContent = formatMoney(breakdown[2] || 0);
+
+  const panelPot = el('results-panel-pot');
+  const panelStatus = el('results-panel-status');
+  const panelLegend = el('results-panel-legend');
+  const panelDistribution = el('results-panel-distribution');
+
+  if (panelPot) {
+    panelPot.classList.toggle('ring-2', matchState === 'upcoming');
+    panelPot.classList.toggle('ring-primary/30', matchState === 'upcoming');
+    panelPot.classList.toggle('bg-emerald-50', matchState === 'upcoming');
+  }
+  if (panelStatus) {
+    panelStatus.classList.toggle('opacity-70', matchState === 'upcoming');
+  }
+  if (panelLegend) {
+    panelLegend.classList.toggle('opacity-40', matchState === 'upcoming');
+  }
+  if (panelDistribution) {
+    panelDistribution.classList.toggle('opacity-40', matchState === 'upcoming');
+  }
 }
 
-function renderPlayers(m){
-  const list=el('players-list');
+function renderPlayers(){
+  const list = el('players-list');
   if (!list) return;
-  const tickets = resolveMatchTickets(m);
-  if (!tickets.length) {
-    list.innerHTML = `<div class="p-3 text-sm text-gray-500">No tickets yet</div>`;
-    return;
-  }
-  list.innerHTML=tickets.map((ticket,i)=>{
-    const user = ticket.user || {};
-    const name = user.name || user.username || 'Player';
-    const avatarId = user.id || user.username || name || `p-${i}`;
-    const avatar = user.avatar || `https://i.pravatar.cc/48?u=${encodeURIComponent(String(avatarId))}`;
-    const position = Number(ticket.rank) || i+1;
-    return `<div class="p-3 flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-6 text-xs font-bold text-gray-800">#${position}</div><img src="${avatar}" class="w-8 h-8 rounded-full"><div class="font-medium">${name}</div></div><button class="text-xs px-2 py-1 border rounded hover:bg-gray-50">View picks</button></div>`;
-  }).join('');
+  list.innerHTML = `<div class="px-4 py-6 text-sm text-gray-500">Cargando participantes…</div>`;
 }
 
 /* ===== DRAWER TICKET (Matches) ===== */
