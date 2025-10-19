@@ -1,51 +1,97 @@
-# Habla! — Web & Supabase Schema
+# Habla! — Juego de combinadas de fútbol con “Lukas”
 
-Este repositorio contiene el **front web** de Habla! y la **línea base del esquema** de base de datos en Supabase. El objetivo es que cualquier persona (o asistente/IA como ChatGPT/Codex) pueda entender, auditar y reproducir el proyecto sin depender del Dashboard de Supabase.
+Habla! es una app de predicciones de fútbol donde los jugadores:
+1) se registran/inician sesión,
+2) compran **Lukas** (moneda in-app),
+3) usan sus Lukas para adquirir **Combinadas** (tickets con predicciones),
+4) compiten por **pozos por partido** con un **ranking en vivo**,
+5) al finalizar, el **top 3** se lleva el bote acumulado,
+6) y pueden **canjear Lukas** por premios en una tienda virtual.
 
-## Estructura
+Este repo es el **fuente de verdad** del front web y del backend lógico en Supabase (esquema, funciones RPC, edge functions). Está pensado para que pueda ser leído por asistentes tipo “Codex/ChatGPT”.
+
+---
+
+## Estructura del repositorio
 .
-├─ index.html
-├─ Supabase/
-│ └─ Schema/
-│ └─ schema.sql # DDL base: tablas principales (matches, tickets, etc.)
-└─ docs/
-├─ ai-context.md
-├─ architecture.md
-├─ data-contracts.md
-├─ env.example
-└─ glossary.md
+├─ index.html # Front actual (estático)
+├─ supabase/
+│ └─ schema/
+│ ├─ schema.sql # DDL base de tablas (desde Supabase Visualizer)
+│ ├─ indexes/ # (añadir) índices
+│ ├─ constraints/ # (añadir) PK/FK/UNIQUE/CHECK
+│ ├─ sequences/ # (añadir) OWNED BY de secuencias
+│ ├─ views/ # (añadir) vistas
+│ ├─ functions/ # (añadir) funciones / RPC
+│ ├─ triggers/ # (añadir) triggers
+│ ├─ extensions/ # (añadir) extensiones (pgcrypto, etc.)
+│ ├─ grants/ # (añadir) GRANTs
+│ ├─ rls/ # (añadir) enable/force + policies
+│ │ ├─ enable_force.sql
+│ │ └─ policies/
+│ └─ seeds/ # (añadir) inserts mínimos reproducibles
+├─ docs/
+│ ├─ ai-context.md
+│ ├─ architecture.md
+│ ├─ data-contracts.md
+│ ├─ env.example
+│ └─ glossary.md
+└─ README.md
 
-> **Nota:** Más adelante se recomienda migrar a minúsculas con `supabase/` y subdividir el esquema en carpetas (`functions/`, `indexes/`, `constraints/`, `rls/`, `seeds/`, etc.). Por ahora, este repo incluye la línea base (`schema.sql`) y documentación completa en `docs/`.
+> **Nota:** si hoy solo tienes `schema.sql`, puedes ir completando las subcarpetas con el material SQL que extraigas desde el **SQL Editor** de Supabase (sin CLI). En `docs/architecture.md` tienes consultas listas para copiar/pegar y versionar índices, constraints, funciones, RLS, etc.
 
-## Cómo correr el front (estático)
+---
 
-1. Abre `index.html` en tu navegador, o sirve la carpeta con cualquier servidor estático.
-2. Configura las variables de entorno (ver `docs/env.example`) donde corresponda (Vercel para producción).
+## Setup rápido (sin CLI)
 
-## Cómo aplicar el esquema en Supabase (manual, sin CLI)
+1. **Variables de entorno**  
+   Copia `docs/env.example` y completa valores en **Vercel** y en **Supabase (Edge Functions / Auth / Storage)**. No commitees secretos reales.
 
-1. Entra a **Supabase Studio → SQL Editor**.  
-2. Copia el contenido de `Supabase/Schema/schema.sql` y ejecútalo en tu proyecto.  
-3. (Opcional en el futuro) Aplica objetos adicionales por carpetas: `functions/`, `rls/`, `indexes/`, `constraints/`, `views/`, `grants/`, `seeds/`.
+2. **Provisionar BD en Supabase Studio** (orden recomendado):  
+   1) `supabase/schema/extensions/*.sql`  
+   2) `supabase/schema/schema.sql` (tablas)  
+   3) `supabase/schema/sequences/*.sql`  
+   4) `supabase/schema/constraints/*.sql` + `indexes/*.sql`  
+   5) `supabase/schema/views/*.sql`  
+   6) `supabase/schema/functions/*.sql` + `triggers/*.sql`  
+   7) `supabase/schema/grants/*.sql`  
+   8) `supabase/schema/rls/enable_force.sql` + `rls/policies/*.sql`  
+   9) `supabase/schema/seeds/*.sql` (mínimo para smoke)
 
-## Orden de aplicación recomendado (cuando se separen archivos)
+3. **Front web**  
+   - Deploy estático en **Vercel** apuntando a la raíz o a `/` (según tu configuración).  
+   - Asegúrate de exponer `SUPABASE_URL` y `SUPABASE_ANON_KEY` en las env vars del proyecto.
 
-1. `extensions/`  
-2. `schema.sql` (tablas)  
-3. `sequences/` (OWNED BY)  
-4. `constraints/` + `indexes/`  
-5. `views/` (y `matviews/` si existieran)  
-6. `functions/` + `triggers/`  
-7. `grants/`  
-8. `rls/enable_force.sql` + `rls/policies/`  
-9. `seeds/`
+4. **Edge Functions (opcional, recomendado)**  
+   - Versiona el fuente en `supabase/edge-functions/<nombre>/index.ts`.  
+   - Publica manualmente desde Supabase Studio (mientras no uses CLI).
 
-## Enlaces útiles
+---
 
-- Documentación del proyecto: carpeta [`docs/`](./docs).
-- Contratos de datos (RPC/Edge/API): [`docs/data-contracts.md`](./docs/data-contracts.md).
-- Contexto para IA (cómo “leer” el repo): [`docs/ai-context.md`](./docs/ai-context.md).
+## Estado actual del esquema (resumen)
+
+Tablas clave incluidas en `schema.sql`:
+- `matches`, `match_results`
+- `tickets`, `ticket_answers`
+- `ticket_scores`, `ticket_scores_live`
+- `profiles`, `onboarding_submissions`, `users`
+- `app_config`, `email_outbox`, `seed_audit`
+- `af_*` (ingestas/refs de API-Football)
+
+Ver detalle en **docs/glossary.md** y contratos en **docs/data-contracts.md**.
+
+---
+
+## Flujo funcional (alto nivel)
+
+- **Auth**: usuarios se registran/inician sesión (Supabase Auth).  
+- **Lukas**: se compran con dinero real (proveedor de pagos externo). Se registra saldo (ledger) y transacciones (pendiente de modelar en BD, ver “Próximos pasos”).  
+- **Combinada**: con Lukas, el usuario compra el ticket del partido (`tickets` + `ticket_answers`).  
+- **Ranking en vivo**: `ticket_scores_live` se actualiza por eventos del partido.  
+- **Cierre y premios**: al terminar, `ticket_scores` y `match_results`; top-3 se lleva el bote.  
+- **Tienda**: canje de Lukas por premios (pendiente modelar: `store_items`, `redemptions`).
+
+---
 
 ## Licencia
-
 Privado / Uso interno del equipo de Habla!.
