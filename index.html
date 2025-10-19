@@ -145,37 +145,37 @@
           <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-2xl p-6 text-white">
             <div class="flex items-center justify-between">
               <div>
-                <h1 class="text-2xl font-extrabold">Today’s Tournaments</h1>
-                <p class="text-emerald-100">Join now, lock before kickoff and earn Lukas</p>
+                <h1 class="text-2xl font-extrabold">Mis combinadas de hoy</h1>
+                <p id="hero-personal-sub" class="text-emerald-100">Inicia sesión para crear y seguir tus propias combinadas.</p>
               </div>
               <div class="hidden sm:block bg-white/10 rounded-xl px-4 py-2 text-sm font-semibold">
                 <i class="fa-solid fa-bolt-lightning mr-1"></i><span id="hero-bonus">Bonus active</span>
               </div>
             </div>
             <div class="mt-4 flex flex-wrap gap-2 text-sm">
-              <span class="bg-white/10 px-3 py-1 rounded-full">🔥 Hot matches highlighted</span>
-              <span class="bg-white/10 px-3 py-1 rounded-full">🎯 Trending picks shown</span>
-              <span class="bg-white/10 px-3 py-1 rounded-full">🏆 Prize pool boosters</span>
+              <span class="bg-white/10 px-3 py-1 rounded-full">🔥 Tus partidos por jugar</span>
+              <span class="bg-white/10 px-3 py-1 rounded-full">🎯 Seguimiento de picks personales</span>
+              <span class="bg-white/10 px-3 py-1 rounded-full">🏆 Progreso rumbo a premios</span>
             </div>
           </div>
 
           <div class="bg-white rounded-2xl border p-5">
             <div class="flex items-center justify-between">
-              <div class="font-semibold text-gray-900">Your momentum</div>
-              <div class="text-xs text-gray-500">Stay engaged to win more</div>
+              <div class="font-semibold text-gray-900">Mi progreso</div>
+              <div class="text-xs text-gray-500">Personaliza tu camino a premios</div>
             </div>
             <div class="mt-3 grid grid-cols-3 gap-3 text-center">
               <div class="p-3 rounded-lg bg-emerald-50 border">
                 <div class="text-emerald-700 text-xl font-extrabold" id="hero-streak">2</div>
-                <div class="text-xs text-emerald-700">Day streak</div>
+                <div class="text-xs text-emerald-700">Racha de días</div>
               </div>
               <div class="p-3 rounded-lg bg-yellow-50 border">
                 <div class="text-amber-700 text-xl font-extrabold">x1.5</div>
-                <div class="text-xs text-amber-700">Sponsor boost</div>
+                <div class="text-xs text-amber-700">Multiplicador activo</div>
               </div>
               <div class="p-3 rounded-lg bg-sky-50 border">
                 <div class="text-sky-700 text-xl font-extrabold" id="hero-players">0</div>
-                <div class="text-xs text-sky-700">Players joined today</div>
+                <div class="text-xs text-sky-700">Mis combinadas activas</div>
               </div>
             </div>
           </div>
@@ -1148,6 +1148,15 @@ function resolveMatchTickets(match) {
   return getMatchTickets(match?.id);
 }
 
+function getMyTickets(match) {
+  const tickets = resolveMatchTickets(match);
+  if (!Array.isArray(tickets) || !currentUser) {
+    return [];
+  }
+  const userId = currentUser.id;
+  return tickets.filter(ticket => ticket?.user?.id === userId);
+}
+
 async function hydrateMatchTickets(matchList = []) {
   if (!Array.isArray(matchList) || matchList.length === 0) {
     return;
@@ -1395,16 +1404,34 @@ function renderMatches(){
     .filter(m => new Date(m.startISO) > new Date())
     .sort((a,b) => new Date(a.startISO) - new Date(b.startISO));
 
-  // héroe: players totales
-  el('hero-players').textContent = ups.reduce((acc,m)=> {
-    const tickets = resolveMatchTickets(m);
-    return acc + (m.participants || tickets.length || 0);
-  }, 0);
+  const heroSubtitle = el('hero-personal-sub');
+  if (heroSubtitle) {
+    heroSubtitle.textContent = currentUser
+      ? 'Sigue tus combinadas activas y ajusta antes del kickoff.'
+      : 'Inicia sesión para crear y seguir tus propias combinadas.';
+  }
+
+  // héroe: combinadas propias activas
+  const heroTickets = ups.reduce((acc, m) => acc + getMyTickets(m).length, 0);
+  const heroTicketsEl = el('hero-my-tickets');
+  if (heroTicketsEl) {
+    heroTicketsEl.textContent = heroTickets;
+  }
+
+  const heroSubtitleStats = el('hero-personal-sub');
+  if (heroSubtitleStats && currentUser && heroTickets > 0) {
+    heroSubtitleStats.textContent = `Tienes ${heroTickets} combinada${heroTickets === 1 ? '' : 's'} activas hoy.`;
+  }
 
   ups.forEach(m => {
-	const tickets = resolveMatchTickets(m);
-    const d = dist(tickets);
-    const playerCount = m.participants || tickets.length || 0;
+    const myTickets = getMyTickets(m);
+    const d = dist(myTickets);
+    const playerCount = myTickets.length;
+    const hasTickets = playerCount > 0;
+    const buttonLabel = !currentUser
+      ? 'Inicia sesión'
+      : (hasTickets ? 'Ver mis picks' : 'Crear mi combinada');
+    const buttonIcon = !currentUser ? 'fa-arrow-right-to-bracket' : 'fa-ticket';
 	
     const row = document.createElement('div');
     row.className = "rounded-xl border bg-white hover:shadow-md transition";
@@ -1423,7 +1450,7 @@ function renderMatches(){
 
           <!-- Col 2: players (centrado) -->
           <div class="flex flex-col items-center justify-center text-center">
-            <div class="text-xs text-gray-600 mb-1">Players</div>
+            <div class="text-xs text-gray-600 mb-1">Mis combinadas</div>
             <div class="text-sm font-semibold text-gray-800">
               ${playerCount}
             </div>
@@ -1431,7 +1458,7 @@ function renderMatches(){
 
           <!-- Col 3: trending (centrado) -->
           <div class="hidden sm:flex flex-col items-center justify-center text-center">
-            <div class="text-xs text-gray-600 mb-1">Trending</div>
+            <div class="text-xs text-gray-600 mb-1">Mi tendencia</div>
             <div class="dist-bar bg-gray-200 w-full max-w-[220px]">
               <div style="width:${d.home}%" class="h-full float-left bg-green-600"></div>
               <div style="width:${d.draw}%" class="h-full float-left bg-gray-400"></div>
@@ -1453,20 +1480,20 @@ function renderMatches(){
             <button
               class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-emerald-600"
               data-open-ticket="${m.id}">
-              <i class="fa-solid fa-ticket mr-1"></i> Make your picks
+              <i class="fa-solid ${buttonIcon} mr-1"></i> ${buttonLabel}
             </button>
           </div>
         </div>
         <div class="border-t bg-gray-50">
           <div class="flex items-center justify-between px-4 py-2">
-            <span class="text-xs font-semibold text-gray-600">Tickets combinados</span>
+            <span class="text-xs font-semibold text-gray-600">Mis combinadas</span>
             <button type="button" class="text-xs font-semibold text-primary hover:text-emerald-600 flex items-center gap-1" data-toggle-match-tickets="${m.id}">
               <i class="fa-solid fa-list"></i>
               <span>Ver combinadas</span>
             </button>
           </div>
           <div class="match-tickets hidden px-4 pb-4" id="match-tickets-${m.id}">
-            ${buildMatchTicketsHTML(tickets)}
+            ${buildMatchTicketsHTML(myTickets, { matchId: m.id })}
           </div>
         </div>
       </div>`;
@@ -1495,7 +1522,7 @@ function renderMatches(){
         const label = toggleBtn.querySelector('span');
         if (isHidden) {
           ticketsPanel.classList.remove('hidden');
-          ticketsPanel.innerHTML = buildMatchTicketsHTML(resolveMatchTickets(m));
+          ticketsPanel.innerHTML = buildMatchTicketsHTML(getMyTickets(m), { matchId: m.id });
           if (label) label.textContent = 'Ocultar combinadas';
         } else {
           ticketsPanel.classList.add('hidden');
@@ -1538,60 +1565,83 @@ function dist(tickets){
   };
 }
 
-function buildMatchTicketsHTML(tickets) {
-  const list = Array.isArray(tickets) ? tickets : [];
-  if (!list.length) {
-    return `<div class="px-4 py-3 text-sm text-gray-500 bg-white rounded-lg border">No hay tickets combinados todavía.</div>`;
+function buildMatchTicketsHTML(tickets, options = {}) {
+  const { matchId = null } = options;
+
+  if (!isLoggedIn()) {
+    return `
+      <div class="px-4 py-3 text-sm text-gray-600 bg-white rounded-lg border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <span>Inicia sesión para crear tus combinadas y verlas aquí.</span>
+        <button type="button" class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-white hover:bg-emerald-600" onclick="openAuthFlow('signin')">
+          Inicia sesión
+        </button>
+      </div>`;
   }
 
-  const header = `
-    <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] px-4 py-2 text-[12px] text-gray-500">
-      <div>#</div><div>Jugador</div><div>P1</div><div>P2</div><div>P3</div><div>P4</div><div>P5</div><div class="text-right">Score</div>
-    </div>`;
-
-  const rows = list.map(ticket => {
-    const user = ticket?.user || {};
-    const avatarUrl = user.avatar || '';
-    const initials = (user.name || user.username || 'P').slice(0, 2).toUpperCase();
-    const score = ticket?.liveScore?.score;
-    const formattedScore = (score !== undefined && score !== null) ? score : '—';
-    const p = ticket?.picks || {};
-    const tag = (value) => (value ? value : '—');
-
-    const avatar = avatarUrl
-      ? `<img src="${avatarUrl}" alt="${user.name || 'Player'}" class="w-8 h-8 rounded-full object-cover" />`
-      : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">${initials}</div>`;
-
-    const rankLabel = Number.isFinite(Number(ticket?.rank)) && Number(ticket.rank) > 0
-      ? `#${ticket.rank}`
-      : '—';
+  const list = Array.isArray(tickets) ? tickets : [];
+	
+  if (!list.length) {
+    const cta = Number.isFinite(Number(matchId))
+      ? `<button type="button" class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-white hover:bg-emerald-600 flex items-center justify-center gap-1" data-open-ticket="${matchId}">
+          <i class="fa-solid fa-plus"></i>
+          Crear mi combinada
+        </button>`
+      : '';
 
     return `
-      <div class="grid grid-cols-[56px,1.1fr,0.8fr,0.8fr,0.8fr,0.8fr,0.9fr,0.9fr] items-center px-4 py-2 text-sm">
-        <div class="text-xs font-bold text-gray-800">${rankLabel}</div>
-        <div class="flex items-center gap-2">
-          ${avatar}
-          <div class="flex flex-col">
-            <span class="font-medium text-gray-800 leading-tight">${user.name || user.username || 'Player'}</span>
-            ${user.username ? `<span class="text-[11px] text-gray-500">@${user.username}</span>` : ''}
+      <div class="px-4 py-3 text-sm text-gray-600 bg-white rounded-lg border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <span>Aún no tienes combinadas para este partido.</span>
+        ${cta}
+      </div>`;
+  }
+
+  const rows = list.map(ticket => {
+    const picks = ticket?.picks || {};
+    const submittedAt = ticket?.submittedAt
+      ? new Date(ticket.submittedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+      : '—';
+    const score = ticket?.liveScore?.score;
+    const formattedScore = (score !== undefined && score !== null) ? score : '—';
+    const rank = ticket?.liveScore?.rank;
+    const rankLabel = Number.isFinite(Number(rank)) ? `#${rank}` : null;
+    const updatedAt = ticket?.liveScore?.updatedAt
+      ? new Date(ticket.liveScore.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : null;
+
+    const statusParts = [];
+    if (formattedScore !== '—') statusParts.push(`Score ${formattedScore}`);
+    if (rankLabel) statusParts.push(`Posición ${rankLabel}`);
+    const statusText = statusParts.length ? statusParts.join(' • ') : 'Esperando resultados';
+
+    const pickBlocks = ['s1', 's2', 's3', 's4', 's5'].map((key, idx) => {
+      const value = picks[key] || '—';
+      return `
+        <div class="flex flex-col rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+          <span class="text-[11px] font-semibold uppercase text-gray-500">P${idx + 1}</span>
+          <span class="text-sm font-semibold text-gray-800">${value}</span>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="rounded-lg border bg-white p-4 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div class="text-xs uppercase text-gray-500">Enviada</div>
+            <div class="text-sm font-semibold text-gray-900">${submittedAt}</div>
+          </div>
+          <div class="text-left sm:text-right">
+            <div class="text-xs uppercase text-gray-500">Estado</div>
+            <div class="text-sm font-semibold text-gray-900">${statusText}</div>
+            ${updatedAt ? `<div class="text-[11px] text-gray-500">Actualizado ${updatedAt}</div>` : ''}
           </div>
         </div>
-        <div class="text-sm">${tag(p.s1)}</div>
-        <div class="text-sm">${tag(p.s2)}</div>
-        <div class="text-sm">${tag(p.s3)}</div>
-        <div class="text-sm">${tag(p.s4)}</div>
-        <div class="text-sm">${tag(p.s5)}</div>
-        <div class="text-sm text-right font-semibold text-gray-700">${formattedScore}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+          ${pickBlocks}
+        </div>
       </div>`;
   }).join('');
 
-  return `
-    <div class="rounded-lg border bg-white overflow-hidden">
-      ${header}
-      <div class="divide-y">
-        ${rows}
-      </div>
-    </div>`;
+  return `<div class="space-y-3">${rows}</div>`;
 }
 
 /* ===== RESULTS LIST ===== */
