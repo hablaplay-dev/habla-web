@@ -20,7 +20,29 @@
     // Crear cliente de Supabase
     const ENV = JSON.parse(document.getElementById('env').textContent);
     const sb = supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
-	window.sb = sb;
+    // Algunos navegadores están ejecutando versiones de la librería de Supabase
+    // sin la utilería interna `fetchMaybeNewAccessToken`, pero nuestro flujo
+    // (y el propio auto-refresh de Supabase) intentan invocarla cuando existe
+    // una sesión almacenada. Eso termina generando un error de consola
+    // `fetchMaybeNewAccessToken is not a function` justo después de iniciar
+    // sesión. Definimos un polyfill sencillo que delega al refresh oficial
+    // disponible para garantizar la compatibilidad.
+    if (sb?.auth && typeof sb.auth.fetchMaybeNewAccessToken !== 'function') {
+      sb.auth.fetchMaybeNewAccessToken = async (refreshToken) => {
+        try {
+          // Supabase espera que la función regrese la sesión fresca.
+          const { data, error } = refreshToken
+            ? await sb.auth.refreshSession({ refresh_token: refreshToken })
+            : await sb.auth.refreshSession();
+          if (error) throw error;
+          return data?.session ?? null;
+        } catch (err) {
+          console.warn('[auth] Failed to refresh session', err);
+          return null;
+        }
+      };
+    }
+    window.sb = sb;
   </script>
 
   <style>
