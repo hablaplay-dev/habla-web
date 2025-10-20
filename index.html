@@ -1137,12 +1137,42 @@ function mapTicketRpcRowToUI(row) {
 
 let matches = [];
 
-function setMatchTickets(matchId, tickets) {
+function setMatchTickets(matchId, tickets, options = {}) {
   const key = Number(matchId);
-  matchTicketsCache.set(key, tickets);
+  const list = Array.isArray(tickets) ? tickets.filter(Boolean) : [];
+  const { merge = false } = options;
+
+  let nextTickets = list;
+
+  if (merge && matchTicketsCache.has(key)) {
+    const existing = matchTicketsCache.get(key) || [];
+    const byId = new Map();
+
+    const register = (ticket, fallbackPrefix) => {
+      if (!ticket) return;
+      const id = ticket.ticketId ?? ticket.id;
+      if (id !== undefined && id !== null) {
+        byId.set(id, ticket);
+        return;
+      }
+      const fallbackKey = `${fallbackPrefix}-${byId.size}`;
+      byId.set(fallbackKey, ticket);
+    };
+
+    existing.forEach(ticket => register(ticket, 'existing'));
+    list.forEach(ticket => register(ticket, 'incoming'));
+
+    nextTickets = Array.from(byId.values()).sort((a, b) => {
+      const aTime = a?.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+      const bTime = b?.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+      return aTime - bTime;
+    });
+  }
+
+  matchTicketsCache.set(key, nextTickets);
   const idx = matches.findIndex(m => Number(m.id) === key);
   if (idx >= 0) {
-    matches[idx] = { ...matches[idx], tickets };
+    matches[idx] = { ...matches[idx], tickets: nextTickets };
   }
 }
 
@@ -2636,7 +2666,7 @@ async function refreshMatchTicketsAfterSubmit(matchId){
       return;
     }
     const normalized = (data || []).map(mapTicketRpcRowToUI);
-    setMatchTickets(id, normalized);
+    setMatchTickets(id, normalized, { merge: true });
     renderMatches();
     renderResults();
   } catch (err) {
