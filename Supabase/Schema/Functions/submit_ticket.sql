@@ -24,12 +24,27 @@ begin
     raise exception 'Match is locked for new tickets';
   end if;
 
-  insert into tickets(user_id, match_id, status, submitted_at)
-  values (v_user, p_match_id, 'SUBMITTED', now())
-  on conflict (user_id, match_id) do update
-    set submitted_at = excluded.submitted_at,
-        status       = 'SUBMITTED'
-  returning id into v_ticket_id;
+  -- La tabla ya no tiene el constraint único (user_id, match_id),
+  -- así que resolvemos manualmente el "upsert" localizando el ticket
+  -- más reciente del usuario para el partido.
+  select id
+    into v_ticket_id
+  from tickets
+  where user_id = v_user
+    and match_id = p_match_id
+  order by submitted_at desc
+  limit 1;
+
+  if v_ticket_id is null then
+    insert into tickets(user_id, match_id, status, submitted_at)
+    values (v_user, p_match_id, 'SUBMITTED', now())
+    returning id into v_ticket_id;
+  else
+    update tickets
+       set submitted_at = now(),
+           status       = 'SUBMITTED'
+     where id = v_ticket_id;
+  end if;
 
   delete from ticket_answers where ticket_id = v_ticket_id;
 
