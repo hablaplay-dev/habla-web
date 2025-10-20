@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION public.submit_ticket(p_match_id bigint, p_s1 text, p_s2 text, p_s3 text, p_s4 text, p_s5 text)
- RETURNS jsonb
+ RETURNS bigint
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
@@ -8,8 +8,6 @@ declare
   v_user uuid;
   v_ticket_id bigint;
   v_locked boolean;
-  v_duplicate_ticket_id bigint;
-  v_picks jsonb;
 begin
   v_user := auth.uid();
   if v_user is null then
@@ -26,38 +24,29 @@ begin
     raise exception 'Match is locked for new tickets';
   end if;
 
-  v_picks := jsonb_build_object(
-    's1', coalesce(p_s1, '-'),
-    's2', coalesce(p_s2, '-'),
-    's3', coalesce(p_s3, '-'),
-    's4', coalesce(p_s4, '-'),
-    's5', coalesce(p_s5, '-')
-  );
-
-  select existing.id
-    into v_duplicate_ticket_id
-  from (
-    select t.id,
-           t.submitted_at,
-           coalesce(jsonb_object_agg(ta.q_key, ta.value), '{}'::jsonb) as picks
-      from public.tickets t
-      left join public.ticket_answers ta
-        on ta.ticket_id = t.id
-     where t.user_id = v_user
-       and t.match_id = p_match_id
-     group by t.id, t.submitted_at
-  ) as existing
-  where existing.picks = v_picks
-  order by existing.submitted_at desc, existing.id desc
+  -- La tabla ya no tiene el constraint único (user_id, match_id),
+  -- así que resolvemos manualmente el "upsert" localizando el ticket
+  -- más reciente del usuario para el partido.
+  select id
+    into v_ticket_id
+  from tickets
+  where user_id = v_user
+    and match_id = p_match_id
+  order by submitted_at desc
   limit 1;
 
-  if v_duplicate_ticket_id is not null then
-    return jsonb_build_object('ticket_id', v_duplicate_ticket_id, 'duplicate', true);
+  if v_ticket_id is null then
+    insert into tickets(user_id, match_id, status, submitted_at)
+    values (v_user, p_match_id, 'SUBMITTED', now())
+    returning id into v_ticket_id;
+  else
+    update tickets
+       set submitted_at = now(),
+           status       = 'SUBMITTED'
+     where id = v_ticket_id;
   end if;
 
-  insert into tickets(user_id, match_id, status, submitted_at)
-  values (v_user, p_match_id, 'SUBMITTED', now())
-  returning id into v_ticket_id;
+  delete from ticket_answers where ticket_id = v_ticket_id;
 
   insert into ticket_answers(ticket_id, q_key, value) values
     (v_ticket_id, 's1', coalesce(p_s1,'-')),
@@ -66,5 +55,5 @@ begin
     (v_ticket_id, 's4', coalesce(p_s4,'-')),
     (v_ticket_id, 's5', coalesce(p_s5,'-'));
 
-  return jsonb_build_object('ticket_id', v_ticket_id, 'duplicate', false);
+  return v_ticket_id;
 end $function$
