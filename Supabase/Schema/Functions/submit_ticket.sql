@@ -1,13 +1,15 @@
 CREATE OR REPLACE FUNCTION public.submit_ticket(p_match_id bigint, p_s1 text, p_s2 text, p_s3 text, p_s4 text, p_s5 text)
- RETURNS bigint
+ RETURNS TABLE(ticket_id bigint, duplicate boolean)
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'auth'
 AS $function$
 declare
   v_user uuid;
   v_ticket_id bigint;
   v_locked boolean;
+  v_duplicate boolean;
+  v_canonical text;
 begin
   v_user := auth.uid();
   if v_user is null then
@@ -24,36 +26,66 @@ begin
     raise exception 'Match is locked for new tickets';
   end if;
 
-  -- La tabla ya no tiene el constraint único (user_id, match_id),
-  -- así que resolvemos manualmente el "upsert" localizando el ticket
-  -- más reciente del usuario para el partido.
-  select id
-    into v_ticket_id
-  from tickets
-  where user_id = v_user
-    and match_id = p_match_id
-  order by submitted_at desc
+  -- Normalizamos la combinada entrante para comparar sin importar el orden
+  v_canonical := (
+    select string_agg(concat(key, '=', val), '|' order by key)
+    from (values
+      ('s1', coalesce(nullif(trim(p_s1), ''), '-')),
+      ('s2', coalesce(nullif(trim(p_s2), ''), '-')),
+      ('s3', coalesce(nullif(trim(p_s3), ''), '-')),
+      ('s4', coalesce(nullif(trim(p_s4), ''), '-')),
+      ('s5', coalesce(nullif(trim(p_s5), ''), '-'))
+    ) as pick(key, val)
+  );
+
+  -- Buscamos si el usuario ya tiene la misma combinada (sin importar orden)
+  select true
+    into v_duplicate
+  from (
+    select (
+      select string_agg(concat(key, '=', val), '|' order by key)
+      from (values
+        ('s1', coalesce(max(case when ta.q_key = 's1' then nullif(trim(ta.value), '') end), '-')),
+        ('s2', coalesce(max(case when ta.q_key = 's2' then nullif(trim(ta.value), '') end), '-')),
+        ('s3', coalesce(max(case when ta.q_key = 's3' then nullif(trim(ta.value), '') end), '-')),
+        ('s4', coalesce(max(case when ta.q_key = 's4' then nullif(trim(ta.value), '') end), '-')),
+        ('s5', coalesce(max(case when ta.q_key = 's5' then nullif(trim(ta.value), '') end), '-'))
+      ) as existing(key, val)
+    ) as canonical
+    from tickets t
+    left join ticket_answers ta
+      on ta.ticket_id = t.id
+     and ta.q_key in ('s1','s2','s3','s4','s5')
+    where t.user_id = v_user
+      and t.match_id = p_match_id
+      and t.status = 'SUBMITTED'
+    group by t.id
+  ) combos
+  where combos.canonical = v_canonical
   limit 1;
 
-  if v_ticket_id is null then
-    insert into tickets(user_id, match_id, status, submitted_at)
-    values (v_user, p_match_id, 'SUBMITTED', now())
-    returning id into v_ticket_id;
-  else
-    update tickets
-       set submitted_at = now(),
-           status       = 'SUBMITTED'
-     where id = v_ticket_id;
+  if coalesce(v_duplicate, false) then
+    ticket_id := null;
+    duplicate := true;
+    return next;
+    return;
   end if;
 
-  delete from ticket_answers where ticket_id = v_ticket_id;
+  -- Insertamos un ticket nuevo (ya no reutilizamos el anterior)
+  insert into tickets(user_id, match_id, status, submitted_at)
+  values (v_user, p_match_id, 'SUBMITTED', now())
+  returning id into v_ticket_id;
 
   insert into ticket_answers(ticket_id, q_key, value) values
-    (v_ticket_id, 's1', coalesce(p_s1,'-')),
-    (v_ticket_id, 's2', coalesce(p_s2,'-')),
-    (v_ticket_id, 's3', coalesce(p_s3,'-')),
-    (v_ticket_id, 's4', coalesce(p_s4,'-')),
-    (v_ticket_id, 's5', coalesce(p_s5,'-'));
+    (v_ticket_id, 's1', coalesce(nullif(trim(p_s1), ''), '-')),
+    (v_ticket_id, 's2', coalesce(nullif(trim(p_s2), ''), '-')),
+    (v_ticket_id, 's3', coalesce(nullif(trim(p_s3), ''), '-')),
+    (v_ticket_id, 's4', coalesce(nullif(trim(p_s4), ''), '-')),
+    (v_ticket_id, 's5', coalesce(nullif(trim(p_s5), ''), '-'));
 
-  return v_ticket_id;
-end $function$
+  ticket_id := v_ticket_id;
+  duplicate := false;
+  return next;
+  return;
+end
+$function$
