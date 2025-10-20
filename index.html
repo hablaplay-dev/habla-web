@@ -1565,12 +1565,14 @@ function formatTicketTime(value){
 
 function formatTicketStatus(ticket){
   const liveScore = ticket?.liveScore || {};
-  const parts = [];
-  const score = Number(liveScore.score);
-  const rank = Number(liveScore.rank);
-  if (Number.isFinite(score)) parts.push(`Score ${score}`);
-  if (Number.isFinite(rank)) parts.push(`Posición #${rank}`);
-  return parts.length ? parts.join(' • ') : 'Esperando resultados';
+  const updatedLabel = formatTicketTime(liveScore.updatedAt);
+  if (updatedLabel) {
+    return `Actualizado ${updatedLabel}`;
+  }
+  if (ticket?.submittedAt) {
+    return 'Esperando resultados';
+  }
+  return 'Sin enviar';
 }
 
 function buildTicketPickBadges(ticket){
@@ -1603,26 +1605,39 @@ function buildMatchTicketSummary(match, tickets){
     return aTime - bTime;
   });
 
-  const cards = list.map((ticket, idx) => {
+  const headerCells = ['Combinada', 'Creada', 'P1', 'P2', 'P3', 'P4', 'P5']
+    .map(label => `<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide text-[11px] text-gray-500">${label}</th>`)
+    .join('');
+
+  const rows = list.map((ticket, idx) => {
     const submittedLabel = formatTicketDateTime(ticket?.submittedAt) || 'Sin enviar';
     const updatedLabel = formatTicketTime(ticket?.liveScore?.updatedAt);
-    const statusText = formatTicketStatus(ticket);
-    const metaSuffix = updatedLabel ? ` • Actualizado ${updatedLabel}` : '';
+    const picks = ticket?.picks || {};
+
+    const pickCells = ['s1', 's2', 's3', 's4', 's5']
+      .map(key => `<td class="px-3 py-2 text-sm font-semibold text-gray-800">${picks[key] || '—'}</td>`)
+      .join('');
 
     return `
-      <div class="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
-        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div class="text-[11px] font-semibold uppercase text-gray-500">Combinada ${idx + 1}</div>
-          <div class="text-[11px] text-gray-500">${submittedLabel}</div>
-        </div>
-        <div class="mt-2 flex flex-wrap gap-1.5">
-          ${buildTicketPickBadges(ticket)}
-        </div>
-        <div class="mt-2 text-[11px] text-gray-500">${statusText}${metaSuffix}</div>
-      </div>`;
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="px-3 py-2 text-sm font-semibold text-gray-900">Combinada ${idx + 1}</td>
+        <td class="px-3 py-2 text-sm text-gray-700">
+          <div>${submittedLabel}</div>
+          ${updatedLabel ? `<div class="text-[11px] text-gray-500">Actualizado ${updatedLabel}</div>` : ''}
+        </td>
+        ${pickCells}
+      </tr>`;
   }).join('');
 
-  return `<div class="flex flex-col gap-2 w-full">${cards}</div>`;
+  return `
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-xs text-gray-600">
+        <thead class="bg-white">
+          <tr>${headerCells}</tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 function buildMatchTicketsHTML(tickets, options = {}) {
@@ -1924,6 +1939,52 @@ function resolveMatchState(matchObj = {}) {
   }
 }
 
+function expandLeaderboardRows(rows = []){
+  return rows.flatMap(row => {
+    if (Array.isArray(row?.tickets) && row.tickets.length) {
+      return row.tickets.map(ticket => {
+        const merged = {
+          ...row,
+          ...ticket,
+          full_name: ticket.full_name ?? row.full_name ?? row.fullName ?? row.name,
+          username: ticket.username ?? row.username ?? row.user_name,
+          avatar_url: ticket.avatar_url ?? row.avatar_url ?? row.avatar,
+          submitted_at: ticket.submitted_at ?? ticket.created_at ?? row.submitted_at ?? row.created_at ?? null,
+          updated_at: ticket.updated_at ?? ticket.score_updated_at ?? row.updated_at ?? row.score_updated_at ?? null,
+          rank: ticket.rank ?? row.rank,
+          prize_amount: typeof ticket.prize_amount === 'number' ? ticket.prize_amount : row.prize_amount,
+          score: ticket.score ?? ticket.points ?? row.score ?? row.points ?? null,
+          ticket_id: ticket.ticket_id ?? ticket.id ?? row.ticket_id ?? row.id ?? null,
+        };
+        delete merged.tickets;
+        return merged;
+      });
+    }
+    const clone = { ...row };
+    if (clone.tickets) delete clone.tickets;
+    if (!('ticket_id' in clone) && (clone.ticketId || clone.id)) {
+      clone.ticket_id = clone.ticketId ?? clone.id;
+    }
+    return clone;
+  });
+}
+
+function ensureExpandedLeaderboard(rows = []){
+  if (!Array.isArray(rows)) return [];
+  const needsExpansion = rows.some(r => Array.isArray(r?.tickets));
+  if (needsExpansion) {
+    return expandLeaderboardRows(rows);
+  }
+  return rows.map(row => {
+    const clone = { ...row };
+    if (clone.tickets) delete clone.tickets;
+    if (!('ticket_id' in clone) && (clone.ticketId || clone.id)) {
+      clone.ticket_id = clone.ticketId ?? clone.id;
+    }
+    return clone;
+  });
+}
+
 // Pinta lista con columnas: #, user, P1..P5, Premio
 async function paintParticipants(matchObj) {
   const list = document.getElementById('players-list');
@@ -1951,7 +2012,8 @@ async function paintParticipants(matchObj) {
     leaderboard = [];
   }
 
-  const info = buildPotInfo(matchObj, Array.isArray(leaderboard) ? leaderboard.length : 0);
+  const expanded = ensureExpandedLeaderboard(leaderboard);
+  const info = buildPotInfo(matchObj, expanded.length);
 
   // Realtime (si cambia el live score o los puntos)
   subscribeLeaderboardRealtime(matchObj.id, async () => {
@@ -1965,16 +2027,17 @@ async function paintParticipants(matchObj) {
       const lb = nextState === 'upcoming'
         ? await getMatchTicketsDetailed(matchObj.id)
         : await getLeaderboardWithPicks(matchObj.id);
-      const rtInfo = buildPotInfo(matchObj, Array.isArray(lb) ? lb.length : 0);
-      drawLeaderboard(list, lb, nextState, matchObj, rtInfo);
-      renderRightStats(lb, matchObj, nextState, rtInfo); // refresca panel derecho
+      const expandedRt = ensureExpandedLeaderboard(lb);
+      const rtInfo = buildPotInfo(matchObj, expandedRt.length);
+      drawLeaderboard(list, expandedRt, nextState, matchObj, rtInfo);
+      renderRightStats(expandedRt, matchObj, nextState, rtInfo); // refresca panel derecho
     } catch (err) {
       console.warn('[paintParticipants][realtime]', err);
     }
   });
 
-  drawLeaderboard(list, leaderboard, initialState, matchObj, info);
-  renderRightStats(leaderboard, matchObj, initialState, info); // primer pintado
+  drawLeaderboard(list, expanded, initialState, matchObj, info);
+  renderRightStats(expanded, matchObj, initialState, info); // primer pintado
 }
 
 function extractTicketPicks(row){
@@ -2028,6 +2091,7 @@ function normalizeLeaderboardRow(row, idx, info = {}){
   const scoreRaw = row?.points ?? row?.score ?? row?.total_points ?? null;
   const score = Number(scoreRaw);
   const prizeAmount = typeof row?.prize_amount === 'number' ? row.prize_amount : (info?.prizeByRank ? info.prizeByRank(rank) : 0);
+  const ticketId = row?.ticket_id ?? row?.ticketId ?? null;
 
   return {
     rank,
@@ -2043,11 +2107,12 @@ function normalizeLeaderboardRow(row, idx, info = {}){
     scoreLabel: Number.isFinite(score) ? String(score) : '—',
     prizeAmount,
     prizeLabel: prizeAmount > 0 ? formatMoney(prizeAmount) : '—',
+    ticketId,
   };
 }
 
 function drawLeaderboard(container, lb, state = 'upcoming', matchObj = {}, infoOverride = null) {
-  const arr = Array.isArray(lb) ? lb : [];
+  const arr = ensureExpandedLeaderboard(Array.isArray(lb) ? lb : []);
   const matchState = state || 'upcoming';
   const info = infoOverride || buildPotInfo(matchObj, arr.length);
   const withinWindow = matchState !== 'finished' || matchEndedWithinDays(matchObj, 7);
@@ -2078,29 +2143,16 @@ function drawLeaderboard(container, lb, state = 'upcoming', matchObj = {}, infoO
     const highlightClass = (matchState === 'live' && item.rank === 1)
       ? 'bg-emerald-50'
       : ((matchState === 'finished' && item.prizeAmount > 0) ? 'bg-amber-50/60' : '');
-    const highlightDetailClass = [highlightClass, 'border-b border-gray-100'].filter(Boolean).join(' ').trim();
 
     const pickCells = picksOrder.map(key => {
       const value = item.picks?.[key] || '—';
       return `<td class="px-2 py-3 align-top text-sm font-semibold text-gray-900">${value}</td>`;
     }).join('');
 
-    const detailItems = picksOrder.map((key, orderIdx) => {
-      const label = PICK_LABELS[key] || `P${orderIdx + 1}`;
-      const value = item.picks?.[key] || '—';
-      return `<li class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-        <span class="text-xs font-semibold uppercase text-gray-500">${label}</span>
-        <span class="text-sm font-semibold text-gray-900">${value}</span>
-      </li>`;
-    }).join('');
-
-    const statusLine = showScores
-      ? `Comprada ${item.submittedLabel}${item.updatedLabel ? ` • Actualizado ${item.updatedLabel}` : ''}`
-      : `Comprada ${item.submittedLabel} • Esperando kickoff`;
-
     const scoreCell = showScores ? item.scoreLabel : '—';
     const prizeCell = showScores ? item.prizeLabel : '—';
     const prizeClass = showScores && item.prizeAmount > 0 ? 'text-emerald-700' : 'text-gray-700';
+    const ticketLabel = item.ticketId ? `<div class="mt-1 text-[11px] text-gray-500">Ticket #${item.ticketId}</div>` : '';
 
     return `
       <tr class="${highlightClass} align-top">
@@ -2111,18 +2163,13 @@ function drawLeaderboard(container, lb, state = 'upcoming', matchObj = {}, infoO
             <div>
               <div class="text-sm font-semibold text-gray-900">${item.name}</div>
               ${item.username ? `<div class="text-xs text-gray-500">@${item.username}</div>` : ''}
+              ${ticketLabel}
             </div>
           </div>
         </td>
         ${pickCells}
         <td class="px-4 py-3 text-sm font-semibold ${showScores ? 'text-gray-900' : 'text-gray-500'}">${scoreCell}</td>
         <td class="px-4 py-3 text-sm font-semibold ${prizeClass}">${prizeCell}</td>
-      </tr>
-      <tr class="${highlightDetailClass}">
-        <td colspan="9" class="px-4 pb-4">
-          <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-gray-700">${detailItems}</ul>
-          <div class="mt-3 text-xs text-gray-500 flex flex-wrap gap-3">${statusLine ? `<span>${statusLine}</span>` : ''}</div>
-        </td>
       </tr>`;
   }).join('');
 
@@ -2191,7 +2238,7 @@ function pct(n, t){ return t>0 ? Math.round((n*100)/t) : 0; }
 
 // Renderiza barras de distribución (P1..P4) y lista de P5
 function renderRightStats(lb, matchObj, state = null, infoOverride = null){
-  const arr = Array.isArray(lb) ? lb : [];
+  const arr = ensureExpandedLeaderboard(Array.isArray(lb) ? lb : []);
   const total = arr.length;
   const matchState = state || resolveMatchState(matchObj);
   const info = infoOverride || buildPotInfo(matchObj, total);
@@ -2546,6 +2593,35 @@ function updateCompleted(){
   el('completed-counter').textContent = `${Object.keys(picks).length}/5`;
 }
 
+function resetTicketFormForNextEntry(){
+  picks = {};
+  score = { home: 0, away: 0 };
+  updateCompleted();
+  if (selectedMatch) {
+    renderPredictionsForDB(selectedMatch);
+    const banner = el('error-banner');
+    if (banner) banner.classList.add('hidden');
+  }
+}
+
+async function refreshMatchTicketsAfterSubmit(matchId){
+  const id = Number(matchId);
+  if (!Number.isFinite(id)) return;
+  try {
+    const { data, error } = await sb.rpc('get_match_tickets_with_picks', { p_match_id: id });
+    if (error) {
+      console.warn('[refreshMatchTicketsAfterSubmit]', error);
+      return;
+    }
+    const normalized = (data || []).map(mapTicketRpcRowToUI);
+    setMatchTickets(id, normalized);
+    renderMatches();
+    renderResults();
+  } catch (err) {
+    console.warn('[refreshMatchTicketsAfterSubmit]', err);
+  }
+}
+
 // Modal de éxito
 function openSuccessModal(ticketId){
   const m = el('success-modal');
@@ -2638,6 +2714,11 @@ el('confirm-submit').addEventListener('click', async ()=>{
       return;
     }
 
+    const currentMatchId = selectedMatch?.id;
+    if (Number.isFinite(Number(currentMatchId))) {
+      await refreshMatchTicketsAfterSubmit(currentMatchId);
+    }
+    resetTicketFormForNextEntry();
     openSuccessModal(ticketId || null);
   } catch (e) {
     console.error(e);
