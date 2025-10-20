@@ -2725,7 +2725,7 @@ el('confirm-submit').addEventListener('click', async ()=>{
 
   try {
     // Enviar al RPC transaccional
-    const { data: ticketId, error } = await sb.rpc('submit_ticket', {
+    const { data: rpcResponse, error } = await sb.rpc('submit_ticket', {
       p_match_id: selectedMatch.id,
       p_s1: picks.s1, p_s2: picks.s2, p_s3: picks.s3, p_s4: picks.s4, p_s5: picks.s5
     });
@@ -2733,6 +2733,15 @@ el('confirm-submit').addEventListener('click', async ()=>{
     if (error) {
       console.error('[submit_ticket][error]', error);
       showToast('Could not submit your ticket.');
+      return;
+    }
+
+    const result = Array.isArray(rpcResponse) ? rpcResponse[0] : rpcResponse;
+    const duplicate = Boolean(result?.duplicate);
+    const ticketId = result?.ticket_id ?? null;
+
+    if (duplicate) {
+      showToast('You already submitted that combo for this match.');
       return;
     }
 
